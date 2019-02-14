@@ -5,10 +5,13 @@ CONFIG -= qt
 
 SOURCES += readPLY.cpp exportPLY.cpp \
 
+QMAKE_CXXFLAGS += -std=c++11
+
 INCLUDEPATH +=  /usr/local/Cellar/cgal/4.13/include \ # CGAL
                 /usr/local/Cellar/boost/1.68.0_1/include \ # BOOST
                 /usr/local/Cellar/gmp/6.1.2_2/include \ # GMP
-                /usr/local/Cellar/mpfr/4.0.1/include # MPFR
+                /usr/local/Cellar/mpfr/4.0.1/include \ # MPFR
+                $CGAL_HOME \
 
 
 LIBS +=     -L/usr/local/Cellar/boost/1.68.0_1/lib \ # BOOST
