@@ -4,6 +4,8 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += readPLY.cpp exportPLY.cpp \
+    main.cpp \
+    readPlyWithCn.cpp
 
 INCLUDEPATH +=  /usr/local/Cellar/cgal/4.13/include \ # CGAL
                 /usr/local/Cellar/boost/1.68.0_1/include \ # BOOST

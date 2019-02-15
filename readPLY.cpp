@@ -18,7 +18,7 @@ typedef CGAL::Nth_of_tuple_property_map<2, PNCI> Color_map;
 typedef CGAL::Nth_of_tuple_property_map<3, PNCI> Intensity_map;
 
 
-std::list<Point> readPLYfun(const char* fname)
+std::list<Point> readPlyFun(const char* fname)
 {
     // Reads a .ply point set file with normal vectors and colors
     std::list<Point> points; // store points
