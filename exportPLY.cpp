@@ -20,29 +20,13 @@ typedef Triangulation::Locate_type              Locate_type;
 typedef Triangulation::Point                    Point;
 typedef Triangulation::Facet                    Facet;
 
-int main()
+int exportTriangulationFun()
 {
     
     
     auto filename = "/Users/Raphael/Library/Mobile Documents/com~apple~CloudDocs/Studium/PhD/Paris/data/EMS/Est1 - Cloud_subsampled.ply";
-    auto L = readPLYfun(filename);
+    auto L = readPlyFun(filename);
     
-    
-//    // construction from a list of points :
-//    std::list<Point> L;
-//
-//
-//
-//
-//    L.push_front(Point(10,10,10));
-//    L.push_front(Point(11,10,10));
-//    L.push_front(Point(10,11,10));
-//    L.push_front(Point(10,10,11));
-//    L.push_front(Point(10,14,11));
-    //    L.push_front(Point(11,10,13));
-    //    L.push_front(Point(22,13,11));
-    //    L.push_front(Point(10,31,41));
-    //    L.push_front(Point(12,10,17));
     
     Triangulation T(L.begin(), L.end());
     Triangulation::size_type nv = T.number_of_vertices();
@@ -139,3 +123,11 @@ int main()
     return 0;
     
 }
+
+
+
+
+
+
+
+

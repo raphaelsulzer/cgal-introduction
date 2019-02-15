@@ -4,6 +4,8 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += readPLY.cpp exportPLY.cpp \
+    main.cpp \
+    readPlyWithCn.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 
