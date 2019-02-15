@@ -20,12 +20,11 @@ typedef Triangulation::Locate_type              Locate_type;
 typedef Triangulation::Point                    Point;
 typedef Triangulation::Facet                    Facet;
 
-int exportTriangulationFun()
+int exportTriangulationFun(const char* ifn, const char* ofn)
 {
     
     
-    auto filename = "/Users/Raphael/Library/Mobile Documents/com~apple~CloudDocs/Studium/PhD/Paris/data/EMS/Est1 - Cloud_subsampled.ply";
-    auto L = readPlyFun(filename);
+    auto L = readPlyFun(ifn);
     
     
     Triangulation T(L.begin(), L.end());
@@ -35,7 +34,7 @@ int exportTriangulationFun()
     std::cout << "Triangulation done.." << std::endl;
     
     std::ofstream fo;
-    fo.open ("/Users/Raphael/Library/Mobile Documents/com~apple~CloudDocs/Studium/PhD/Paris/data/triangulation.ply");
+    fo.open (ofn);
     
     fo << "ply" << std::endl;
     fo << "format ascii 1.0" << std::endl;
