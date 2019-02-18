@@ -3,9 +3,11 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
-SOURCES += readPLY.cpp exportPLY.cpp \
+SOURCES += \
+    exportPLY.cpp \
     main.cpp \
-    readPlyWithCn.cpp
+    readPlyWithCn.cpp \
+    readPly.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 

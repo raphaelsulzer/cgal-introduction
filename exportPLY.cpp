@@ -10,7 +10,8 @@
 #include <cassert>
 #include <list>
 #include <vector>
-#include "readPLY.cpp"
+#include "readPly.cpp"
+//#include "readPlyWithCn.cpp"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_3<K>       Triangulation;
@@ -19,13 +20,19 @@ typedef Triangulation::Vertex_handle            Vertex_handle;
 typedef Triangulation::Locate_type              Locate_type;
 typedef Triangulation::Point                    Point;
 typedef Triangulation::Facet                    Facet;
+typedef CGAL::cpp11::tuple<Point, Vector, Color, int> PNCI;
 
 int exportTriangulationFun(const char* ifn, const char* ofn)
 {
     
     
     auto L = readPlyFun(ifn);
-    
+//    auto plyfile = readPlyWithCnFun(ifn);
+
+
+
+    std::list<Point> points; // store points
+
     
     Triangulation T(L.begin(), L.end());
     Triangulation::size_type nv = T.number_of_vertices();
@@ -43,6 +50,12 @@ int exportTriangulationFun(const char* ifn, const char* ofn)
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
+    fo << "property uchar red" << std::endl;
+    fo << "property uchar green" << std::endl;
+    fo << "property uchar blue" << std::endl;
+    fo << "property float nx" << std::endl;
+    fo << "property float ny" << std::endl;
+    fo << "property float nz" << std::endl;
     fo << "element face " << nf << std::endl;
     fo << "property list uchar int vertex_indices" << std::endl;
     fo << "end_header" << std::endl;
@@ -76,19 +89,13 @@ int exportTriangulationFun(const char* ifn, const char* ofn)
     //std::cout << "iterate over finite triangles: " << std::endl;
     for(fft = T.finite_facets_begin() ; fft != T.finite_facets_end() ; fft++){
         
-        // facet fft is represented by pair (cell c, int vidx). vidx is the vertex opposite to the cell.
-        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite. See: https://doc.cgal.org/latest/Triangulation_3/index.html
+        // facet fft is represented by std::pair (cell c, int vidx). vidx is the vertex opposite to the cell.
+        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
+        // see: https://doc.cgal.org/latest/Triangulation_3/index.html
         
-        c = fft->first;
-        vidx = fft->second;
-        
-        //std::cout << "cell points: ";
-        for(int k = 0 ; k <= 3 ; k++){
-            
-            //std::cout << c->vertex(k)->point() << "; ";
-        }
-        //std::cout << std::endl;
-        
+
+        c = fft->first;         // cell
+        vidx = fft->second;     // vertex index
         
         
         //std::cout << "is infinite: " << T.is_infinite(v) << std::endl;
