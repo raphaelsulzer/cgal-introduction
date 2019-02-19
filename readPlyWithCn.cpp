@@ -19,7 +19,6 @@ typedef CGAL::Nth_of_tuple_property_map<3, PNCI> Intensity_map;
 
 std::vector<PNCI> readPlyWithCnFun(const char* fname)
 {
-
     std::vector<PNCI> points; // store points
     std::ifstream in(fname);
 
@@ -35,18 +34,6 @@ std::vector<PNCI> readPlyWithCnFun(const char* fname)
                         CGAL::PLY_property<unsigned char>("green"),
                         CGAL::PLY_property<unsigned char>("blue")),
        CGAL::make_ply_normal_reader (Normal_map()));
-
-    // Display points read
-    for (std::size_t i = 0; i < points.size (); ++ i)
-    {
-      const Point& p = get<0>(points[i]);
-      const Vector& n = get<1>(points[i]);
-      const Color& c = get<2>(points[i]);
-      int I = get<3>(points[i]);
-      std::cerr << "Point (" << p << ") with normal (" << n
-                << "), color (" << int(c[0]) << " " << int(c[1]) << " " << int(c[2])
-                << ") and intensity " << I << std::endl;
-    }
 
     return points;
 }

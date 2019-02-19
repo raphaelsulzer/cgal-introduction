@@ -4,18 +4,14 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
-    exportPLY.cpp \
     main.cpp \
     readPlyWithCn.cpp \
-    readPly.cpp
+    readPly.cpp \
+    info_insert_with_zip_iterator.cpp \
+    exportTriWithCn.cpp \
+#    exportTri.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
-
-
-
-
-
-
 
 
 INCLUDEPATH += usr/local/include

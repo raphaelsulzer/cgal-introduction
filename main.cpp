@@ -5,8 +5,9 @@
 #include <vector>
 #include <tuple>
 #include <utility>
-#include "exportPLY.cpp"
-#include "readPlyWithCn.cpp"
+//#include "exportTri.cpp"
+#include "exportTriWithCn.cpp"
+//#include "info_insert_with_zip_iterator.cpp"
 
 
 int main()
@@ -17,14 +18,12 @@ int main()
     const char* ofn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_ss_triangulated.ply";
 //    int result = exportTriangulationFun(ifn, ofn);
 
-    auto ply = readPlyWithCnFun(ifn);
 
-    auto points = ply.size();
-
-    std::cout << points << std::endl;
-
+    exportTriWithCnFun(ifn, ofn);
 
     return 0;
+
+
 
 
 }

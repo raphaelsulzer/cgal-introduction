@@ -11,7 +11,7 @@
 #include <list>
 #include <vector>
 #include "readPly.cpp"
-//#include "readPlyWithCn.cpp"
+#include "readPlyWithCn.cpp"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_3<K>       Triangulation;
@@ -22,19 +22,15 @@ typedef Triangulation::Point                    Point;
 typedef Triangulation::Facet                    Facet;
 typedef CGAL::cpp11::tuple<Point, Vector, Color, int> PNCI;
 
-int exportTriangulationFun(const char* ifn, const char* ofn)
+int exportTriFun(const char* ifn, const char* ofn)
 {
     
     
     auto L = readPlyFun(ifn);
-//    auto plyfile = readPlyWithCnFun(ifn);
 
-
-
-    std::list<Point> points; // store points
-
-    
     Triangulation T(L.begin(), L.end());
+
+    //    Triangulation T(L.begin(), L.end());
     Triangulation::size_type nv = T.number_of_vertices();
     Triangulation::size_type nf = T.number_of_finite_facets();
     
@@ -61,35 +57,35 @@ int exportTriangulationFun(const char* ifn, const char* ofn)
     fo << "end_header" << std::endl;
     fo << std::setprecision(12);
     
-    std::cout << nv << std::endl;
-    std::cout << nf << std::endl;
-    std::cout << "number of facets: " << nf << std::endl;
+//    std::cout << nv << std::endl;
+//    std::cout << nf << std::endl;
+//    std::cout << "number of facets: " << nf << std::endl;
     
     
-    Triangulation::Finite_facets_iterator fft;
-    Triangulation::Finite_vertices_iterator vft;
-    int vidx;
     
-    
-    Cell_handle c;
-    Vertex_handle v;
-    
+    // give every vertex from the triangulation an index starting at 0
+    // and already print the point coordinates of the vertex to the PLY file
     std::map<Vertex_handle, int> Vertices;
     int index = 0;
-    
-    std::cout << "iterate over finite vertices: " << std::endl;
+    Triangulation::Finite_vertices_iterator vft;    
+    //std::cout << "iterate over finite vertices: " << std::endl;
     for (vft = T.finite_vertices_begin() ; vft != T.finite_vertices_end() ; vft++){
-        
-        Vertices[vft] = index;
+        Vertices[vft] = index;  // assign index to vertex handle
         //std::cout << "index: " <<index << ": " << vft->point() << std::endl;
         fo << vft->point() << std::endl;
         index++;
     }
     
+    // Save the facets to the PLY file
     //std::cout << "iterate over finite triangles: " << std::endl;
+    Triangulation::Finite_facets_iterator fft;
+    int vidx;
+    // initialise cell and vertex handle
+    Cell_handle c;
+    Vertex_handle v;
     for(fft = T.finite_facets_begin() ; fft != T.finite_facets_end() ; fft++){
         
-        // facet fft is represented by std::pair (cell c, int vidx). vidx is the vertex opposite to the cell.
+        // facet fft is represented by std::pair(cell c, int vidx). vidx is the vertex opposite to the cell.
         // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
         // see: https://doc.cgal.org/latest/Triangulation_3/index.html
         
