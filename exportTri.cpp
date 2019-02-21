@@ -11,7 +11,7 @@
 #include <list>
 #include <vector>
 #include "readPly.cpp"
-#include "readPlyWithCn.cpp"
+//#include "readPlyWithCn.cpp"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_3<K>       Triangulation;
@@ -20,7 +20,6 @@ typedef Triangulation::Vertex_handle            Vertex_handle;
 typedef Triangulation::Locate_type              Locate_type;
 typedef Triangulation::Point                    Point;
 typedef Triangulation::Facet                    Facet;
-typedef CGAL::cpp11::tuple<Point, Vector, Color, int> PNCI;
 
 int exportTriFun(const char* ifn, const char* ofn)
 {

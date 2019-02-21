@@ -5,11 +5,12 @@ CONFIG -= qt
 
 SOURCES += \
     main.cpp \
-    readPlyWithCn.cpp \
+#    readPlyWithCn.cpp \
     readPly.cpp \
-    info_insert_with_zip_iterator.cpp \
+#    info_insert_with_zip_iterator.cpp \
     exportTriWithCn.cpp \
-#    exportTri.cpp
+#    exportTri.cpp \
+    rayTriIntersection.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 
