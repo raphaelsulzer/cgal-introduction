@@ -44,7 +44,7 @@ typedef CGAL::Sequential_tag Concurrency_tag;
 
 std::vector<Point> makeSimplePointSet()
 {
-    std::vector<Point> L(12);
+    std::vector<Point> L(18);
     L[0]=Point(0,2,2);
     L[1]=Point(0,7,2);
     L[2]=Point(0,7,4);
@@ -58,6 +58,13 @@ std::vector<Point> makeSimplePointSet()
     L[9]=Point(3,4,4);
     L[10]=Point(3,4,7);
     L[11]=Point(3,2,7);
+
+    L[12]=Point(1.5,5.5,4);
+    L[13]=Point(1.5,4,5.5);
+    L[14]=Point(0,4.5,3);
+    L[15]=Point(0,3,4.5);
+    L[16]=Point(3,4.5,3);
+    L[17]=Point(3,3,4.5);
 
     return L;
 }
@@ -75,16 +82,26 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point> points)
     }
     CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>());
 
-    const int nb_neighbors = 3; // K-nearest neighbors = 3 rings
+    // Estimates normals direction.
+    // Note: pca_estimate_normals() requires a range of points
+    // as well as property maps to access each point's position and normal.
+    const int nb_neighbors = 4;
     CGAL::pca_estimate_normals<Concurrency_tag>
       (pointVectorPairs, nb_neighbors,
        CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
        normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
 
-    for(std::size_t i=0; i < points.size(); ++i)
-    {
-        std::cout << pointVectorPairs[i].second << std::endl;
-    }
+
+    // Orients normals.
+    // Note: mst_orient_normals() requires a range of points
+    // as well as property maps to access each point's position and normal.
+    std::vector<PointVectorPair>::iterator unoriented_points_begin =
+            CGAL::mst_orient_normals(pointVectorPairs, nb_neighbors,
+                               CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+                               normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
+
+
+
 
     return pointVectorPairs;
 };
@@ -143,11 +160,8 @@ Delaunay triangulationSimple()
 int exportTriWithCnFun(const char* ifn, const char* ofn)
 {
 
-
 //    Delaunay Dt = triangulationFromFile(ifn);
-
     Delaunay Dt = triangulationSimple();
-
     
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
@@ -163,9 +177,6 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
-    fo << "property uchar red" << std::endl;
-    fo << "property uchar green" << std::endl;
-    fo << "property uchar blue" << std::endl;
     fo << "property float nx" << std::endl;
     fo << "property float ny" << std::endl;
     fo << "property float nz" << std::endl;
@@ -186,7 +197,8 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
         // and you would do the find operation to find the point in a std::map<Point, idx>
         Vertices[vft] = index;
         // print data to file
-        fo << vft->point() << std::endl;                           // coordinates
+        fo << vft->point() << " "                           // coordinates
+           << vft->info() << std::endl;                     // normal
 //        fo << vft->point() << " "                           // coordinates
 //           << int(std::get<1>(vft->info())[0]) << " "       // red
 //           << int(std::get<1>(vft->info())[1]) << " "       // green
