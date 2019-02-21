@@ -6,6 +6,10 @@
 #include <iostream>
 #include <vector>
 
+#include <CGAL/pca_estimate_normals.h>
+#include <CGAL/mst_orient_normals.h>
+#include <CGAL/property_map.h>
+
 #include <readPlyWithCn.cpp>
 
 
@@ -14,8 +18,9 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
 
-typedef std::tuple<Vector, Color, int>                              In;
-typedef CGAL::Triangulation_vertex_base_with_info_3<In, Kernel>     Vb;
+typedef std::tuple<Vector, Color, int>                              IVCI;
+typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
+//typedef CGAL::Triangulation_vertex_base_with_info_3<IVCI, Kernel>   Vb;
 typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;
 typedef CGAL::Triangulation_data_structure_3<Vb, Cb>                Tds;
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;
@@ -23,6 +28,19 @@ typedef Delaunay::Point                                             Point;
 typedef Delaunay::Cell_handle                                       Cell_handle;
 typedef Delaunay::Vertex_handle                                     Vertex_handle;
 typedef CGAL::cpp11::tuple<Point, Vector, Color, int>               PNCI;
+
+
+typedef Kernel::Vector_3 Vector;
+
+typedef std::pair<Point, Vector> PointVectorPair;
+
+// Concurrency
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
+
 
 std::vector<Point> makeSimplePointSet()
 {
@@ -44,10 +62,79 @@ std::vector<Point> makeSimplePointSet()
     return L;
 }
 
+// estimate normals of a point set
+std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point> points)
+{
+
+    std::vector<PointVectorPair> pointVectorPairs(points.size());
+
+    for(std::size_t i=0; i < points.size(); ++i)
+    {
+//        std::cout << "here" << std::endl;
+        pointVectorPairs[i].first = points[i];
+    }
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>());
+
+    const int nb_neighbors = 3; // K-nearest neighbors = 3 rings
+    CGAL::pca_estimate_normals<Concurrency_tag>
+      (pointVectorPairs, nb_neighbors,
+       CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+       normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
+
+    for(std::size_t i=0; i < points.size(); ++i)
+    {
+        std::cout << pointVectorPairs[i].second << std::endl;
+    }
+
+    return pointVectorPairs;
+};
+
+
+// // generate a Delaunay triangulation from a PLY file
+//Delaunay triangulationFromFile(const char* ifn)
+//{
+//    // get data as vector of tuples(point, normal, color, intensity)
+//    auto ply = readPlyWithCnFun(ifn);
+
+//    std::vector<Point> points;
+//    std::vector<IVCI> infos;
+//    for (std::size_t i = 0; i < ply.size (); ++ i)
+//    {
+//        // make vector of points
+//        points.push_back(get<0>(ply[i]));
+//        // make vector of infos as: tuple(normal, color, intensity)
+//        infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
+//    }
+
+//    // make the triangulation
+//    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
+//              boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
+//    std::cout << "Triangulation done.." << std::endl;
+
+
+//    return Dt;
+
+//}
 
 
 
+// generate a simple Delaunay triangulation
+Delaunay triangulationSimple()
+{
+    // get data as vector of tuples(point, normal, color, intensity)
+    std::vector<Point> points = makeSimplePointSet();
 
+    std::vector<PointVectorPair> pVP = estimateNormalsFun(points);
+
+
+    // make the triangulation
+    Delaunay Dt(pVP.begin(), pVP.end());
+    std::cout << "Triangulation done.." << std::endl;
+
+
+    return Dt;
+
+}
 
 
 
@@ -56,23 +143,10 @@ std::vector<Point> makeSimplePointSet()
 int exportTriWithCnFun(const char* ifn, const char* ofn)
 {
 
-    // get data as vector of tuples(point, normal, color, intensity)
-    auto ply = readPlyWithCnFun(ifn);
 
-    std::vector<Point> points;
-    std::vector<In> infos;
-    for (std::size_t i = 0; i < ply.size (); ++ i)
-    {
-        // make vector of points
-        points.push_back(get<0>(ply[i]));
-        // make vector of infos as: tuple(normal, color, intensity)
-        infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
-    }
+//    Delaunay Dt = triangulationFromFile(ifn);
 
-    // make the triangulation
-    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
-              boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
-    std::cout << "Triangulation done.." << std::endl;
+    Delaunay Dt = triangulationSimple();
 
     
     // get number of vertices and triangles of the triangulation
@@ -112,11 +186,12 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
         // and you would do the find operation to find the point in a std::map<Point, idx>
         Vertices[vft] = index;
         // print data to file
-        fo << vft->point() << " "                           // coordinates
-           << int(std::get<1>(vft->info())[0]) << " "       // red
-           << int(std::get<1>(vft->info())[1]) << " "       // green
-           << int(std::get<1>(vft->info())[2]) << " "       // blue
-           << std::get<0>(vft->info()) << std::endl;        // normal
+        fo << vft->point() << std::endl;                           // coordinates
+//        fo << vft->point() << " "                           // coordinates
+//           << int(std::get<1>(vft->info())[0]) << " "       // red
+//           << int(std::get<1>(vft->info())[1]) << " "       // green
+//           << int(std::get<1>(vft->info())[2]) << " "       // blue
+//           << std::get<0>(vft->info()) << std::endl;        // normal
         index++;
     }
 
@@ -165,6 +240,28 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
     return 0;
 
 }
+
+
+
+
+int main()
+{
+
+
+    const char* ifn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_subsampled.ply";
+    const char* ofn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_ss_triangulated.ply";
+    const char* ofn_test = "/home/raphael/PhD_local/data/tanksAndTemples/test.ply";
+//    int result = exportTriangulationFun(ifn, ofn);
+
+    exportTriWithCnFun(ifn, ofn_test);
+//    rayTriIntersectionFun(ofn_test);
+
+    return 0;
+
+}
+
+
+
 
 
 
