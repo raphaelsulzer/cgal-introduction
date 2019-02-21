@@ -14,23 +14,27 @@
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
-//typedef Kernel::FT FT;
+
+
+
+// vertext base for point + info (=vector)
+typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
+// vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
-
 typedef std::tuple<Vector, Color, int>                              IVCI;
-typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
 //typedef CGAL::Triangulation_vertex_base_with_info_3<IVCI, Kernel>   Vb;
-typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;
-typedef CGAL::Triangulation_data_structure_3<Vb, Cb>                Tds;
-typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;
+
+typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;         // cell base
+typedef CGAL::Triangulation_data_structure_3<Vb, Cb>                Tds;        // triangulation data structure
+typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
 typedef Delaunay::Point                                             Point;
 typedef Delaunay::Cell_handle                                       Cell_handle;
 typedef Delaunay::Vertex_handle                                     Vertex_handle;
 typedef CGAL::cpp11::tuple<Point, Vector, Color, int>               PNCI;
 
 
-typedef Kernel::Vector_3 Vector;
+typedef Kernel::Ray_3 Ray;
 
 typedef std::pair<Point, Vector> PointVectorPair;
 
@@ -41,7 +45,7 @@ typedef CGAL::Parallel_tag Concurrency_tag;
 typedef CGAL::Sequential_tag Concurrency_tag;
 #endif
 
-
+// generate a simple point set as an example
 std::vector<Point> makeSimplePointSet()
 {
     std::vector<Point> L(18);
@@ -73,15 +77,16 @@ std::vector<Point> makeSimplePointSet()
 std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point> points)
 {
 
+    // initialise a vector of point-vector-pairs
     std::vector<PointVectorPair> pointVectorPairs(points.size());
 
+    // add the points as the first element of the point vector pair
     for(std::size_t i=0; i < points.size(); ++i)
     {
-//        std::cout << "here" << std::endl;
         pointVectorPairs[i].first = points[i];
     }
-    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>());
 
+    // following two blocks are from this CGAL example: https://doc.cgal.org/latest/Point_set_processing_3/Point_set_processing_3_2normals_example_8cpp-example.html
     // Estimates normals direction.
     // Note: pca_estimate_normals() requires a range of points
     // as well as property maps to access each point's position and normal.
@@ -91,17 +96,13 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point> points)
        CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
        normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
 
-
     // Orients normals.
     // Note: mst_orient_normals() requires a range of points
     // as well as property maps to access each point's position and normal.
-    std::vector<PointVectorPair>::iterator unoriented_points_begin =
+    std::vector<PointVectorPair>::iterator unoriented_points_begin =    // this returns unoriented points that could be removed in the next step
             CGAL::mst_orient_normals(pointVectorPairs, nb_neighbors,
                                CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
                                normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
-
-
-
 
     return pointVectorPairs;
 };
@@ -141,18 +142,16 @@ Delaunay triangulationSimple()
     // get data as vector of tuples(point, normal, color, intensity)
     std::vector<Point> points = makeSimplePointSet();
 
+    // estimate normals on the point set
     std::vector<PointVectorPair> pVP = estimateNormalsFun(points);
-
 
     // make the triangulation
     Delaunay Dt(pVP.begin(), pVP.end());
     std::cout << "Triangulation done.." << std::endl;
 
-
     return Dt;
 
 }
-
 
 
 
@@ -253,6 +252,34 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
 
 }
 
+int rayTracingFun(Delaunay Dt)
+{
+
+    std::map<Vertex_handle, int> Vertices;
+    int index = 0;
+    Delaunay::Finite_vertices_iterator vft;
+
+    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+
+        Ray r(vft->point(), vft->info());
+        std::cout << r << std::endl;
+
+//        // print data to file
+//        fo << vft->point() << " "                           // coordinates
+//           << vft->info() << std::endl;                     // normal
+//        index++;
+    }
+
+
+
+
+    return 0;
+
+}
+
+
+
+
 
 
 
@@ -266,6 +293,8 @@ int main()
 //    int result = exportTriangulationFun(ifn, ofn);
 
     exportTriWithCnFun(ifn, ofn_test);
+    Delaunay Dt = triangulationSimple();
+    rayTracingFun(Dt);
 //    rayTriIntersectionFun(ofn_test);
 
     return 0;
