@@ -9,6 +9,8 @@
 #include <CGAL/pca_estimate_normals.h>
 #include <CGAL/mst_orient_normals.h>
 #include <CGAL/property_map.h>
+#include <CGAL/intersections.h>
+
 
 #include <readPlyWithCn.cpp>
 
@@ -35,6 +37,9 @@ typedef CGAL::cpp11::tuple<Point, Vector, Color, int>               PNCI;
 
 
 typedef Kernel::Ray_3 Ray;
+typedef Kernel::Triangle_3 Triangle;
+typedef Kernel::Intersect_3 Intersect;
+typedef Kernel::Segment_3 Segment;
 
 typedef std::pair<Point, Vector> PointVectorPair;
 
@@ -74,7 +79,7 @@ std::vector<Point> makeSimplePointSet()
 }
 
 // estimate normals of a point set
-std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point> points)
+std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points)
 {
 
     // initialise a vector of point-vector-pairs
@@ -241,6 +246,7 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
             v = c->vertex(j%4);
 
             // print the indicies of each cell to the file
+            // vertices is a map of all vertices of the triangulation to an index
             fo << Vertices.find(v)->second << ' ';
 
         }
@@ -252,17 +258,86 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
 
 }
 
+//int getTrianglesFromTriangulationFun(const Delaunay& Dt):
+//{
+
+//    std::list<Triangle> tris;
+
+
+
+
+
+
+
+
+
+//}Point_2
+
+
+
 int rayTracingFun(Delaunay Dt)
 {
 
     std::map<Vertex_handle, int> Vertices;
-    int index = 0;
     Delaunay::Finite_vertices_iterator vft;
 
-    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+    // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
+    // every ray means iterating over every vertice
+    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
 
-        Ray r(vft->point(), vft->info());
-        std::cout << r << std::endl;
+        Ray ray(vft->point(), vft->info());
+//        std::cout << ray << std::endl;
+
+        // vector of incident cells to the vertex
+        std::vector<Cell_handle> inc_cells;
+
+
+        // get all incident cells of a vertex: https://doc.cgal.org/latest/TDS_3/classTriangulationDataStructure__3.html
+        Dt.incident_cells(vft, std::back_inserter(inc_cells));
+
+        // for every cell of incident cells, check if facet(cell, vertex) intersects with vertex normal
+        for(std::size_t i=0; i < inc_cells.size(); i++){
+
+            if(!Dt.is_infinite(inc_cells[i]))
+            {
+
+                int vertexIndex = inc_cells[i]->index(vft);
+                Triangle tri = Dt.triangle(inc_cells[i], vertexIndex);
+
+                // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
+                CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
+                  result = intersection(tri, ray);
+
+
+                if (result) {
+                    // if result is a point
+                    if (const Point* p = boost::get<Point>(&*result))
+                    {
+                    std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
+                    // get the neighbouring cell of the current triangle and
+                    }
+                    else
+                    {
+                    const Segment* s = boost::get<Segment>(&*result);
+                    std::cout << "segment 3:  " << *s << std::endl;
+                    }}
+                else {
+                std::cout << "no intersection" << std::endl;
+
+                }
+            }
+
+
+        }
+
+
+
+        // make function that returns a vector of triangles from the triangulation
+        // do intersection of triangles and ray, either with this
+        // https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
+        // or with AABB tree
+
+
 
 //        // print data to file
 //        fo << vft->point() << " "                           // coordinates
@@ -270,17 +345,9 @@ int rayTracingFun(Delaunay Dt)
 //        index++;
     }
 
-
-
-
     return 0;
 
 }
-
-
-
-
-
 
 
 int main()
