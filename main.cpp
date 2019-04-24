@@ -1,14 +1,14 @@
-#include <iostream>
-#include <fstream>
-#include <cassert>
-#include <list>
-#include <vector>
-#include <tuple>
-#include <utility>
+//#include <iostream>
+//#include <fstream>
+//#include <cassert>
+//#include <list>
+//#include <vector>
+//#include <tuple>
+//#include <utility>
 //#include "exportTri.cpp"
-#include "exportTriWithCn.cpp"
+//#include "exportTriWithCn.cpp"
 //#include "info_insert_with_zip_iterator.cpp"
-//#include "rayTriIntersection.cpp"
+#include "rayTriIntersection.cpp"
 
 
 int main()
@@ -22,7 +22,7 @@ int main()
 
 
 //    exportTriWithCnFun(ifn, ofn);
-//    rayTriIntersectionFun(ofn_test);
+    rayTriIntersectionFun(ofn_test);
 
     return 0;
 

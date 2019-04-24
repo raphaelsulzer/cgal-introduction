@@ -8,9 +8,10 @@ SOURCES += \
 #    readPlyWithCn.cpp \
 #    readPly.cpp \
 #    info_insert_with_zip_iterator.cpp \
-    exportTriWithCn.cpp \
 #    exportTri.cpp \
-#    rayTriIntersection.cpp
+#    rayTriIntersection.cpp \
+#    main.cpp
+    cgal-introduction.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 

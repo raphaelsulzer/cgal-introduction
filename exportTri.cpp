@@ -126,7 +126,25 @@ int exportTriFun(const char* ifn, const char* ofn)
 }
 
 
+int main()
+{
 
+
+
+    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/museeZoologic/ALS_TLS_clipped.ply";
+    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/museeZoologic/ALS_TLS_meshed.ply";
+//    const char* ifn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_subsampled.ply";
+//    const char* ofn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_ss_triangulated.ply";
+    const char* ofn_test = "/home/raphael/PhD_local/data/tanksAndTemples/test.ply";
+    int result = exportTriFun(ifn, ofn);
+
+//    exportTriWithCnFun(ifn, ofn_test);
+//    Delaunay Dt = triangulationSimple();
+//    rayTracingFun(Dt);
+
+    return 0;
+
+}
 
 
 

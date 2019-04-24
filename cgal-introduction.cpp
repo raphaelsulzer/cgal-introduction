@@ -12,20 +12,23 @@
 #include <CGAL/intersections.h>
 
 
-#include <readPlyWithCn.cpp>
+//#include <readPlyWithCn.cpp>
+//#include <exportTri.cpp>
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 
 
 
-// vertext base for point + info (=vector)
-typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
+
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
 typedef std::tuple<Vector, Color, int>                              IVCI;
 //typedef CGAL::Triangulation_vertex_base_with_info_3<IVCI, Kernel>   Vb;
+// vertext base for point + info (=vector)
+typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
+
 
 typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;         // cell base
 typedef CGAL::Triangulation_data_structure_3<Vb, Cb>                Tds;        // triangulation data structure
@@ -264,14 +267,8 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
 //    std::list<Triangle> tris;
 
 
-
-
-
-
-
-
-
 //}Point_2
+
 
 
 
@@ -323,14 +320,13 @@ int rayTracingFun(Delaunay Dt)
                     }}
                 else {
                 std::cout << "no intersection" << std::endl;
+                // pack this intersection thing into a function that gets called throughout the traversel and returns once there is no more intersection or once you hit the infinite cell
 
                 }
             }
 
 
         }
-
-
 
         // make function that returns a vector of triangles from the triangulation
         // do intersection of triangles and ray, either with this
@@ -354,14 +350,17 @@ int main()
 {
 
 
-    const char* ifn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_subsampled.ply";
-    const char* ofn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_ss_triangulated.ply";
-    const char* ofn_test = "/home/raphael/PhD_local/data/tanksAndTemples/test.ply";
-//    int result = exportTriangulationFun(ifn, ofn);
 
-    exportTriWithCnFun(ifn, ofn_test);
-    Delaunay Dt = triangulationSimple();
-    rayTracingFun(Dt);
+    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/museeZoologic/ALS_TLS_clipped.ply";
+    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/museeZoologic/ALS_TLS_meshed.ply";
+//    const char* ifn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_subsampled.ply";
+//    const char* ofn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_ss_triangulated.ply";
+    const char* ofn_test = "/home/raphael/PhD_local/data/tanksAndTemples/test.ply";
+//    int result = exportTriFun(ifn, ofn);
+
+//    exportTriWithCnFun(ifn, ofn_test);
+//    Delaunay Dt = triangulationSimple();
+//    rayTracingFun(Dt);
 //    rayTriIntersectionFun(ofn_test);
 
     return 0;
