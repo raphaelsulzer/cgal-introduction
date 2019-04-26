@@ -11,15 +11,14 @@
 #include <CGAL/property_map.h>
 #include <CGAL/intersections.h>
 
+#include <CGAL/IO/read_ply_points.h>
+
 
 //#include <readPlyWithCn.cpp>
 //#include <exportTri.cpp>
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
-
-
-
 
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
@@ -112,6 +111,7 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points
                                CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
                                normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
 
+    std::cout << "Normals calculated!" << std::endl;
     return pointVectorPairs;
 };
 
@@ -164,12 +164,15 @@ Delaunay triangulationSimple()
 
 
 
-int exportTriWithCnFun(const char* ifn, const char* ofn)
+//int exportTriWithCnFun(const char* ifn, const char* ofn, std::vector<PointVectorPair> pVP)
+int exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 {
 
 //    Delaunay Dt = triangulationFromFile(ifn);
-    Delaunay Dt = triangulationSimple();
+//    Delaunay Dt = triangulationSimple();
     
+    Delaunay Dt(pVP.begin(), pVP.end());
+
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
     Delaunay::size_type nf = Dt.number_of_finite_facets();
@@ -257,6 +260,8 @@ int exportTriWithCnFun(const char* ifn, const char* ofn)
         fo << std::endl;
     }
     fo.close();
+
+    std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
     return 0;
 
 }
@@ -345,23 +350,46 @@ int rayTracingFun(Delaunay Dt)
 
 }
 
+std::vector<Point> readPlyFun(const char* fname)
+{
+    // Reads a .ply point set file with normal vectors and colors
+    std::vector<Point> points; // store points
+    std::ifstream in(fname);
+    CGAL::read_ply_points(in, std::back_inserter (points));
+
+    // Display points read
+//    for (auto pt = points.begin(); pt != points.end(); pt++)
+//    {
+//        const Point& p = *pt;
+//        std::cout << p << std::endl;
+//    }
+
+    std::cout << "PLY file read!" << std::endl;
+    return points;
+}
+
 
 int main()
 {
 
 
 
-    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/museeZoologic/ALS_TLS_clipped.ply";
-    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/museeZoologic/ALS_TLS_meshed.ply";
+    const char* ifn = "/home/raphael/PhD_local/data/museeZoologic/ALS_TLS_clipped.ply";
+    const char* ofn = "/home/raphael/PhD_local/data/museeZoologic/ALS_TLS_CGAL_meshed.ply";
 //    const char* ifn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_subsampled.ply";
 //    const char* ofn = "/home/raphael/PhD_local/data/tanksAndTemples/Barn_COLMAP_ss_triangulated.ply";
     const char* ofn_test = "/home/raphael/PhD_local/data/tanksAndTemples/test.ply";
 //    int result = exportTriFun(ifn, ofn);
 
 //    exportTriWithCnFun(ifn, ofn_test);
-//    Delaunay Dt = triangulationSimple();
-//    rayTracingFun(Dt);
-//    rayTriIntersectionFun(ofn_test);
+    //Delaunay Dt = triangulationSimple();
+    //rayTracingFun(Dt);
+
+    auto pts = readPlyFun(ifn);
+
+    auto pVP = estimateNormalsFun(pts);
+
+    exportTriWithCnFun(pVP, ofn);
 
     return 0;
 
