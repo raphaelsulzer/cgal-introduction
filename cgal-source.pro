@@ -15,6 +15,9 @@ SOURCES += \
 
 QMAKE_CXXFLAGS += -std=c++11
 
+# surpress wired warnings
+QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter
+
 ### UBUNTU
 
 #INCLUDEPATH += usr/local/include

@@ -276,19 +276,94 @@ Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 //}Point_2
 
 
-
-
-int rayTracingFun(Delaunay Dt)
+int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_cells, Ray ray, Cell_handle current_cell, int oppositeVertex)
 {
 
-    std::map<Vertex_handle, int> Vertices;
-    Delaunay::Finite_vertices_iterator vft;
+    if(!Dt.is_infinite(current_cell)){
 
-    // give every cell from the triangulation an index starting at 0
+        std::cout << "next cell" << std::endl;
+
+        //int oppositeVertex = current_cell->index(face_vertex);
+
+        for(int i=1; i<4; i++){
+
+            int idx = (oppositeVertex+i)%4;
+
+            Triangle tri = Dt.triangle(current_cell, idx);
+            Facet fac = std::make_pair(current_cell, idx);
+
+
+            // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
+            // get the intersection of the ray and the triangle
+            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
+              result = intersection(tri, ray);
+
+            // check if ray triangle intersection is a point (probably in most cases)
+            // or a line segment (if ray lies inside the triangle)
+            if (result) {
+
+                // first of all I need to locate the current cell in the global context of the triangulation,
+                // so I can mark that it is crossed by a ray
+                // 1. mark the current cell as "positivelly" traversed, i.e. add one to count
+                // add some point this needs to be weighted by the distance from the original point
+                (all_cells.find(current_cell)->second.second)++;
+                std::cout << all_cells.find(current_cell)->second.first << ": " << all_cells.find(current_cell)->second.second << std::endl;
+
+                // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
+                Facet mirror_fac = Dt.mirror_facet(fac);
+                Triangle mirror_tri = Dt.triangle(mirror_fac);
+                // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
+                // and check if there is an intersection
+                // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
+                // so start from there to put this into a function
+
+                Cell_handle newCell = mirror_fac.first;
+                int newIdx = mirror_fac.second;
+
+                // if there is an intersection, go on to the next cell, via mirror facet
+
+
+                // only needs this thing here to treat things different if ray/triangle intersection is not a point, but a line:
+                // if result is a point
+                if (const Point* p = boost::get<Point>(&*result))
+                {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
+                }
+                else{const Segment* s = boost::get<Segment>(&*result);
+                std::cout << "segment 3:  " << *s << std::endl;
+                }
+
+                traverseCells(Dt, all_cells, ray, newCell, newIdx);
+
+
+            }
+
+
+
+
+            else { // continue in looping over the other vertices (=facets) of the cell
+            //std::cout << "no intersection" << std::endl;
+            // pack this intersection thing into a function that gets called throughout the traversel and returns once there is no more intersection or once you hit the infinite cell
+
+            }
+        }
+
+    }
+    return 0;
+}
+
+
+
+
+int rayTracingFun(Delaunay Dt){
+
+    // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
+    // every ray means iterating over every vertice
+    // "get the score for a tetrahedron" also means I need to keep track of all the tetrahedrons in the Triangulation, thus:
+    // give every cell from the triangulation an index starting at 0, and a count, which counts how often it is traversed by rays, also starting at 0
     std::map<Cell_handle, std::pair<int, int>> all_cells;
     int index = 0;
-    Delaunay::Finite_cells_iterator cft;
-    for (cft = Dt.finite_cells_begin() ; cft != Dt.finite_cells_end() ; cft++){
+    Delaunay::All_cells_iterator cft;
+    for (cft = Dt.all_cells_begin() ; cft != Dt.all_cells_end() ; cft++){
         // assign index to vertex handle. this is needed later for finding the index a certain cell is constructed with
         // TODO: maybe this could already be included in the info vector of every point/vertex, and then instead of using the finite_vertices_iterator,
         // one could iterate over the index vector, so that the point order of the file is determined by the info vector
@@ -298,13 +373,13 @@ int rayTracingFun(Delaunay Dt)
         // actually, an index is probably not even needed
         all_cells[cft] = std::make_pair(index,0);
         index++;
+        std::cout << std::to_string(index) << std::endl;
     }
+    std::cout << "all cells enumerated..." << std::endl;
 
-
-
-    // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
-    // every ray means iterating over every vertice
-    // "get the score for a tetrahedron" also means I need to keep track of all the tetrahedrons in the Triangulation
+    // iterate over every vertices = iterate over every ray
+    Delaunay::Finite_vertices_iterator vft;
+    int counter = 0;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
 
         // ray constructed from point origin to (end of) normal
@@ -324,15 +399,14 @@ int rayTracingFun(Delaunay Dt)
 
             Cell_handle current_cell = inc_cells[i];
 
+
             if(!Dt.is_infinite(current_cell))
             {
 
+                int cellBasedVertexIndex = current_cell->index(vft);
+                Triangle tri = Dt.triangle(current_cell, cellBasedVertexIndex);
+                Facet fac = std::make_pair(current_cell, cellBasedVertexIndex);
 
-
-
-                int vertexIndex = current_cell->index(vft);
-                Triangle tri = Dt.triangle(current_cell, vertexIndex);
-                Facet fac = std::make_pair(current_cell, vertexIndex);
 
 
                 // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
@@ -344,6 +418,8 @@ int rayTracingFun(Delaunay Dt)
                 // or a line segment (if ray lies inside the triangle)
                 if (result) {
 
+                    std::cout << "found first cell in direction of normal / ray" << std::endl;
+
                     // first of all I need to locate the current cell in the global context of the triangulation,
                     // so I can mark that it is crossed by a ray
                     // 1. mark the current cell as "positivelly" traversed, i.e. add one to count
@@ -354,6 +430,14 @@ int rayTracingFun(Delaunay Dt)
                     // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                     Facet mirror_fac = Dt.mirror_facet(fac);
                     Triangle mirror_tri = Dt.triangle(mirror_fac);
+                    // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
+                    // and check if there is an intersection
+                    // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
+                    // so start from there to put this into a function
+
+                    Cell_handle newCell = mirror_fac.first;
+                    int newIdx = mirror_fac.second;
+
 
 
 
@@ -366,25 +450,36 @@ int rayTracingFun(Delaunay Dt)
                     {
                     const Segment* s = boost::get<Segment>(&*result);
                     //std::cout << "segment 3:  " << *s << std::endl;
-                    }}
+                    }
+
+                    traverseCells(Dt, all_cells, ray, newCell, newIdx);
+
+
+                }
+
+
+
                 else {
                 //std::cout << "no intersection" << std::endl;
                 // pack this intersection thing into a function that gets called throughout the traversel and returns once there is no more intersection or once you hit the infinite cell
 
                 }
 
+                //traverseCells(Dt, current_cell, )
+
+
+
 
             }
 
-
         }
+        std::cout << "ray " << std::to_string(++counter) << " done" << std::endl;
+
 
         // make function that returns a vector of triangles from the triangulation
         // do intersection of triangles and ray, either with this
         // https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
         // or with AABB tree
-
-
 
 //        // print data to file
 //        fo << vft->point() << " "                           // coordinates
@@ -392,15 +487,11 @@ int rayTracingFun(Delaunay Dt)
 //        index++;
     }
 
+
+
     return 0;
 
 }
-
-
-
-
-
-
 
 
 
@@ -444,13 +535,16 @@ int main()
 
 //    exportTriWithCnFun(ifn, ofn_test);
     //Delaunay Dt = triangulationSimple();
-    //rayTracingFun(Dt);
 
     auto pts = readPlyFun(ifn);
 
     auto pVP = estimateNormalsFun(pts);
 
     Delaunay Dt = exportTriWithCnFun(pVP, ofn);
+
+
+    //for(int i = 1; i<4; i++){std::cout << i << std::endl;}
+
 
     rayTracingFun(Dt);
 
