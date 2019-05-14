@@ -296,6 +296,7 @@ int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_ce
 
         // iterate over the faces of the current cell
         for(int i=1; i<4; i++){
+            // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
 
 
             int idx = (oppositeVertex+i)%4;
@@ -430,6 +431,10 @@ int rayTracingFun(Delaunay Dt){
     std::cout << "all cells enumerated..." << std::endl;
 
     // iterate over every vertices = iterate over every ray
+    // TODO: go in here and map the following to a function
+    // this function can than be called with the vft2 iterator
+    // and I pass this iterator around and also pass it from within the traversal function
+    // when I want to restart from a point that is hit
     Delaunay::Finite_vertices_iterator vft2;
     int counter = 0;
     for(vft2 = Dt.finite_vertices_begin() ; vft2 != Dt.finite_vertices_end() ; vft2++){
@@ -448,6 +453,8 @@ int rayTracingFun(Delaunay Dt){
 
         // for every cell of incident cells, check if facet(cell, vertex) intersects with vertex normal
         // so this is checking in all directions of a vertex, but we will only have an intersection in (maximum) one direction
+        // why only in one direction? because I'm only checking the OPPOSITE facade. It of course also intersects with the bordering facets
+        // of all the neighbouring cells
         for(std::size_t i=0; i < inc_cells.size(); i++){
 
             Cell_handle current_cell = inc_cells[i];
@@ -522,6 +529,13 @@ int rayTracingFun(Delaunay Dt){
         std::cout << "ray " << std::to_string(++counter) << " done" << std::endl;
 
     }
+
+    // TODO: create a list of triangles that only consists of triangles that have a full and an unfull neighbouring cell
+    // although this is probably not a good way to do it, since it will be difficult to connect the
+    std::vector<Triangle> surTris;
+
+
+
     return 0;
 }
 
