@@ -4,6 +4,7 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <boost/iterator/zip_iterator.hpp>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include <CGAL/pca_estimate_normals.h>
@@ -12,11 +13,10 @@
 #include <CGAL/intersections.h>
 
 #include <CGAL/IO/read_ply_points.h>
-
+#include <CGAL/IO/read_ply_points.h>
 
 //#include <readPlyWithCn.cpp>
 //#include <exportTri.cpp>
-
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 
@@ -44,6 +44,10 @@ typedef Kernel::Intersect_3 Intersect;
 typedef Kernel::Segment_3 Segment;
 
 typedef std::pair<Point, Vector> PointVectorPair;
+
+typedef CGAL::cpp11::tuple<Point, Vector> PN;
+typedef CGAL::Nth_of_tuple_property_map<0, PN> Point_map;
+typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
 
 // Concurrency
 #ifdef CGAL_LINKED_WITH_TBB
@@ -116,31 +120,7 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points
 };
 
 
-// // generate a Delaunay triangulation from a PLY file
-//Delaunay triangulationFromFile(const char* ifn)
-//{
-//    // get data as vector of tuples(point, normal, color, intensity)
-//    auto ply = readPlyWithCnFun(ifn);
 
-//    std::vector<Point> points;
-//    std::vector<IVCI> infos;
-//    for (std::size_t i = 0; i < ply.size (); ++ i)
-//    {
-//        // make vector of points
-//        points.push_back(get<0>(ply[i]));
-//        // make vector of infos as: tuple(normal, color, intensity)
-//        infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
-//    }
-
-//    // make the triangulation
-//    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
-//              boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
-//    std::cout << "Triangulation done.." << std::endl;
-
-
-//    return Dt;
-
-//}
 
 
 
@@ -151,10 +131,10 @@ Delaunay triangulationSimple()
     std::vector<Point> points = makeSimplePointSet();
 
     // estimate normals on the point set
-    std::vector<PointVectorPair> pVP = estimateNormalsFun(points);
+    std::vector<PointVectorPair> pvP = estimateNormalsFun(points);
 
     // make the triangulation
-    Delaunay Dt(pVP.begin(), pVP.end());
+    Delaunay Dt(pvP.begin(), pvP.end());
     std::cout << "Triangulation done.." << std::endl;
 
     return Dt;
@@ -182,6 +162,7 @@ Delaunay triangulationSimple()
 
 
 //int exportTriWithCnFun(const char* ifn, const char* ofn, std::vector<PointVectorPair> pVP)
+//Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 {
 //    Delaunay Dt = triangulationFromFile(ifn);
@@ -246,13 +227,17 @@ Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
         // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
         // see: https://doc.cgal.org/latest/Triangulation_3/index.html
 
-
+        // get vertex and cell index that describes the facet
         c = fft->first;         // cell
         vidx = fft->second;     // vertex index
 
 
-        //std::cout << "is infinite: " << T.is_infinite(v) << std::endl;
-        //std::cout << "opposite vertex: " << vidx << std::endl;
+        // check here if opposite cell has opposite filling
+
+
+
+
+        // start printed facet line with a 3
         fo << 3 << ' ';
         // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
         // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
@@ -283,10 +268,154 @@ Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 }
 
 
+Delaunay exportSoup(Delaunay& Dt, std::map<Cell_handle, int>& all_cells, const char* ofn)
+{
+//    Delaunay Dt = triangulationFromFile(ifn);
+//    Delaunay Dt = triangulationSimple();
+
+
+
+    // get number of vertices and triangles of the triangulation
+    Delaunay::size_type nv = Dt.number_of_vertices();
+    Delaunay::size_type nf = Dt.number_of_finite_facets();
+
+    // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
+    std::ofstream fo;
+    fo.open (ofn);
+    fo << "ply" << std::endl;
+    fo << "format ascii 1.0" << std::endl;
+    fo << "comment VCGLIB generated" << std::endl;
+    fo << "element vertex " << nv << std::endl;
+    fo << "property float x" << std::endl;
+    fo << "property float y" << std::endl;
+    fo << "property float z" << std::endl;
+    fo << "property float nx" << std::endl;
+    fo << "property float ny" << std::endl;
+    fo << "property float nz" << std::endl;
+    fo << "element face " << nf << std::endl;
+    fo << "property list uchar int vertex_indices" << std::endl;
+    fo << "end_header" << std::endl;
+    fo << std::setprecision(3);
+
+    // give every vertex from the triangulation an index starting at 0
+    // and already print the point coordinates, color and normal of the vertex to the PLY file
+    std::map<Vertex_handle, int> Vertices;
+    int index = 0;
+    Delaunay::Finite_vertices_iterator vft;
+    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+        // assign index to vertex handle. this is needed later for finding the index a certain cell is constructed with
+        // TODO: maybe this could already be included in the info vector of every point/vertex, and then instead of using the finite_vertices_iterator,
+        // one could iterate over the index vector, so that the point order of the file is determined by the info vector
+        // and you would do the find operation to find the point in a std::map<Point, idx>
+        Vertices[vft] = index;
+        // print data to file
+        fo << vft->point() << " "                           // coordinates
+           << vft->info() << std::endl;                     // normal
+//        fo << vft->point() << " "                           // coordinates
+//           << int(std::get<1>(vft->info())[0]) << " "       // red
+//           << int(std::get<1>(vft->info())[1]) << " "       // green
+//           << int(std::get<1>(vft->info())[2]) << " "       // blue
+//           << std::get<0>(vft->info()) << std::endl;        // normal
+        index++;
+    }
+
+    // Save the facets to the PLY file
+    //std::cout << "iterate over finite triangles: " << std::endl;
+    Delaunay::Finite_facets_iterator fft;
+    int vidx;
+    // initialise cell and vertex handle
+    Cell_handle c;
+    Vertex_handle v;
+    unsigned int deletedFaceCount = 0;
+    for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
+
+
+
+        // facet fft is represented by std::pair(cell c, int vidx). vidx is the vertex opposite to the cell.
+        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
+        // see: https://doc.cgal.org/latest/Triangulation_3/index.html
+
+        // get vertex and cell index that describes the facet
+        c = fft->first;         // cell
+        vidx = fft->second;     // vertex index
+
+
+
+        // check here if opposite cell has opposite filling
+
+        //std::pair<int, int> cinfo = all_cells.find(c)->second;
+        int cinfo = all_cells.find(c)->second;
+        // now also get cell of mirror facet and see if the labels are different
+        Facet mirror_fac = Dt.mirror_facet(std::make_pair(c,vidx));
+
+        Cell_handle c1 = mirror_fac.first;
+        //std::pair<int, int> c1info = all_cells.find(c1)->second;
+        int c1info = all_cells.find(c1)->second;
+
+
+
+        if((cinfo !=0 && c1info !=0) || (cinfo != 0 && Dt.is_infinite(c1)) || (c1info !=0 && Dt.is_infinite(c)) ){
+            //std::cout << "left cell: " << cinfo << "    fin: " << Dt.is_infinite(c) << "    right cell: " << c1info << "    fin: " << Dt.is_infinite(c1) << std::endl;
+            deletedFaceCount++;
+            continue;
+        }
+
+
+
+
+
+
+        // start printed facet line with a 3
+        fo << 3 << ' ';
+        // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
+        // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
+        // so we exactely skip 2 - the opposite vertex.
+        for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
+
+
+            //std::cout << "modulo: " << j%4;
+
+            // in the first and second iteration I am calling vertex() with the same value for j%4,
+            // but get a different vertex idx. Reason is that the cell c is different (see std::cout of cell points).
+            // for some reason the first facet is seen from the infinite cell.
+            v = c->vertex(j%4);
+
+            // print the indicies of each cell to the file
+            // vertices is a map of all vertices of the triangulation to an index
+            fo << Vertices.find(v)->second << ' ';
+
+        }
+        // new cell
+        fo << std::endl;
+    }
+    fo.close();
+
+    // rewrite the number of faces line in the file
+    unsigned int sub = nf - deletedFaceCount;
+    std::fstream foa;
+    foa.open(ofn);
+    unsigned int currentLine = 0;
+    while ( currentLine < 10 )
+    {
+         // We don't actually care about the lines we're reading,
+         // so just discard them.
+         foa.ignore( std::numeric_limits<std::streamsize>::max(), '\n') ;
+         ++currentLine ;
+    }
+    foa << "element face " << sub << std::endl;
+    foa.close();
+
+
+    std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
+    return Dt;
+
+}
+
+
 /////// ray tracing functions
 ///
 ///
-int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_cells, //std::map<Vertex_handle, int> all_vertices,
+int traverseCells(Delaunay& Dt, std::map<Cell_handle, int>& all_cells, //std::map<Vertex_handle, int> all_vertices,
                   Ray ray, Cell_handle current_cell, int oppositeVertex)
 {
 
@@ -296,33 +425,26 @@ int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_ce
 
         // iterate over the faces of the current cell
         for(int i=1; i<4; i++){
-            // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
 
+            // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
 
             int idx = (oppositeVertex+i)%4;
 
             Triangle tri = Dt.triangle(current_cell, idx);
             Facet fac = std::make_pair(current_cell, idx);
 
-
-            // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
-            // get the intersection of the ray and the triangle
             CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
               result = intersection(tri, ray);
 
             // check if there is an intersection between the current ray and current triangle
             if (result) {
 
-//                std::cout << "in second cell" << std::endl;
-//                std::cout << "Face number: " << i << std::endl;
-
-
                 // first of all I need to locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
                 // 1. mark the current cell as "positivelly" traversed, i.e. add one to count
                 // add some point this needs to be weighted by the distance from the original point
-                (all_cells.find(current_cell)->second.second)++;
-                //std::cout << all_cells.find(current_cell)->second.first << ": " << all_cells.find(current_cell)->second.second << std::endl;
+                (all_cells.find(current_cell)->second)++;
+                //std::cout << all_cells.find(current_cell)->second << std::endl;
 
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                 Facet mirror_fac = Dt.mirror_facet(fac);
@@ -334,8 +456,6 @@ int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_ce
 
                 Cell_handle newCell = mirror_fac.first;
                 int newIdx = mirror_fac.second;
-
-                // go on to the next cell, via mirror facet
 
                 // check if ray triangle intersection is a point (probably in most cases)
                 // or a line segment (if ray lies inside the triangle)
@@ -365,7 +485,6 @@ int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_ce
                 if (const Point* p = boost::get<Point>(&*result))
                 {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
 
-
                 }
                 else{
                     const Segment* s = boost::get<Segment>(&*result);
@@ -383,7 +502,6 @@ int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_ce
                     // for now just return in this case, until it is solved
                     return 0;
                 }
-                //traverseCells(Dt, all_cells, all_vertices, ray, newCell, newIdx);
                 traverseCells(Dt, all_cells, ray, newCell, newIdx);
             }
         }
@@ -394,7 +512,10 @@ int traverseCells(Delaunay Dt, std::map<Cell_handle, std::pair<int, int>> all_ce
 
 
 
-int rayTracingFun(Delaunay Dt){
+std::pair<Delaunay&, std::map<Cell_handle, int>&> rayTracingFun(Delaunay& Dt, std::map<Cell_handle, int>& all_cells){
+
+
+    std::cout << "Start tracing rays to every point..." << std::endl;
 
 
     // assign index to vertex handle. this is needed later for finding the index a certain cell is constructed with
@@ -412,9 +533,8 @@ int rayTracingFun(Delaunay Dt){
     // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
     // every ray means iterating over every vertice
     // "get the score for a tetrahedron" also means I need to keep track of all the tetrahedrons in the Triangulation, thus:
-    // give every cell from the triangulation an index starting at 0, and a count, which counts how often it is traversed by rays, also starting at 0
-    std::map<Cell_handle, std::pair<int, int>> all_cells;
-    int cIndex = 0;
+    // give every cell from the triangulation a count, which counts how often it is traversed by rays starting at 0
+//    std::map<Cell_handle, int> all_cells;
     Delaunay::All_cells_iterator cft;
     for (cft = Dt.all_cells_begin() ; cft != Dt.all_cells_end() ; cft++){
         // assign index to vertex handle. this is needed later for finding the index a certain cell is constructed with
@@ -422,13 +542,10 @@ int rayTracingFun(Delaunay Dt){
         // one could iterate over the index vector, so that the point order of the file is determined by the info vector
         // and you would do the find operation to find the point in a std::map<Point, idx>
 
-        // make the map where the key is the cell and the value is a pair of <index, traversal_count>
-        // actually, an index is probably not even needed
-        all_cells[cft] = std::make_pair(cIndex,0);
-        cIndex++;
-        //std::cout << std::to_string(cIndex) << std::endl;
+        // make the map where the key is the cell and the value is the traversal_count
+        // an index is not even needed, since the map implicitly allows to locate the cells later anyway
+        all_cells[cft] = 0;
     }
-    std::cout << "all cells enumerated..." << std::endl;
 
     // iterate over every vertices = iterate over every ray
     // TODO: go in here and map the following to a function
@@ -484,7 +601,7 @@ int rayTracingFun(Delaunay Dt){
                     // so I can mark that it is crossed by a ray
                     // 1. mark the current cell as "positivelly" traversed, i.e. add one to count
                     // add some point this needs to be weighted by the distance from the original point
-                    (all_cells.find(current_cell)->second.second)++;
+                    (all_cells.find(current_cell)->second)++;
                     //std::cout << ++(all_cells.find(current_cell)->second.second) << std::endl;
 
                     // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
@@ -498,20 +615,21 @@ int rayTracingFun(Delaunay Dt){
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;
 
-                    // if result is a point
                     // check if ray triangle intersection is a point (probably in most cases)
                     // or a line segment (if ray lies inside the triangle)
+                    // if result is a point
                     if (const Point* p = boost::get<Point>(&*result)){
                     //std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
                     }
+                    // else result is a line
                     else{
                         const Segment* s = boost::get<Segment>(&*result);
                         //std::cout << "segment 3:  " << *s << std::endl;
                         // for now just return in this case, until it is solved
-                        return 0;
+                        //continue;
                     }
 
-                    //traverseCells(Dt, all_cells, all_vertices, ray, newCell, newIdx);
+                    // go to next cell
                     traverseCells(Dt, all_cells, ray, newCell, newIdx);
 
 
@@ -531,27 +649,22 @@ int rayTracingFun(Delaunay Dt){
     }
 
     // TODO: create a list of triangles that only consists of triangles that have a full and an unfull neighbouring cell
-    // although this is probably not a good way to do it, since it will be difficult to connect the
-    std::vector<Triangle> surTris;
+    // although this is probably not a good way to do it, since it will be difficult to connect the triangle soup to a surface mesh
+    // actually CGAL has functions for doing this conversion. But still you loose the already existing connectivity, and then you need to find it again
+    //std::vector<Triangle> surTris;
 
+//    exportSoup(Dt, all_cells, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply");
 
-
-    return 0;
+    return std::pair<Delaunay&, std::map<Cell_handle, int>&> (Dt, all_cells);
 }
-
-
-
-
-
-
-
-
-
 
 
 std::vector<Point> readPlyFun(const char* fname)
 {
-    // Reads a .ply point set file with normal vectors and colors
+
+
+
+    // Reads a .ply point set file
     std::vector<Point> points; // store points
     std::ifstream in(fname);
     CGAL::read_ply_points(in, std::back_inserter (points));
@@ -568,6 +681,49 @@ std::vector<Point> readPlyFun(const char* fname)
 }
 
 
+std::vector<PN> readPlyWithCnFun(const char* fname)
+{
+    std::vector<PN> points; // store points
+    std::ifstream in(fname);
+
+    CGAL::read_ply_points_with_properties
+      (in,
+       std::back_inserter (points),
+       CGAL::make_ply_point_reader (Point_map()),
+       CGAL::make_ply_normal_reader (Normal_map()));
+
+    return points;
+}
+
+// generate a Delaunay triangulation from a PLY file
+Delaunay triangulationFromFile(const char* ifn)
+{
+   // get data as vector of tuples(point, normal, color, intensity)
+   auto ply = readPlyWithCnFun(ifn);
+
+   std::vector<Point> points;
+   std::vector<Vector> infos;
+   for (std::size_t i = 0; i < ply.size (); ++ i)
+   {
+       // make vector of points
+       points.push_back(get<0>(ply[i]));
+//       // make vector of infos as: tuple(normal, color, intensity)
+//       infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
+       // make vector of infos as: tuple(normal, color, intensity)
+       infos.push_back(get<1>(ply[i]));
+   }
+
+   // make the triangulation
+   Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
+             boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
+   std::cout << "Triangulation done.." << std::endl;
+
+
+   return Dt;
+
+}
+
+
 int main()
 {
 
@@ -575,24 +731,18 @@ int main()
 
 //    const char* ifn = "/home/raphael/PhD_local/data/museeZoologic/ALS_TLS_clipped.ply";
 //    const char* ofn = "/home/raphael/PhD_local/data/museeZoologic/ALS_TLS_CGAL_meshed.ply";
-    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_50sampled.ply";
-    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_normals.ply";
+    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
+    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
 
 
 //    exportTriWithCnFun(ifn, ofn_test);
-    //Delaunay Dt = triangulationSimple();
+    Delaunay Dt = triangulationFromFile(ifn);
 
-    auto pts = readPlyFun(ifn);
+    std::map<Cell_handle, int> all_cells;
 
-    auto pVP = estimateNormalsFun(pts);
+    std::pair<Delaunay&, std::map<Cell_handle, int>&> dt_cells = rayTracingFun(Dt, all_cells);
 
-    Delaunay Dt = exportTriWithCnFun(pVP, ofn);
-
-
-    //for(int i = 1; i<4; i++){std::cout << i << std::endl;}
-
-
-    rayTracingFun(Dt);
+    exportSoup(dt_cells.first, dt_cells.second, ofn);
 
     return 0;
 
