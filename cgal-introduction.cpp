@@ -606,7 +606,6 @@ std::pair<Delaunay&, std::map<Cell_handle, int>&> rayTracingFun(Delaunay& Dt, st
 
                     // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                     Facet mirror_fac = Dt.mirror_facet(fac);
-                    Triangle mirror_tri = Dt.triangle(mirror_fac);
                     // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
                     // and check if there is an intersection
                     // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
@@ -731,7 +730,7 @@ int main()
 
 //    const char* ifn = "/home/raphael/PhD_local/data/museeZoologic/ALS_TLS_clipped.ply";
 //    const char* ofn = "/home/raphael/PhD_local/data/museeZoologic/ALS_TLS_CGAL_meshed.ply";
-    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
+    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_10000sampled_messyNormals.ply";
     const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
 
 
