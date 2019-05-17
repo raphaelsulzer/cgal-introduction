@@ -11,7 +11,8 @@ SOURCES += \
 #    exportTri.cpp \
 #    rayTriIntersection.cpp \
 #    main.cpp
-    cgal-introduction.cpp
+    cgal-introduction.cpp \
+#    energy-minimization.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 
@@ -19,12 +20,14 @@ QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-variable -Wno-unused-parameter
 
 ### UBUNTU
-INCLUDEPATH += usr/local/include
+INCLUDEPATH += usr/local/include \
+/home/raphael/Downloads/gco-v3.0-master
 
 LIBS += \
 -L/usr/local/lib/ -lCGAL \
 -L/usr/lib/ -lgmp \
 -L/usr/lib/ -lmpfr \
+-L/home/raphael/Downloads/gco-v3.0-master/build/ -lgco \
 
 
 #### MAC OS
