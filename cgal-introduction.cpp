@@ -18,7 +18,6 @@
 
 #include <CGAL/Euclidean_distance.h>
 
-
 // for GCoptimization
 #include <stdio.h>
 #include <stdlib.h>
@@ -148,7 +147,6 @@ Delaunay triangulationSimple()
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-
 double cellScore(double dist2, bool inside){
 
     double sigma;
@@ -167,11 +165,8 @@ double cellScore(double dist2, bool inside){
     return S;
 }
 
-
-
-int traverseCells(Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
+int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
 {
-
     if(!Dt.is_infinite(current_cell)){
         // iterate over the faces of the current cell
         for(int i=1; i<4; i++){
@@ -266,7 +261,7 @@ int traverseCells(Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle curren
     return 0;
 }
 
-void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vft2, Cell_map& all_cells, bool inside){
+void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vft2, Cell_map& all_cells, bool inside){
 
     // ray constructed from point origin to (end of) normal
     Ray ray(vft2->point(), vft2->info());
@@ -465,7 +460,9 @@ Delaunay triangulationFromFile(const char* ifn)
    return Dt;
 }
 
-///////////////// OUTPUT /////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////// OUTPUT //////////////////////////////
+/////////////////////////////////////////////////////////////////////
 //int exportTriWithCnFun(const char* ifn, const char* ofn, std::vector<PointVectorPair> pVP)
 //Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
@@ -563,7 +560,7 @@ Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 
 
 //Delaunay exportSoup(Delaunay& Dt, Cell_map& all_cells, const char* ofn)
-Delaunay exportSoup(Delaunay& Dt, std::map<Cell_handle, int>& cell_indexMap, std::vector<int>& labels, const char* ofn)
+Delaunay exportSoup(const Delaunay& Dt, std::map<Cell_handle, int>& cell_indexMap, std::vector<int>& labels, const char* ofn)
 {
 
 //    Delaunay::Finite_cells_iterator cft;
@@ -819,7 +816,7 @@ std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArra
 int main()
 {
 
-    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_10000sampled_messyNormals.ply";
+    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
     const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
 //    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
 //    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
@@ -834,7 +831,8 @@ int main()
 
     std::map<Cell_handle, int> cell_indexMap;
     std::vector<int> results;
-    std::pair<std::map<Cell_handle, int>, std::vector<int>> cell_results = GeneralGraph_DArraySArraySpatVarying(dt_cells, cell_indexMap, results, 2);
+    std::pair<std::map<Cell_handle, int>, std::vector<int>> cell_results =
+            GeneralGraph_DArraySArraySpatVarying(dt_cells, cell_indexMap, results, 2);
 
 
 //    int width = 10;
