@@ -70,9 +70,6 @@ typedef CGAL::Parallel_tag Concurrency_tag;
 typedef CGAL::Sequential_tag Concurrency_tag;
 #endif
 
-////////////////////////////////////////////////////////////
-/////////////////// preprocessing functions ////////////////
-////////////////////////////////////////////////////////////
 // estimate normals of a point set
 std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points)
 {
@@ -107,6 +104,49 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points
     std::cout << "Normals calculated!" << std::endl;
     return pointVectorPairs;
 };
+
+// generate a simple point set as an example
+std::vector<Point> makeSimplePointSet()
+{
+    std::vector<Point> L(18);
+    L[0]=Point(0,2,2);
+    L[1]=Point(0,7,2);
+    L[2]=Point(0,7,4);
+    L[3]=Point(0,4,4);
+    L[4]=Point(0,4,7);
+    L[5]=Point(0,2,7);
+
+    L[6]=Point(3,2,2);
+    L[7]=Point(3,7,2);
+    L[8]=Point(3,7,4);
+    L[9]=Point(3,4,4);
+    L[10]=Point(3,4,7);
+    L[11]=Point(3,2,7);
+
+    L[12]=Point(1.5,5.5,4);
+    L[13]=Point(1.5,4,5.5);
+    L[14]=Point(0,4.5,3);
+    L[15]=Point(0,3,4.5);
+    L[16]=Point(3,4.5,3);
+    L[17]=Point(3,3,4.5);
+
+    return L;
+}
+// generate a simple Delaunay triangulation
+Delaunay triangulationSimple()
+{
+    // get data as vector of tuples(point, normal, color, intensity)
+    std::vector<Point> points = makeSimplePointSet();
+
+    // estimate normals on the point set
+    std::vector<PointVectorPair> pvP = estimateNormalsFun(points);
+
+    // make the triangulation
+    Delaunay Dt(pvP.begin(), pvP.end());
+    std::cout << "Triangulation done.." << std::endl;
+
+    return Dt;
+}
 
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
@@ -312,8 +352,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 }
 
 // the main ray tracing function, that calls the first cell and the cell traversel functions
-//std::pair<Delaunay&, Cell_map&> rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
-void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
+std::pair<Delaunay&, Cell_map&> rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -352,6 +391,7 @@ void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
     // now that all rays have been traced, apply the last function to all the cells:
     double gamma = 2;
     Cell_map::iterator it;
+    int i = 0;
     for(it = all_cells.begin(); it!=all_cells.end(); it++)
     {
         std::get<1>(it->second) = 1 - exp(-std::get<1>(it->second)/gamma);
@@ -360,11 +400,12 @@ void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
 
 //        std::cout << "outside score of cell "  <<  i   << ": " << it->second.first << std::endl;
 //        std::cout << "inside  score of cell "  <<  i   << ": " << it->second.second << std::endl;
+        i++;
     }
 
 
 //    exportSoup(Dt, all_cells, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply");
-//    return std::pair<Delaunay&, Cell_map&> (Dt, all_cells);
+    return std::pair<Delaunay&, Cell_map&> (Dt, all_cells);
 }
 
 //////////////////////////////////////////////////////////
@@ -522,8 +563,7 @@ Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
 
 
 //Delaunay exportSoup(Delaunay& Dt, Cell_map& all_cells, const char* ofn)
-//Delaunay exportSoup(const Delaunay& Dt, std::map<Cell_handle, int>& cell_indexMap, std::vector<int>& labels, const char* ofn)
-void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
+Delaunay exportSoup(const Delaunay& Dt, std::map<Cell_handle, int>& cell_indexMap, std::vector<int>& labels, const char* ofn)
 {
 
 //    Delaunay::Finite_cells_iterator cft;
@@ -588,18 +628,22 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
         vidx = fft->second;     // vertex index
 
         //////// check which faces to prune:
-        // with only outside labelling:
+//        // with only outside labelling:
         // cell of current facet
-        double cscore = std::get<1>(all_cells.find(c)->second);
-        // cell of mirror facet and see if the labels are different
-        Cell_handle c1 = Dt.mirror_facet(*fft).first;
-        double mscore = std::get<1>(all_cells.find(c1)->second);
+//        double ccell = all_cells.find(c)->second.first;
+//        // cell of mirror facet and see if the labels are different
+//        Cell_handle c1 = Dt.mirror_facet(*fft).first;
+//        double mcell = all_cells.find(c1)->second.first;
 
-        if((cscore !=0.0 && mscore !=0.0) || (cscore != 0.0 && Dt.is_infinite(c1)) || (mscore !=0.0 && Dt.is_infinite(c)) ){
-//            std::cout << "left cell: " << ccell << "    fin: " << Dt.is_infinite(c) << "    right cell: " << mcell << "    fin: " << Dt.is_infinite(c1) << std::endl;
-            deletedFaceCount++;
-            continue;
-        }
+////        std::cout << "left cell: " << ccell << "    fin: " << Dt.is_infinite(c) << "    right cell: " << mcell << "    fin: " << Dt.is_infinite(c1) << std::endl;
+
+
+//         check here if opposite cell has same filling, and if so, continue
+//        if((ccell !=0.0 && mcell !=0.0) || (ccell != 0.0 && Dt.is_infinite(c1)) || (mcell !=0.0 && Dt.is_infinite(c)) ){
+////            std::cout << "left cell: " << ccell << "    fin: " << Dt.is_infinite(c) << "    right cell: " << mcell << "    fin: " << Dt.is_infinite(c1) << std::endl;
+//            deletedFaceCount++;
+//            continue;
+//        }
 
         // with inside labelling:
 //        double coutside = all_cells.find(c)->second.first;
@@ -617,21 +661,21 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 
         // TODO: eventuell muss infinite cell ganz normal behandelt werden??
 
-//        // with GC labelling:
-//        int cindex = cell_indexMap.find(c)->second;
+        // with GC labelling:
+        int cindex = cell_indexMap.find(c)->second;
 
-//        Cell_handle m = Dt.mirror_facet(*fft).first;
-//        int mindex = cell_indexMap.find(m)->second;
-
-
-//        //        std::cout << "left cell: " << labels[cindex] << "right cell: " << labels[mindex] << std::endl;
-////        std::cout << "left cell: " << labels[cindex] << "    right cell: " << labels[mindex] << std::endl;
+        Cell_handle m = Dt.mirror_facet(*fft).first;
+        int mindex = cell_indexMap.find(m)->second;
 
 
-//        if(labels[cindex] == labels[mindex]){
-////            std::cout << "left cell: " << labels[cindex] << "   right cell: " << labels[mindex] << std::endl;
-//            deletedFaceCount++;
-//            continue;}
+        //        std::cout << "left cell: " << labels[cindex] << "right cell: " << labels[mindex] << std::endl;
+//        std::cout << "left cell: " << labels[cindex] << "    right cell: " << labels[mindex] << std::endl;
+
+
+        if(labels[cindex] == labels[mindex]){
+//            std::cout << "left cell: " << labels[cindex] << "   right cell: " << labels[mindex] << std::endl;
+            deletedFaceCount++;
+            continue;}
 
         // start printed facet line with a 3
         fo << 3 << ' ';
@@ -674,7 +718,7 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
     std::cout << "remaining faces: " << nf-deletedFaceCount-1 << std::endl;
 
     std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
-//    return Dt;
+    return Dt;
 }
 
 
@@ -683,48 +727,29 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 //// grid neighborhood is set up "manually". Uses spatially varying terms. Namely
 //// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with
 //// w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
-//std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
-void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int num_iterations)
+std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
 {
 
+    Delaunay Dt = dt_cells.first;
 
-//    Delaunay Dt = dt_cells.first;
-
-//    Cell_map all_cells = dt_cells.second;
+    Cell_map all_cells = dt_cells.second;
     int num_cells = all_cells.size();
     int num_labels = 2;
-
-    GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_cells,num_labels);
-
 
 //    int *result = new int[num_cells];   // stores result of optimization
 
     // first set up the array for data costs
     float *data = new float[num_cells*num_labels];
-    int idx;
+    int i = 0;
     Cell_map::iterator it;
-    // iterate over the all_cells map
     for(it = all_cells.begin(); it!=all_cells.end(); it++)
     {
 //        std::cout << "inside    " << it->second.first << std::endl;
 //        std::cout << "outside   " << it->second.second << std::endl;
-
-//        data[i*2+0] = std::get<1>(it->second);
-//        data[i*2+1] = std::get<2>(it->second);
-//        i++;
-        // use the idx of the all_cells map
-        idx = std::get<0>(it->second);
-        data[idx*2+0] = std::get<1>(it->second);
-        data[idx*2+1] = std::get<2>(it->second);
-
-        // set an initial label
-        if(std::get<1>(it->second) > std::get<2>(it->second))
-            {gc->setLabel(idx, 1);}
-        else
-            {gc->setLabel(idx, 0);}
-
+        data[i*2+0] = std::get<1>(it->second);
+        data[i*2+1] = std::get<2>(it->second);
+        i++;
     }
-
 
     // next set up the array for smooth costs
     float *smooth = new float[num_labels*num_labels];
@@ -734,49 +759,38 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
             else{smooth[l1+l2*num_labels] = 1.0;}
 
     try{
+        GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_cells,num_labels);
         gc->setDataCost(data);
         gc->setSmoothCost(smooth);
 
-//        std::map<Cell_handle, int> cell_indexMap;
-//        int index = 0;
-//        Cell_map::iterator it;
-//        for(it = all_cells.begin(); it!=all_cells.end(); it++)
-//        {
-//            // if outside score is bigger than inside score
-//            if(std::get<1>(it->second) > std::get<2>(it->second))
-//                gc->setLabel(index, 0);
-//            else{gc->setLabel(index, 1);}
-//            index++;
-
-//        }
-
-        // set neighborhood:
-        int current_index;
-        Cell_map::iterator it2;
-        // iterate over the all_cells map
-        for(it2 = all_cells.begin(); it2!=all_cells.end(); it2++)
+        std::map<Cell_handle, int> cell_indexMap;
+        int index = 0;
+        Cell_map::iterator it;
+        for(it = all_cells.begin(); it!=all_cells.end(); it++)
         {
+            cell_indexMap[it->first] = index;
+            if(std::get<1>(it->second) > std::get<2>(it->second))
+                gc->setLabel(index, 1);
+            else{gc->setLabel(index, 0);}
+            index++;
 
-            current_index = std::get<0>(it2->second);
+        }
+
+        std::map<Cell_handle, int>::iterator it2;
+        for(it2 = cell_indexMap.begin(); it2!=cell_indexMap.end(); it2++)
+        {
             Cell_handle current_cell = it2->first;
+            int current_index = cell_indexMap.find(current_cell)->second;
             for(int i = 0; i < 4; i++){
 
                 Cell_handle neighbour_cell = current_cell->neighbor(i);
-                int neighbour_index = std::get<0>(all_cells.find(neighbour_cell)->second);
-
-                // if current_cell and neighbour_cell are BOTH infinite, then continue
-                if(Dt.is_infinite(current_cell) && Dt.is_infinite(neighbour_cell)){
-                    std::cout << "two infinites" << std::endl;
-                    continue;
-                }
-
-//                std::cout << current_index <<
+                int neighbour_index = cell_indexMap.find(neighbour_cell)->second;
 
                 // prevent to call setNeighbour(s2,s1) if setNeighbour(s1,s2)was already called
                 if(neighbour_index < current_index)
                     continue;
 
-//                // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
+                // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
                 Triangle tri = Dt.triangle(current_cell, i);
                 double area = sqrt(tri.squared_area());
 
@@ -784,49 +798,16 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
                 gc->setNeighbors(current_index, neighbour_index, area);
             }
         }
-
-//        std::map<Cell_handle, int>::iterator it2;
-//        for(it2 = cell_indexMap.begin(); it2!=cell_indexMap.end(); it2++)
-//        {
-//            Cell_handle current_cell = it2->first;
-//            int current_index = cell_indexMap.find(current_cell)->second;
-//            for(int i = 0; i < 4; i++){
-
-//                Cell_handle neighbour_cell = current_cell->neighbor(i);
-//                int neighbour_index = cell_indexMap.find(neighbour_cell)->second;
-
-//                // prevent to call setNeighbour(s2,s1) if setNeighbour(s1,s2)was already called
-//                if(neighbour_index < current_index)
-//                    continue;
-
-//                // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
-//                Triangle tri = Dt.triangle(current_cell, i);
-//                double area = sqrt(tri.squared_area());
-
-//                // call the neighbourhood function
-//                gc->setNeighbors(current_index, neighbour_index, area);
-//            }
-//        }
         std::cout << "Before optimization energy is " << gc->compute_energy() << std::endl;
         // use swap because it is good when you have two labels
         gc->swap(num_iterations);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
         std::cout << "After optimization energy is " << gc->compute_energy() << std::endl;
 
+        for ( int  i = 0; i < num_cells; i++ )
+            result.push_back(gc->whatLabel(i));
+//            result[i] = gc->whatLabel(i);
 
-        int idx3;
-        Cell_map::iterator it3;
-        // iterate over the all_cells map
-        for(it3 = all_cells.begin(); it3!=all_cells.end(); it3++)
-        {
-            idx3 = std::get<0>(it3->second);
-            std::get<3>(it3->second) = gc->whatLabel(idx3);
-        }
-
-//        for ( int  i = 0; i < num_cells; i++ )
-//            result.push_back(gc->whatLabel(i));
-////            result[i] = gc->whatLabel(i);
-
-//        return std::pair<std::map<Cell_handle, int> ,std::vector<int>> (cell_indexMap, result);
+        return std::pair<std::map<Cell_handle, int> ,std::vector<int>> (cell_indexMap, result);
 
         delete gc;
     }
@@ -848,16 +829,14 @@ int main()
 
     Cell_map all_cells;
 
-//    std::pair<Delaunay&, Cell_map&> dt_cells = rayTracingFun(Dt, all_cells);
-    rayTracingFun(Dt, all_cells);
+    std::pair<Delaunay&, Cell_map&> dt_cells = rayTracingFun(Dt, all_cells);
 
 
-//    std::map<Cell_handle, int> cell_indexMap;
-//    std::vector<int> results;
-//    std::pair<std::map<Cell_handle, int>, std::vector<int>> cell_results =
-//            GeneralGraph_DArraySArraySpatVarying(dt_cells, cell_indexMap, results, 2);
+    std::map<Cell_handle, int> cell_indexMap;
+    std::vector<int> results;
+    std::pair<std::map<Cell_handle, int>, std::vector<int>> cell_results =
+            GeneralGraph_DArraySArraySpatVarying(dt_cells, cell_indexMap, results, 2);
 
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 2);
 
 //    int width = 10;
 //    int height = 5;
@@ -876,9 +855,9 @@ int main()
 // TODO: right now all cells are dealt with in the minimization, but only finite cells have a score,
 //    that needs to change
 
-    exportSoup(Dt, all_cells, ofn);
+
 //    exportSoup(dt_cells.first, dt_cells.second, ofn);
-//    exportSoup(dt_cells.first, cell_results.first, cell_results.second, ofn);
+    exportSoup(dt_cells.first, cell_results.first, cell_results.second, ofn);
 
     return 0;
 
