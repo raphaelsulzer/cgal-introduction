@@ -316,8 +316,6 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 
 }
 
-// the main ray tracing function, that calls the first cell and the cell traversel functions
-//std::pair<Delaunay&, Cell_map&> rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
 void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
@@ -347,12 +345,10 @@ void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
     Delaunay::Finite_vertices_iterator vit;
     int counter = 0;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
-
         // collect outside votes
         firstCell(Dt, vit, all_cells, 0);
         // collect inside votes
         firstCell(Dt, vit, all_cells, 1);
-//        std::cout << "ray " << std::to_string(++counter) << " done" << std::endl;
     }
     // now that all rays have been traced, apply the last function to all the cells:
     double gamma = 2;
@@ -361,15 +357,7 @@ void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
     {
         std::get<1>(it->second) = 1 - exp(-std::get<1>(it->second)/gamma);
         std::get<2>(it->second) = 1 - exp(-std::get<2>(it->second)/gamma);
-
-
-//        std::cout << "outside score of cell "  <<  i   << ": " << it->second.first << std::endl;
-//        std::cout << "inside  score of cell "  <<  i   << ": " << it->second.second << std::endl;
     }
-
-
-//    exportSoup(Dt, all_cells, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply");
-//    return std::pair<Delaunay&, Cell_map&> (Dt, all_cells);
 }
 
 //////////////////////////////////////////////////////////
@@ -385,7 +373,6 @@ std::vector<Point> readPlyFun(const char* fname)
     std::cout << "PLY file read!" << std::endl;
     return points;
 }
-
 
 std::vector<PN> readPlyWithCnFun(const char* fname)
 {
@@ -430,124 +417,28 @@ Delaunay triangulationFromFile(const char* ifn)
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////// OUTPUT //////////////////////////////
 /////////////////////////////////////////////////////////////////////
-//int exportTriWithCnFun(const char* ifn, const char* ofn, std::vector<PointVectorPair> pVP)
-//Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
-Delaunay exportTriWithCnFun(std::vector<PointVectorPair> pVP, const char* ofn)
-{
-
-    Delaunay Dt(pVP.begin(), pVP.end());
-
-    // get number of vertices and triangles of the triangulation
-    Delaunay::size_type nv = Dt.number_of_vertices();
-    Delaunay::size_type nf = Dt.number_of_finite_facets();
-
-    // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
-    std::ofstream fo;
-    fo.open (ofn);
-    fo << "ply" << std::endl;
-    fo << "format ascii 1.0" << std::endl;
-    fo << "comment VCGLIB generated" << std::endl;
-    fo << "element vertex " << nv << std::endl;
-    fo << "property float x" << std::endl;
-    fo << "property float y" << std::endl;
-    fo << "property float z" << std::endl;
-    fo << "property float nx" << std::endl;
-    fo << "property float ny" << std::endl;
-    fo << "property float nz" << std::endl;
-    fo << "element face " << nf << std::endl;
-    fo << "property list uchar int vertex_indices" << std::endl;
-    fo << "end_header" << std::endl;
-    fo << std::setprecision(3);
-
-    // give every vertex from the triangulation an index starting at 0
-    // and already print the point coordinates, color and normal of the vertex to the PLY file
-    std::map<Vertex_handle, int> Vertices;
-    int index = 0;
-    Delaunay::Finite_vertices_iterator vft;
-    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-        // assign index to vertex handle. this is needed later for finding the index a certain cell is constructed with
-        // TODO: maybe this could already be included in the info vector of every point/vertex, and then instead of using the finite_vertices_iterator,
-        // one could iterate over the index vector, so that the point order of the file is determined by the info vector
-        // and you would do the find operation to find the point in a std::map<Point, idx>
-        // update: don't see anymore what I would gain from that
-        Vertices[vft] = index;
-        // print data to file
-        fo << vft->point() << " "                           // coordinates
-           << vft->info() << std::endl;                     // normal
-        //        fo << vft->point() << " "                           // coordinates
-        //           << int(std::get<1>(vft->info())[0]) << " "       // red
-        //           << int(std::get<1>(vft->info())[1]) << " "       // green
-        //           << int(std::get<1>(vft->info())[2]) << " "       // blue
-        //           << std::get<0>(vft->info()) << std::endl;        // normal
-        index++;
-    }
-
-    // Save the facets to the PLY file
-    //std::cout << "iterate over finite triangles: " << std::endl;
-    Delaunay::Finite_facets_iterator fft;
-    int vidx;
-    // initialise cell and vertex handle
-    Cell_handle c;
-    Vertex_handle v;
-    for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
-
-        // get vertex and cell index that describes the facet:
-        // facet fft is represented by std::pair(cell c, int vidx). vidx is the vertex opposite to the cell.
-        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
-        // see: https://doc.cgal.org/latest/Triangulation_3/index.html
-        c = fft->first;         // cell
-        vidx = fft->second;     // vertex index
-
-        // start printed facet line with a 3
-        fo << 3 << ' ';
-        // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
-        // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
-        // so we exactely skip 2 - the opposite vertex.
-        for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
-
-            // in the first and second iteration I am calling vertex() with the same value for j%4,
-            // but get a different vertex idx. Reason is that the cell c is different (see std::cout of cell points).
-            // for some reason the first facet is seen from the infinite cell.
-            v = c->vertex(j%4);
-
-            // print the indicies of each cell to the file
-            // vertices is a map of all vertices of the triangulation to an index
-            fo << Vertices.find(v)->second << ' ';
-
-        }
-        // new cell
-        fo << std::endl;
-    }
-    fo.close();
-
-    std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
-    return Dt;
-
-}
-
-
-//Delaunay exportSoup(Delaunay& Dt, Cell_map& all_cells, const char* ofn)
-//Delaunay exportSoup(const Delaunay& Dt, std::map<Cell_handle, int>& cell_indexMap, std::vector<int>& labels, const char* ofn)
 void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 {
-
-//    Delaunay::Finite_cells_iterator cft;
-//    for (cft = Dt.finite_cells_begin() ; cft != Dt.finite_cells_end() ; cft++){
-
-//        int index = cell_indexMap.find(cft)->second;
-//        int result = labels[index];
-//        std::cout << result << std::endl;
-//    }
-
-
-
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
     Delaunay::size_type nf = Dt.number_of_finite_facets();
 
+    // calculate how many faces to print
+    Delaunay::Finite_facets_iterator fft;
+    int deletedFaceCount = 0;
+    for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
+        Cell_handle c = fft->first;
+        int clabel = std::get<3>(all_cells.find(c)->second);
+        Cell_handle m = Dt.mirror_facet(*fft).first;
+        int mlabel = std::get<3>(all_cells.find(m)->second);
+        if(clabel == mlabel){deletedFaceCount++;}
+    }
+    int sub = nf - deletedFaceCount;
+
     // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
-    std::ofstream fo;
-    fo.open (ofn);
+    std::fstream fo;
+    fo.open(ofn, std::fstream::out);
+
     fo << "ply" << std::endl;
     fo << "format ascii 1.0" << std::endl;
     fo << "comment VCGLIB generated" << std::endl;
@@ -558,7 +449,7 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
     fo << "property float nx" << std::endl;
     fo << "property float ny" << std::endl;
     fo << "property float nz" << std::endl;
-    fo << "element face " << nf << std::endl;
+    fo << "element face " << sub << std::endl;
     fo << "property list uchar int vertex_indices" << std::endl;
     fo << "end_header" << std::endl;
     fo << std::setprecision(3);
@@ -577,12 +468,12 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
     }
 
     // Save the facets to the PLY file
-    Delaunay::Finite_facets_iterator fft;
+//    Delaunay::Finite_facets_iterator fft;
     int vidx;
     // initialise cell and vertex handle
     Cell_handle c;
     Vertex_handle v;
-    unsigned int deletedFaceCount = 0;
+//    unsigned int deletedFaceCount = 0;
     for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
 
         // get vertex and cell index that describes the facet
@@ -601,7 +492,6 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
         double mscore = std::get<1>(all_cells.find(c1)->second);
 
 //        if((cscore !=0.0 && mscore !=0.0) || (cscore != 0.0 && Dt.is_infinite(c1)) || (mscore !=0.0 && Dt.is_infinite(c)) ){
-////            std::cout << "left cell: " << ccell << "    fin: " << Dt.is_infinite(c) << "    right cell: " << mcell << "    fin: " << Dt.is_infinite(c1) << std::endl;
 //            deletedFaceCount++;
 //            continue;
 //        }
@@ -620,21 +510,14 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 //            continue;
 //        }
 
-        // TODO: eventuell muss infinite cell ganz normal behandelt werden??
-
 //        // with GC labelling:
         int clabel = std::get<3>(all_cells.find(c)->second);
 
         Cell_handle m = Dt.mirror_facet(*fft).first;
         int mlabel = std::get<3>(all_cells.find(m)->second);
 
-
-        //        std::cout << "left cell: " << labels[cindex] << "right cell: " << labels[mindex] << std::endl;
-//        std::cout << "left cell: " << labels[cindex] << "    right cell: " << labels[mindex] << std::endl;
-
         if(clabel == mlabel){
-//            std::cout << "left cell: " << labels[cindex] << "   right cell: " << labels[mindex] << std::endl;
-            deletedFaceCount++;
+//            deletedFaceCount++;
             continue;}
 
         // start printed facet line with a 3
@@ -643,37 +526,31 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
         // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
         // so we exactely skip 2 - the opposite vertex.
         for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
-            // in the first and second iteration I am calling vertex() with the same value for j%4,
-            // but get a different vertex idx. Reason is that the cell c is different (see std::cout of cell points).
-            // for some reason the first facet is seen from the infinite cell.
-            v = c->vertex(j%4);
-
             // print the indicies of each cell to the file
             // vertices is a map of all vertices of the triangulation to an index
+            v = c->vertex(j%4);
             fo << Vertices.find(v)->second << ' ';
-
         }
         fo << std::endl;
     }
-    fo.close();
+
+//    fo.clear();
+//    fo.seekg(170,std::ios_base::beg);
 
 //    // rewrite the number of faces line in the file, by substracting the number of pruned faces
-//    unsigned int sub = nf - deletedFaceCount;
-//    std::fstream foa;
-//    foa.open(ofn);
+//    int sub = nf - deletedFaceCount;
 //    unsigned int currentLine = 0;
 //    while ( currentLine < 10 )
 //    {
-//         // We don't actually care about the lines we're reading,
-//         // so just discard them.
-//         foa.ignore( std::numeric_limits<std::streamsize>::max(), '\n') ;
-//         ++currentLine ;
+//         fo.ignore( std::numeric_limits<std::streamsize>::max(), '\n');
+//         ++currentLine;
 //    }
-//    foa << "element face " << sub << std::endl;
-//    foa.close();
+//    fo << "element face " << sub << std::endl;
+
+    fo.close();
 
     std::cout << "before  face count: " << nf << std::endl;
-    std::cout << "remaining faces: " << nf-deletedFaceCount-1 << std::endl;
+    std::cout << "remaining faces: " << sub << std::endl;
     std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
 }
 
@@ -687,17 +564,10 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int num_iterations)
 {
 
-
-//    Delaunay Dt = dt_cells.first;
-
-//    Cell_map all_cells = dt_cells.second;
     int num_cells = all_cells.size();
     int num_labels = 2;
-
     GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_cells,num_labels);
 
-
-//    int *result = new int[num_cells];   // stores result of optimization
 
     // first set up the array for data costs and set the initial label in the same loop
     float *data = new float[num_cells*num_labels];
@@ -706,12 +576,6 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
     // iterate over the all_cells map
     for(it = all_cells.begin(); it!=all_cells.end(); it++)
     {
-//        std::cout << "inside    " << it->second.first << std::endl;
-//        std::cout << "outside   " << it->second.second << std::endl;
-
-//        data[i*2+0] = std::get<1>(it->second);
-//        data[i*2+1] = std::get<2>(it->second);
-//        i++;
         // use the idx of the all_cells map
         idx = std::get<0>(it->second);
         data[idx*2+0] = std::get<1>(it->second);
@@ -752,7 +616,6 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
 
                 // if current_cell and neighbour_cell are BOTH infinite, then continue
                 if(Dt.is_infinite(current_cell) && Dt.is_infinite(neighbour_cell)){
-//                    std::cout << "two infinites" << std::endl;
                     continue;
                 }
 
@@ -760,13 +623,13 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
                 if(neighbour_index < current_index)
                     continue;
 
-//                // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
+                // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
                 Triangle tri = Dt.triangle(current_cell, i);
                 double area = sqrt(tri.squared_area());
 
-
                 // call the neighbourhood function
-                gc->setNeighbors(current_index, neighbour_index, area);
+                int area_weight = 3;    // this clearly shows that minimization does something, since energy changes when weight is changed
+                gc->setNeighbors(current_index, neighbour_index, area_weight*area);
             }
         }
 
@@ -793,53 +656,28 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
     }
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////// MAIN ///////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-
     const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_10000sampled_messyNormals.ply";
     const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
 //    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
 //    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
 
-//    exportTriWithCnFun(ifn, ofn_test);
     Delaunay Dt = triangulationFromFile(ifn);
 
     Cell_map all_cells;
 
-//    std::pair<Delaunay&, Cell_map&> dt_cells = rayTracingFun(Dt, all_cells);
     rayTracingFun(Dt, all_cells);
 
-
-//    std::map<Cell_handle, int> cell_indexMap;
-//    std::vector<int> results;
-//    std::pair<std::map<Cell_handle, int>, std::vector<int>> cell_results =
-//            GeneralGraph_DArraySArraySpatVarying(dt_cells, cell_indexMap, results, 2);
-
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 2);
-
-//    int width = 10;
-//    int height = 5;
-//    int num_pixels = width*height;
-//    int num_labels = 7;
-//    GeneralGraph_DArraySArraySpatVarying(width,height,num_pixels,num_labels);
-
-    // TODO: minimization seems to work. next return the result array from the GC function and export only the interface facets.
-
-//    for(int i = 0; i < result.second.size(); i++)
-//    {
-//        std::cout << "label: " << result.second[i] << std::endl;
-//    }
-
-
-// TODO: right now all cells are dealt with in the minimization, but only finite cells have a score,
-//    that needs to change
+    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 10);
 
     exportSoup(Dt, all_cells, ofn);
-//    exportSoup(dt_cells.first, dt_cells.second, ofn);
-//    exportSoup(dt_cells.first, cell_results.first, cell_results.second, ofn);
 
     return 0;
-
 }
 
 
