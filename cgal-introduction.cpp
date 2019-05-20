@@ -125,7 +125,6 @@ double cellScore(double dist2, bool inside){
     }
 
     double S = 1 - exp(-dist2/(2*sigma*sigma));
-//    std::cout << "cell score: " << S << std::endl;
     return S;
 }
 
@@ -192,10 +191,9 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
                 Cell_handle newCell = mirror_fac.first;
                 int newIdx = mirror_fac.second;
 
-                // for every vertex of the cell, check if there is an intersection
-                // because that will generate an infinite loop, because it means that one cell has multiple triangles that are intersected by
-                // the ray (since a vertex is shared by three facets)
-                // so it will always re-enter the same cell
+                // for every vertex of the cell, check if there is an intersection, because it means that one cell has multiple triangles that are intersected by
+                // the ray (since a vertex is shared by three facets).
+                // That will generate an infinite loop, so it will always re-enter the same cell at some point
                 // that's why I am - for now - just returning from that cell if it happens
                 // what could be done is make this intersection point the new source of the ray
                 // simply say ray source = this point, and ray target = new point in the opposite direction of the previous point
@@ -207,7 +205,7 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
 
                     if(point_intersection){
                         const Point* p = boost::get<Point>(&*point_intersection);
-                        std::cout << "intersection with a vertex of the cell: " << p << std::endl;
+                        std::cout << "intersection with a vertex of the cell: " << *p << std::endl;
                         return 0;
                     }
                 }
@@ -277,7 +275,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                 // else result is a line
                 else{
                     const Segment* s = boost::get<Segment>(&*result);
-//                    std::cout << "segment 3:  " << *s << std::endl;
+                    std::cout << "segment 3:  " << *s << std::endl;
                     // for now just return in this case, until it is solved
                     //continue;
                     score = 0;
@@ -316,7 +314,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 
 }
 
-void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
+void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -351,7 +349,7 @@ void rayTracingFun(Delaunay& Dt, Cell_map& all_cells){
         firstCell(Dt, vit, all_cells, 1);
     }
     // now that all rays have been traced, apply the last function to all the cells:
-    double gamma = 2;
+    double gamma = 3;
     Cell_map::iterator it;
     for(it = all_cells.begin(); it!=all_cells.end(); it++)
     {
@@ -468,7 +466,6 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
     }
 
     // Save the facets to the PLY file
-//    Delaunay::Finite_facets_iterator fft;
     int vidx;
     // initialise cell and vertex handle
     Cell_handle c;
@@ -549,20 +546,20 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 
     fo.close();
 
-    std::cout << "before  face count: " << nf << std::endl;
+    std::cout << "before face count: " << nf << std::endl;
     std::cout << "remaining faces: " << sub << std::endl;
     std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
 }
-
-
 
 //// in this version, set data and smoothness terms using arrays
 //// grid neighborhood is set up "manually". Uses spatially varying terms. Namely
 //// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with
 //// w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
 //std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
-void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int num_iterations)
+void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
 {
+
+    std::cout << "Starting Optimization..." << std::endl;
 
     int num_cells = all_cells.size();
     int num_labels = 2;
@@ -586,7 +583,6 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
             {gc->setLabel(idx, 1);}
         else
             {gc->setLabel(idx, 0);}
-
     }
 
     // next set up the array for smooth costs
@@ -662,10 +658,12 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, Cell_map& all_cells, int
 //////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_10000sampled_messyNormals.ply";
-    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
+    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
+    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
 //    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
 //    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
+
+
 
     Delaunay Dt = triangulationFromFile(ifn);
 
@@ -673,7 +671,7 @@ int main()
 
     rayTracingFun(Dt, all_cells);
 
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 10);
+    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 100);
 
     exportSoup(Dt, all_cells, ofn);
 
