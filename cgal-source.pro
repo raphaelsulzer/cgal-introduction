@@ -20,28 +20,28 @@ QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-variable -Wno-unused-parameter
 
 #### UBUNTU
-#INCLUDEPATH += usr/local/include \
-#/home/raphael/Downloads/gco-v3.0-master
+INCLUDEPATH += usr/local/include \
+/home/raphael/Downloads/gco-v3.0-master
 
-#LIBS += \
-#-L/usr/local/lib/ -lCGAL \
-#-L/usr/lib/ -lgmp \
-#-L/usr/lib/ -lmpfr \
-#-L/home/raphael/Downloads/gco-v3.0-master/build/ -lgco \
+LIBS += \
+-L/usr/local/lib/ -lCGAL \
+-L/usr/lib/ -lgmp \
+-L/usr/lib/ -lmpfr \
+-L/home/raphael/Downloads/gco-v3.0-master/build/ -lgco \
 
 
 ### MAC OS
-macx: INCLUDEPATH +=  /usr/local/Cellar/cgal/4.13/include \ # CGAL
-                /usr/local/Cellar/gmp/6.1.2_2/include \ # GMP
-                /usr/local/Cellar/mpfr/4.0.1/include \ # MPFR
-                /usr/local/Cellar/boost/1.68.0_1/include \ # BOOST
-                /usr/local/gco-v3.0-master/ #GCoptimization
+#macx: INCLUDEPATH +=  /usr/local/Cellar/cgal/4.13/include \ # CGAL
+#                /usr/local/Cellar/gmp/6.1.2_2/include \ # GMP
+#                /usr/local/Cellar/mpfr/4.0.1/include \ # MPFR
+#                /usr/local/Cellar/boost/1.68.0_1/include \ # BOOST
+#                /usr/local/gco-v3.0-master/ #GCoptimization
 
 
-macx: LIBS += -L/usr/local/lib/ -lgmp
-macx: LIBS += -L/usr/local/lib/ -lmpfr
-macx: LIBS += -L/usr/local/lib/ -lCGAL
-macx: LIBS += -L/usr/local/gco-v3.0-master/build/ -lgco
+#macx: LIBS += -L/usr/local/lib/ -lgmp
+#macx: LIBS += -L/usr/local/lib/ -lmpfr
+#macx: LIBS += -L/usr/local/lib/ -lCGAL
+#macx: LIBS += -L/usr/local/gco-v3.0-master/build/ -lgco
 
 
 

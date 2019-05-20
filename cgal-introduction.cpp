@@ -53,7 +53,7 @@ typedef Kernel::Intersect_3                                         Intersect;
 typedef Kernel::Segment_3                                           Segment;
 
 // map cell of the Dt, to an index, the outside score, the inside score, and the final label
-typedef std::map<Cell_handle, std::tuple<int, double, double, int>>            Cell_map;
+typedef std::map<Cell_handle, std::tuple<int, float, float, int>>            Cell_map;
 //typedef std::map<Cell_handle, std::pair<double, double>>            Cell_map;
 
 
@@ -111,9 +111,9 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-double cellScore(double dist2, bool inside){
+float cellScore(float dist2, bool inside){
 
-    double sigma;
+    float sigma;
     if(inside){
         sigma = 0.05;
         // truncate inside ray
@@ -124,7 +124,7 @@ double cellScore(double dist2, bool inside){
         sigma = 0.1;
     }
 
-    double S = 1 - exp(-dist2/(2*sigma*sigma));
+    float S = 1 - exp(-dist2/(2*sigma*sigma));
     return S;
 }
 
@@ -148,12 +148,12 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
                 // check if ray triangle intersection is a point (probably in most cases)
                 // or a line segment (if ray lies inside the triangle)
                 // if result is a point
-                double score;
+                float score;
                 if (const Point* p = boost::get<Point>(&*result))
                 {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
-                    double dist2 = CGAL::squared_distance(*p, source);
+                    float dist2 = CGAL::squared_distance(*p, source);
                     score = cellScore(dist2, inside);
 
                 }
@@ -216,9 +216,9 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
     // put outside score of infinite cell very high
     else{
         // set outside score
-        std::get<1>(all_cells.find(current_cell)->second)+=1.0;
+        std::get<1>(all_cells.find(current_cell)->second)+=1;
         // set inside score
-        std::get<2>(all_cells.find(current_cell)->second)+=0.0;
+        std::get<2>(all_cells.find(current_cell)->second)+=0;
     }
     return 0;
 }
@@ -262,14 +262,14 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                 // check if ray triangle intersection is a point (probably in most cases) or a line segment (if ray lies inside the triangle).
                 // so far this is not used (and not needed) since I am not handling the unlikely case where the ray goes through a triangle
                 // if result is a point
-                double score;
+                float score;
                 Point source = vit->point();
                 if (const Point* p = boost::get<Point>(&*result)){
                 //std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
 
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
-                    double dist2 = CGAL::squared_distance(*p, source);
+                    float dist2 = CGAL::squared_distance(*p, source);
                     score = cellScore(dist2, inside);
                 }
                 // else result is a line
@@ -341,7 +341,6 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells){
     // and I pass this iterator around and also pass it from within the traversal function
     // when I want to restart from a point that is hit
     Delaunay::Finite_vertices_iterator vit;
-    int counter = 0;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
         // collect outside votes
         firstCell(Dt, vit, all_cells, 0);
@@ -349,7 +348,7 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells){
         firstCell(Dt, vit, all_cells, 1);
     }
     // now that all rays have been traced, apply the last function to all the cells:
-    double gamma = 3;
+    float gamma = 3.0;
     Cell_map::iterator it;
     for(it = all_cells.begin(); it!=all_cells.end(); it++)
     {
@@ -483,10 +482,10 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
         //////// check which faces to prune:
         // with only outside labelling:
         // cell of current facet
-        double cscore = std::get<1>(all_cells.find(c)->second);
+        float cscore = std::get<1>(all_cells.find(c)->second);
         // cell of mirror facet and see if the labels are different
         Cell_handle c1 = Dt.mirror_facet(*fft).first;
-        double mscore = std::get<1>(all_cells.find(c1)->second);
+        float mscore = std::get<1>(all_cells.find(c1)->second);
 
 //        if((cscore !=0.0 && mscore !=0.0) || (cscore != 0.0 && Dt.is_infinite(c1)) || (mscore !=0.0 && Dt.is_infinite(c)) ){
 //            deletedFaceCount++;
@@ -575,7 +574,11 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
     {
         // use the idx of the all_cells map
         idx = std::get<0>(it->second);
+        // I am initializing my label s.t. if the outside vote is bigger than the inside vote, than it should be labelled 1 (outside) - and vice versa (0 = inside)
+        // that means the cost/penalty for labelling an cell that initially has label 1 with the opposite label, is the opposite vote (so the inside vote)
+        // so labelling 0 costs outside votes
         data[idx*2+0] = std::get<1>(it->second);
+        // and labelling 1 costs inside votes
         data[idx*2+1] = std::get<2>(it->second);
 
         // set an initial label
@@ -621,18 +624,26 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
 
                 // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
                 Triangle tri = Dt.triangle(current_cell, i);
-                double area = sqrt(tri.squared_area());
+                float area = sqrt(tri.squared_area());
 
                 // call the neighbourhood function
-                int area_weight = 3;    // this clearly shows that minimization does something, since energy changes when weight is changed
+                float area_weight = 1.5;    // this clearly shows that minimization does something, since energy changes when weight is changed
                 gc->setNeighbors(current_index, neighbour_index, area_weight*area);
             }
         }
 
         // Optimization
+        std::cout << "Before optimization data energy is " << gc->giveDataEnergy() << std::endl;
+//        for(int i = 0; i < num_cells; i++){
+//            std::cout << "cell " << i << " label 0: " << data[i*2+0] << std::endl;
+//            std::cout << "cell " << i << " label 1: " << data[i*2+1] << std::endl;
+//        }
+        std::cout << "Before optimization smoothness energy is " << gc->giveSmoothEnergy() << std::endl;
+
         std::cout << "Before optimization energy is " << gc->compute_energy() << std::endl;
         // use swap because it is good when you have two labels
         gc->swap(num_iterations);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+//        gc->expansion(num_iterations);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
         std::cout << "After optimization energy is " << gc->compute_energy() << std::endl;
 
         // save the results in the all_cells Cell_map
@@ -652,17 +663,103 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
     }
 }
 
+void energyMin(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
+{
+
+    int num_cells = all_cells.size();
+    int num_labels = 2;
+
+    int* label = new int[num_cells];
+
+    // first set up the array for data costs and set the initial label in the same loop
+
+    int current_idx;
+    Cell_map::iterator it;
+    // iterate over the all_cells map
+    for(it = all_cells.begin(); it!=all_cells.end(); it++)
+    {
+        Cell_handle current_cell = it->first;
+
+        // data term
+        current_idx = std::get<0>(it->second);
+//        data = std::get<1>(it->second) + std::get<2>(it->second);
+
+        // smoothness term
+        if(std::get<1>(it->second) > std::get<2>(it->second))
+            {label[current_idx] = 1;}
+        else
+            {label[current_idx] = 0;}
+    }
+
+
+    float data_energy = 0.0;
+    float smoothness_energy = 0.0;
+    float total_energy = 0.0;
+    // iterate over the all_cells map
+    for(it = all_cells.begin(); it!=all_cells.end(); it++)
+    {
+        Cell_handle current_cell = it->first;
+        current_idx = std::get<0>(it->second);
+
+        // data term
+        // so I am initializing my label s.t. if the outside vote is bigger than the inside vote, than it should be labelled 1 - and vice versa
+        // that means the cost for labelling an cell that has label 1 with label 0, is the opposite vote (so the inside vote)
+        float data;
+        if(label[current_idx] == 0)
+            data = std::get<1>(it->second);
+        else
+            data = std::get<2>(it->second);
+        data_energy+=data;
+
+        for(int i = 0; i < 4; i++){
+
+            Cell_handle neighbour_cell = current_cell->neighbor(i);
+            int neighbour_idx = std::get<0>(all_cells.find(neighbour_cell)->second);
+
+            // if current_cell and neighbour_cell are BOTH infinite, then continue
+            if(Dt.is_infinite(current_cell) && Dt.is_infinite(neighbour_cell)){
+                continue;
+            }
+
+            // prevent to call setNeighbour(s2,s1) if setNeighbour(s1,s2)was already called
+            if(neighbour_idx < current_idx)
+                continue;
+
+            // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
+            Triangle tri = Dt.triangle(current_cell, i);
+            float area = sqrt(tri.squared_area());
+
+            // call the neighbourhood function
+            float area_weight = 1.5;    // this clearly shows that minimization does something, since energy changes when weight is changed
+
+            float smooth;
+            if(label[current_idx]!=label[neighbour_idx])
+                smooth = area_weight*area;
+            else
+                smooth = 0.0;
+            smoothness_energy+=smooth;
+        }
+    }
+
+    total_energy = data_energy + smoothness_energy;
+
+    std::cout << "Calculated total=data+smoothness energy is: " << total_energy << "=" << data_energy << "+" << smoothness_energy << std::endl;
+
+
+}
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// MAIN ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
-    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
-//    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_100sampled_messyNormals.ply";
-//    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/2cube_CGAL_pruned.ply";
-
+//    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
+//    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
+    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
+    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
 
 
     Delaunay Dt = triangulationFromFile(ifn);
@@ -671,7 +768,9 @@ int main()
 
     rayTracingFun(Dt, all_cells);
 
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 100);
+    energyMin(Dt, all_cells, 2);
+
+    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, -1);
 
     exportSoup(Dt, all_cells, ofn);
 
