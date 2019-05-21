@@ -756,10 +756,10 @@ void energyMin(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
 //////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-//    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
-//    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
-    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
-    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
+    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
+    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
+//    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
+//    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
 
 
     Delaunay Dt = triangulationFromFile(ifn);
