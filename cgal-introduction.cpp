@@ -25,10 +25,6 @@
 #include <time.h>
 #include "GCoptimization.h"
 
-
-//#include <readPlyWithCn.cpp>
-//#include <exportTri.cpp>
-
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 
 // vertext base for point + info (=vector, color, intensity)
@@ -38,10 +34,11 @@ typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
 //typedef CGAL::Triangulation_vertex_base_with_info_3<VC, Kernel>     Vb;
 // vertext base for point + info (=vector)
 typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, Kernel> VCb;
 
 
 typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;         // cell base
-typedef CGAL::Triangulation_data_structure_3<Vb, Cb>                Tds;        // triangulation data structure
+typedef CGAL::Triangulation_data_structure_3<VCb, Cb>                Tds;        // triangulation data structure
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
 typedef Delaunay::Point                                             Point;
 typedef Delaunay::Facet                                             Facet;
@@ -59,9 +56,13 @@ typedef std::map<Cell_handle, std::tuple<int, float, float, int>>            Cel
 
 typedef std::pair<Point, Vector> PointVectorPair;
 
-typedef CGAL::cpp11::tuple<Point, Vector> PN;
-typedef CGAL::Nth_of_tuple_property_map<0, PN> Point_map;
-typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
+typedef CGAL::cpp11::tuple<Point, int> PC;
+typedef CGAL::Nth_of_tuple_property_map<0, PC> Point_map;
+typedef CGAL::Nth_of_tuple_property_map<1, PC> Camera_map;
+
+//typedef CGAL::cpp11::tuple<Point, Vector> PN;
+//typedef CGAL::Nth_of_tuple_property_map<0, PN> Point_map;
+//typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
 
 // Concurrency
 #ifdef CGAL_LINKED_WITH_TBB
@@ -115,13 +116,13 @@ float cellScore(float dist2, bool inside){
 
     float sigma;
     if(inside){
-        sigma = 0.05;
+        sigma = 0.1;
         // truncate inside ray
-        if(dist2 > 3*sigma)
+        if(dist2 > sigma)
             dist2=0;
     }
     else {
-        sigma = 0.1;
+        sigma = 0.5;
     }
 
     float S = 1 - exp(-dist2/(2*sigma*sigma));
@@ -225,8 +226,20 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
 
 void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, bool inside){
 
+    Vector camera;
+    if(vit->info() == 0){
+        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
+    }
+    else if(vit->info() == 1){
+        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
+    }
+    else{
+        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
+    }
+
     // ray constructed from point origin to (end of) normal
-    Ray ray(vit->point(), vit->info());
+//    Ray ray(vit->point(), vit->info());
+    Ray ray(vit->point(), camera);
 
     // make the inside ray
     if(inside){
@@ -371,29 +384,69 @@ std::vector<Point> readPlyFun(const char* fname)
     return points;
 }
 
-std::vector<PN> readPlyWithCnFun(const char* fname)
+//std::vector<PN> readPlyWithN(const char* fname)
+//{
+//    std::vector<PN> points; // store points
+//    std::ifstream in(fname);
+
+//    CGAL::read_ply_points_with_properties
+//      (in,
+//       std::back_inserter (points),
+//       CGAL::make_ply_point_reader (Point_map()),
+//       CGAL::make_ply_normal_reader (Normal_map()));
+
+//    std::cout << "PLY file read!" << std::endl;
+//    return points;
+//}
+
+std::vector<PC> readPlyWithC(const char* fname)
 {
-    std::vector<PN> points; // store points
+    std::vector<PC> points; // store points
     std::ifstream in(fname);
 
     CGAL::read_ply_points_with_properties
       (in,
        std::back_inserter (points),
        CGAL::make_ply_point_reader (Point_map()),
-       CGAL::make_ply_normal_reader (Normal_map()));
+       std::make_pair (Camera_map(), CGAL::PLY_property<int>("camera_index")));
 
     std::cout << "PLY file read!" << std::endl;
     return points;
 }
 
+//// generate a Delaunay triangulation from a PLY file
+//Delaunay triangulationFromFile(const char* ifn)
+//{
+//   // get data as vector of tuples(point, normal, color, intensity)
+//   auto ply = readPlyWithCnFun(ifn);
+
+//   std::vector<Point> points;
+//   std::vector<Vector> infos;
+//   for (std::size_t i = 0; i < ply.size (); ++ i)
+//   {
+//       // make vector of points
+//       points.push_back(get<0>(ply[i]));
+////       // make vector of infos as: tuple(normal, color, intensity)
+////       infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
+//       // make vector of infos as: tuple(normal, color, intensity)
+//       infos.push_back(get<1>(ply[i]));
+//   }
+
+//   // make the triangulation
+//   Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
+//             boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
+//   std::cout << "Triangulation done.." << std::endl;
+//   return Dt;
+//}
+
 // generate a Delaunay triangulation from a PLY file
 Delaunay triangulationFromFile(const char* ifn)
 {
    // get data as vector of tuples(point, normal, color, intensity)
-   auto ply = readPlyWithCnFun(ifn);
+   auto ply = readPlyWithC(ifn);
 
    std::vector<Point> points;
-   std::vector<Vector> infos;
+   std::vector<int> infos;
    for (std::size_t i = 0; i < ply.size (); ++ i)
    {
        // make vector of points
@@ -410,6 +463,7 @@ Delaunay triangulationFromFile(const char* ifn)
    std::cout << "Triangulation done.." << std::endl;
    return Dt;
 }
+
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////// OUTPUT //////////////////////////////
@@ -443,9 +497,10 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
-    fo << "property float nx" << std::endl;
-    fo << "property float ny" << std::endl;
-    fo << "property float nz" << std::endl;
+//    fo << "property float nx" << std::endl;
+//    fo << "property float ny" << std::endl;
+//    fo << "property float nz" << std::endl;
+    fo << "property int camera_index" << std::endl;
     fo << "element face " << sub << std::endl;
     fo << "property list uchar int vertex_indices" << std::endl;
     fo << "end_header" << std::endl;
@@ -555,7 +610,7 @@ void exportSoup(const Delaunay& Dt, Cell_map all_cells, const char* ofn)
 //// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with
 //// w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
 //std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
-void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
+void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int num_iterations)
 {
 
     std::cout << "Starting Optimization..." << std::endl;
@@ -627,7 +682,6 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
                 float area = sqrt(tri.squared_area());
 
                 // call the neighbourhood function
-                float area_weight = 1.5;    // this clearly shows that minimization does something, since energy changes when weight is changed
                 gc->setNeighbors(current_index, neighbour_index, area_weight*area);
             }
         }
@@ -663,7 +717,7 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
     }
 }
 
-void energyMin(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
+void energyMin(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int num_iterations)
 {
 
     int num_cells = all_cells.size();
@@ -729,9 +783,7 @@ void energyMin(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
             Triangle tri = Dt.triangle(current_cell, i);
             float area = sqrt(tri.squared_area());
 
-            // call the neighbourhood function
-            float area_weight = 1.5;    // this clearly shows that minimization does something, since energy changes when weight is changed
-
+            // smooth term
             float smooth;
             if(label[current_idx]!=label[neighbour_idx])
                 smooth = area_weight*area;
@@ -756,11 +808,13 @@ void energyMin(const Delaunay& Dt, Cell_map& all_cells, int num_iterations)
 //////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
-    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
-    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
+//    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
+//    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
 //    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
 //    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
 
+    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/fontaine_10000.ply";
+    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/fontaine_pruned.ply";
 
     Delaunay Dt = triangulationFromFile(ifn);
 
@@ -768,9 +822,9 @@ int main()
 
     rayTracingFun(Dt, all_cells);
 
-    energyMin(Dt, all_cells, 2);
+//    energyMin(Dt, all_cells, 2);
 
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 3.0, -1);
 
     exportSoup(Dt, all_cells, ofn);
 
