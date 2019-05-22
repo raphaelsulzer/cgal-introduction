@@ -12,7 +12,8 @@ SOURCES += \
 #    rayTriIntersection.cpp \
 #    main.cpp
     cgal-introduction.cpp \
-    fileIO.cpp
+    fileIO.cpp \
+    rayTracing.cpp
 #    energy-minimization.cpp
 
 QMAKE_CXXFLAGS += -std=c++11

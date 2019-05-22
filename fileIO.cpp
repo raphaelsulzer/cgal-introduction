@@ -56,7 +56,7 @@ typedef CGAL::Nth_of_tuple_property_map<1, PC> Camera_map;
 
 //////////////////////////////////////////////////////////
 ///////////////////// FILE I/O ///////////////////////////
-/// //////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 std::vector<Point> readPlyFun(const char* fname)
 {
     // Reads a .ply point set file
@@ -152,7 +152,6 @@ Delaunay triangulationFromFile(const char* ifn)
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////// OUTPUT //////////////////////////////
 /////////////////////////////////////////////////////////////////////
-//void exportEdges(const char* ofn, const Delaunay& Dt, Cell_map& all_cells, Vertex_map all_vertices)
 void exportEdges(std::fstream& fo, const Delaunay& Dt, const Cell_map& all_cells, const Vertex_map& all_vertices)
 {
 
@@ -202,7 +201,7 @@ void exportEdges(std::fstream& fo, const Delaunay& Dt, const Cell_map& all_cells
 
 
 
-void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn)
+void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn, bool prune_faces)
 {
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
@@ -235,11 +234,16 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn)
 //    fo << "property float ny" << std::endl;
 //    fo << "property float nz" << std::endl;
     fo << "property int camera_index" << std::endl;
-    fo << "element face " << nf << std::endl;
+    if(prune_faces)
+        fo << "element face " << sub << std::endl;
+    else
+        fo << "element face " << nf << std::endl;
     fo << "property list uchar int vertex_indices" << std::endl;
-    fo << "property uchar red" << std::endl;
-    fo << "property uchar green" << std::endl;
-    fo << "property uchar blue" << std::endl;
+    if(!prune_faces){
+        fo << "property uchar red" << std::endl;
+        fo << "property uchar green" << std::endl;
+        fo << "property uchar blue" << std::endl;
+    }
     fo << "end_header" << std::endl;
     fo << std::setprecision(3);
 
@@ -272,31 +276,6 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn)
         vidx = fft->second;     // vertex index
 
         //////// check which faces to prune:
-        // with only outside labelling:
-        // cell of current facet
-        float cscore = std::get<1>(all_cells.find(c)->second);
-        // cell of mirror facet and see if the labels are different
-        Cell_handle c1 = Dt.mirror_facet(*fft).first;
-        float mscore = std::get<1>(all_cells.find(c1)->second);
-
-//        if((cscore !=0.0 && mscore !=0.0) || (cscore != 0.0 && Dt.is_infinite(c1)) || (mscore !=0.0 && Dt.is_infinite(c)) ){
-//            deletedFaceCount++;
-//            continue;
-//        }
-
-        // with inside labelling:
-//        double coutside = all_cells.find(c)->second.first;
-//        double cinside = all_cells.find(c)->second.second;
-//        double moutside = all_cells.find(c1)->second.first;
-//        double minside = all_cells.find(c1)->second.second;
-
-//        double fscore = sqrt(pow(coutside-moutside,2)+pow(cinside-minside,2));
-//        std::cout << fscore << std::endl;
-
-//        if(!(fscore > 0.1)){
-//            deletedFaceCount++;
-//            continue;
-//        }
 
 //        // with GC labelling:
         int clabel = std::get<3>(all_cells.find(c)->second);
@@ -307,6 +286,10 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn)
 //        if(clabel == mlabel){
 ////            deletedFaceCount++;
 //            continue;}
+
+        if(clabel == mlabel && prune_faces){
+            continue;
+        }
 
         // start printed facet line with a 3
         fo << 3 << ' ';
@@ -320,15 +303,15 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn)
             fo << Vertices.find(v)->second << ' ';
         }
 
-        if(clabel == 1 && mlabel == 1){
+
+        if(clabel == 1 && mlabel == 1 && !prune_faces){
             fo << " 0 191 255";
         }
-        else if(clabel == 0 && mlabel == 0){
+        else if(clabel == 0 && mlabel == 0 && !prune_faces){
             fo << "255 0 0";
         }
-        else{
+        else if(!prune_faces){
             fo << "0 255 0";
-
         }
 
         fo << std::endl;
