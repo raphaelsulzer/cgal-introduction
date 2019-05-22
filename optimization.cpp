@@ -1,13 +1,16 @@
+#include "rayTracing.cpp"
+
 // for GCoptimization
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "GCoptimization.h"
-//#include "fileIO.cpp"
-#include "rayTracing.cpp"
 
 
+////////////////////////////////////////////////////////////
+//////////////////////// Optimization //////////////////////
+////////////////////////////////////////////////////////////
 //// in this version, set data and smoothness terms using arrays
 //// grid neighborhood is set up "manually". Uses spatially varying terms. Namely
 //// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with
@@ -120,7 +123,7 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
     }
 }
 
-void energyMin(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int num_iterations)
+void checkEnergyTerms(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int num_iterations)
 {
 
     int num_cells = all_cells.size();
@@ -148,7 +151,7 @@ void energyMin(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int n
             {label[current_idx] = 0;}
     }
 
-
+    // calculate energy
     float data_energy = 0.0;
     float smoothness_energy = 0.0;
     float total_energy = 0.0;
@@ -160,7 +163,7 @@ void energyMin(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int n
 
         // data term
         // so I am initializing my label s.t. if the outside vote is bigger than the inside vote, than it should be labelled 1 - and vice versa
-        // that means the cost for labelling an cell that has label 1 with label 0, is the opposite vote (so the inside vote)
+        // that means the cost for labelling a cell that has label 1 with label 0, is the opposite vote (so the inside vote)
         float data;
         if(label[current_idx] == 0)
             data = std::get<1>(it->second);
@@ -202,43 +205,3 @@ void energyMin(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int n
 
 
 }
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////// MAIN ///////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-int main()
-{
-//    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
-//    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
-//    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_10000sampled_messyNormals.ply";
-//    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/3cube_CGAL_pruned.ply";
-
-//    const char* ifn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/fontaine_10000.ply";
-//    const char* ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/fontaine_pruned.ply";
-    const char* ifn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/fontaine_10000.ply";
-    const char* ofn = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/fontaine_pruned.ply";
-
-
-    Delaunay Dt = triangulationFromFile(ifn);
-
-    Cell_map all_cells;
-
-    rayTracingFun(Dt, all_cells);
-
-//    energyMin(Dt, all_cells, 2);
-
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 3.0, -1);
-
-    exportSoup(Dt, all_cells, ofn, 1);
-
-    return 0;
-}
-
-
-
-
-
-

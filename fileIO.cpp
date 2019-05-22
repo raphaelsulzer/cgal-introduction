@@ -1,21 +1,18 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_3.h>
-#include <CGAL/Delaunay_triangulation_cell_base_3.h>
-#include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <boost/iterator/zip_iterator.hpp>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <math.h>
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Delaunay_triangulation_cell_base_3.h>
+#include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/pca_estimate_normals.h>
 #include <CGAL/mst_orient_normals.h>
 #include <CGAL/property_map.h>
 #include <CGAL/intersections.h>
-
 #include <CGAL/IO/read_ply_points.h>
-#include <CGAL/IO/read_ply_points.h>
-
 #include <CGAL/Euclidean_distance.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
@@ -23,15 +20,14 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
-//typedef std::tuple<Vector, Color>                                   VC;
-//typedef CGAL::Triangulation_vertex_base_with_info_3<VC, Kernel>     Vb;
+//typedef std::tuple<Vector, Color>                                   VColb;
 // vertext base for point + info (=vector)
-typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel> VNb;
 typedef CGAL::Triangulation_vertex_base_with_info_3<int, Kernel> VCb;
 
 
 typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;         // cell base
-typedef CGAL::Triangulation_data_structure_3<VCb, Cb>                Tds;        // triangulation data structure
+typedef CGAL::Triangulation_data_structure_3<VNb, Cb>               Tds;        // triangulation data structure
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
 typedef Delaunay::Point                                             Point;
 typedef Delaunay::Edge                                              Edge;
@@ -44,12 +40,12 @@ typedef std::map<Vertex_handle, int>                                Vertex_map;
 
 // for reading PLY file
 typedef CGAL::cpp11::tuple<Point, int> PC;
-typedef CGAL::Nth_of_tuple_property_map<0, PC> Point_map;
+typedef CGAL::Nth_of_tuple_property_map<0, PC> PointC_map;
 typedef CGAL::Nth_of_tuple_property_map<1, PC> Camera_map;
 
-//typedef CGAL::cpp11::tuple<Point, Vector> PN;
-//typedef CGAL::Nth_of_tuple_property_map<0, PN> Point_map;
-//typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
+typedef CGAL::cpp11::tuple<Point, Vector> PN;
+typedef CGAL::Nth_of_tuple_property_map<0, PN> PointN_map;
+typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
 
 
 
@@ -57,33 +53,33 @@ typedef CGAL::Nth_of_tuple_property_map<1, PC> Camera_map;
 //////////////////////////////////////////////////////////
 ///////////////////// FILE I/O ///////////////////////////
 //////////////////////////////////////////////////////////
-std::vector<Point> readPlyFun(const char* fname)
+std::vector<Point> readPlyWithO(std::string fname)
 {
     // Reads a .ply point set file
     std::vector<Point> points; // store points
     std::ifstream in(fname);
     CGAL::read_ply_points(in, std::back_inserter (points));
 
-    std::cout << "PLY file read!" << std::endl;
+    std::cout << "PLY file read..." << std::endl;
     return points;
 }
 
-//std::vector<PN> readPlyWithN(const char* fname)
-//{
-//    std::vector<PN> points; // store points
-//    std::ifstream in(fname);
+std::vector<PN> readPlyWithN(std::string fname)
+{
+    std::vector<PN> points; // store points
+    std::ifstream in(fname);
 
-//    CGAL::read_ply_points_with_properties
-//      (in,
-//       std::back_inserter (points),
-//       CGAL::make_ply_point_reader (Point_map()),
-//       CGAL::make_ply_normal_reader (Normal_map()));
+    CGAL::read_ply_points_with_properties
+      (in,
+       std::back_inserter (points),
+       CGAL::make_ply_point_reader (PointN_map()),
+       CGAL::make_ply_normal_reader (Normal_map()));
 
-//    std::cout << "PLY file read!" << std::endl;
-//    return points;
-//}
+    std::cout << "PLY file with normals read..." << std::endl;
+    return points;
+}
 
-std::vector<PC> readPlyWithC(const char* fname)
+std::vector<PC> readPlyWithC(std::string fname)
 {
     std::vector<PC> points; // store points
     std::ifstream in(fname);
@@ -91,10 +87,10 @@ std::vector<PC> readPlyWithC(const char* fname)
     CGAL::read_ply_points_with_properties
       (in,
        std::back_inserter (points),
-       CGAL::make_ply_point_reader (Point_map()),
+       CGAL::make_ply_point_reader (PointC_map()),
        std::make_pair (Camera_map(), CGAL::PLY_property<int>("camera_index")));
 
-    std::cout << "PLY file read..." << std::endl;
+    std::cout << "PLY file with camera index read..." << std::endl;
     return points;
 }
 
@@ -124,28 +120,41 @@ std::vector<PC> readPlyWithC(const char* fname)
 //}
 
 // generate a Delaunay triangulation from a PLY file
-Delaunay triangulationFromFile(const char* ifn)
+//Delaunay triangulationFromFile(const char* ifn, const char* option)
+Delaunay triangulationFromFile(std::string ifn)
 {
-   // get data as vector of tuples(point, normal, color, intensity)
-   auto ply = readPlyWithC(ifn);
 
-   std::vector<Point> points;
-   std::vector<int> infos;
-   for (std::size_t i = 0; i < ply.size (); ++ i)
-   {
-       // make vector of points
-       points.push_back(get<0>(ply[i]));
-//       // make vector of infos as: tuple(normal, color, intensity)
-//       infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
-       // make vector of infos as: tuple(normal, color, intensity)
-       infos.push_back(get<1>(ply[i]));
-   }
+//    if(std::strcmp(option,"O"))
+//        std::vector<Point> ply = readPlyWithO(ifn);
+//    else if(std::strcmp(option,"N"))
+//        std::vector<PN> ply = readPlyWithN(ifn);
+//    else if(std::strcmp(option,"C"))
+//        std::vector<PC> ply = readPlyWithC(ifn);
 
-   // make the triangulation
-   Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
-             boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
-   std::cout << "Triangulation done.." << std::endl;
-   return Dt;
+//    std::vector<Point> ply = readPlyWithO(ifn);
+
+    std::vector<PN> ply = readPlyWithN(ifn);
+    std::vector<Vector> infos;
+
+//    std::vector<PC> ply = readPlyWithC(ifn);
+//    std::vector<int> infos;
+
+    std::vector<Point> points;
+    for (std::size_t i = 0; i < ply.size (); ++ i)
+    {
+        // make vector of points
+        points.push_back(get<0>(ply[i]));
+        //       // make vector of infos as: tuple(normal, color, intensity)
+        //       infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
+        // make vector of infos as: tuple(normal, color, intensity)
+        infos.push_back(get<1>(ply[i]));
+    }
+
+    // make the triangulation
+    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
+    boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
+    std::cout << "Triangulation done.." << std::endl;
+    return Dt;
 }
 
 
@@ -201,7 +210,7 @@ void exportEdges(std::fstream& fo, const Delaunay& Dt, const Cell_map& all_cells
 
 
 
-void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn, bool prune_faces)
+void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool optimized, bool prune_faces)
 {
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
@@ -220,8 +229,20 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn, bool p
     int sub = nf - deletedFaceCount;
 
     // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
+    if(optimized)
+        path+="_optimized";
+    else
+        path+="_initial";
+    if(prune_faces)
+        path+="_pruned";
+    else
+        path+="_colored";
+            
+    path+=".ply";
+                
+    
     std::fstream fo;
-    fo.open(ofn, std::fstream::out);
+    fo.open(path, std::fstream::out);
 
     fo << "ply" << std::endl;
     fo << "format ascii 1.0" << std::endl;
@@ -279,13 +300,31 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, const char* ofn, bool p
 
 //        // with GC labelling:
         int clabel = std::get<3>(all_cells.find(c)->second);
-
         Cell_handle m = Dt.mirror_facet(*fft).first;
         int mlabel = std::get<3>(all_cells.find(m)->second);
 
-//        if(clabel == mlabel){
-////            deletedFaceCount++;
-//            continue;}
+
+        if(!optimized){
+            float c1 = std::get<1>(all_cells.find(c)->second);
+            float c2 = std::get<2>(all_cells.find(c)->second);
+            int clabel;
+            if(c1 > c2)
+                clabel = 0;
+            else {
+                clabel = 1;
+            }
+            Cell_handle m = Dt.mirror_facet(*fft).first;
+            float m1 = std::get<1>(all_cells.find(m)->second);
+            float m2 = std::get<2>(all_cells.find(m)->second);
+            int mlabel;
+            if(m1 > m2)
+                clabel = 0;
+            else {
+                clabel = 1;
+            }
+        }
+
+
 
         if(clabel == mlabel && prune_faces){
             continue;
