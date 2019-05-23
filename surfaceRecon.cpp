@@ -1,3 +1,6 @@
+#include <cgal_typedefs.h>
+#include "fileIO.cpp"
+#include "rayTracing.cpp"
 #include "optimization.cpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -30,10 +33,10 @@ int main()
     rayTracingFun(Dt, all_cells);
 
     // Dt, all_cells, file_output, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 1.0, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 10.0, -1);
 
-    // Dt, all_cells, file_output, optimized, (pruned=1 or colored=0)
-    exportSoup(Dt, all_cells, ofn, 0, 0);
+    // Dt, all_cells, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
+    exportSoup(Dt, all_cells, ofn, 1, 1, 1);
 
     return 0;
 }

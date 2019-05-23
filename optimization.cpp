@@ -1,4 +1,4 @@
-#include "rayTracing.cpp"
+#include <cgal_typedefs.h>
 
 // for GCoptimization
 #include <stdio.h>

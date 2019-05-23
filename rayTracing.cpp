@@ -1,9 +1,5 @@
-#include "fileIO.cpp"
+#include <cgal_typedefs.h>
 
-typedef Kernel::Ray_3                                               Ray;
-typedef Kernel::Triangle_3                                          Triangle;
-typedef Kernel::Intersect_3                                         Intersect;
-typedef Kernel::Segment_3                                           Segment;
 
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////

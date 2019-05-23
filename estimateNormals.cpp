@@ -1,3 +1,5 @@
+#include <cgal_typedefs.h>
+
 ////////////////////////////////////////////////////////////
 /////////////////// preprocessing functions ////////////////
 ////////////////////////////////////////////////////////////
@@ -25,6 +27,7 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points
     // Estimates normals direction.
     // Note: pca_estimate_normals() requires a range of points
     // as well as property maps to access each point's position and normal.
+    // TODO: estimate the neighbourhood size automatically with: https://doc.cgal.org/latest/Point_set_processing_3/index.html#Point_set_processing_3Scale
     const int nb_neighbors = 4;
     CGAL::pca_estimate_normals<Concurrency_tag>
       (pointVectorPairs, nb_neighbors,

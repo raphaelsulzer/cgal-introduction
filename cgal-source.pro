@@ -14,7 +14,8 @@ SOURCES += \
     fileIO.cpp \
     rayTracing.cpp \
     surfaceRecon.cpp \
-    optimization.cpp
+    optimization.cpp \
+    estimateNormals.cpp
 #    energy-minimization.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
@@ -52,3 +53,4 @@ macx{
 
 
 HEADERS += \
+    cgal_typedefs.h
