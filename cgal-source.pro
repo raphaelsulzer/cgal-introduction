@@ -15,7 +15,7 @@ SOURCES += \
     rayTracing.cpp \
     surfaceRecon.cpp \
     optimization.cpp \
-    estimateNormals.cpp
+    pointSetProcessing.cpp
 #    energy-minimization.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
@@ -25,8 +25,9 @@ QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-variable -Wno-unused-parameter
 
 ### UBUNTU
 unix:!macx{
-    INCLUDEPATH += usr/local/include \
-    /usr/lib/gco-v3.0-master
+    INCLUDEPATH +=  /usr/local/include \
+                    /usr/include/eigen3 \
+                    /usr/lib/gco-v3.0-master
 
     LIBS += \
     -L/usr/local/lib/ -lCGAL \

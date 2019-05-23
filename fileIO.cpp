@@ -159,6 +159,40 @@ void exportEdges(std::fstream& fo, const Delaunay& Dt, const Cell_map& all_cells
     std::cout << "edge count is: " << edge_count << std::endl;
 }
 
+void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, Point>& all_vertices, std::string path){
+
+    // get number of vertices and triangles of the triangulation
+    Delaunay::size_type nv = Dt.number_of_vertices();
+
+    std::fstream fo;
+    fo.open(path, std::fstream::out);
+
+    fo << "ply" << std::endl;
+    fo << "format ascii 1.0" << std::endl;
+    fo << "comment VCGLIB generated" << std::endl;
+    fo << "element vertex " << nv << std::endl;
+    fo << "property float x" << std::endl;
+    fo << "property float y" << std::endl;
+    fo << "property float z" << std::endl;
+    fo << "property float nx" << std::endl;
+    fo << "property float ny" << std::endl;
+    fo << "property float nz" << std::endl;
+    fo << "end_header" << std::endl;
+    fo << std::setprecision(3);
+
+
+    Delaunay::Finite_vertices_iterator vft;
+    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+        Point normal = all_vertices.find(vft)->second;
+        // print data to file
+        fo << vft->point() << " "                           // coordinates
+           << normal << std::endl;                     // normal
+    }
+
+    fo.close();
+
+}
+
 
 
 void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool normals, bool optimized, bool prune_faces)

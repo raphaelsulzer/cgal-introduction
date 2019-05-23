@@ -1,5 +1,8 @@
 #include <cgal_typedefs.h>
 
+// TODO: check if I can replace the whole thing with the nearest_vertex(const Point& p, Cell_handle start) function,
+// which can be found in the Delaunay_triangulation_3.h file in /usr/lib/CGAL
+
 
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
