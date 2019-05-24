@@ -42,12 +42,15 @@ macx{
                     /usr/local/Cellar/gmp/6.1.2_2/include \ # GMP
                     /usr/local/Cellar/mpfr/4.0.1/include \ # MPFR
                     /usr/local/Cellar/boost/1.68.0_1/include \ # BOOST
-                    /usr/local/gco-v3.0-master/ #GCoptimization
+                    /usr/local/gco-v3.0-master \ #GCoptimization
+                    /usr/local/eigen3 \ #GCoptimization
+                    /usr/local/Cellar/pcl/1.8.0_7/include/pcl-1.8 \ # pcl
+                    /usr/local/Cellar/flann/1.9.1_4/include # also for pcl
 
     LIBS += -L/usr/local/lib/ -lgmp \
             -L/usr/local/lib/ -lmpfr \
             -L/usr/local/lib/ -lCGAL \
-            -L/usr/local/gco-v3.0-master/build/ -lgco
+            -L/usr/local/gco-v3.0-master/build/ -lgco \
 }
 
 

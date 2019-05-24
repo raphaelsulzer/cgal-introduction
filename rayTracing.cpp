@@ -7,25 +7,28 @@
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-float cellScore(float dist2, bool inside){
+float cellScore(float dist2, double eig3, bool inside){
 
     float sigma;
     if(inside){
-        sigma = 0.05;
+        //        sigma = 0.05;
+        sigma = eig3;
         // truncate inside ray
-        if(dist2 > 3*sigma)
-            dist2=0;
+//        if(dist2 > 8*sigma)
+//            dist2=0;
     }
     // in efficient volumetric fusion paper they also introduce outside limit of 3*sigma, simply for having "a shorter walk in the 3DT".
     else {
-        sigma = 0.25;
+//        sigma = 0.25;
+        sigma = eig3*5;
     }
 
     float S = 1 - exp(-dist2/(2*sigma*sigma));
     return S;
 }
 
-int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
+
+int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
 {
 
     // input::
@@ -60,7 +63,7 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
                     float dist2 = CGAL::squared_distance(*p, source);
-                    score = cellScore(dist2, inside);
+                    score = cellScore(dist2, sigma, inside);
 
                 }
                 else{
@@ -110,12 +113,12 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
                       point_intersection = intersection(pt, ray);
 
                     if(point_intersection){
-                        const Point* p = boost::get<Point>(&*point_intersection);
-                        std::cout << "intersection with a vertex of the cell: " << *p << std::endl;
+//                        const Point* p = boost::get<Point>(&*point_intersection);
+//                        std::cout << "intersection with a vertex of the cell: " << *p << std::endl;
                         return 0;
                     }
                 }
-                traverseCells(Dt, all_cells, ray, newCell, newIdx, source, inside);
+                traverseCells(Dt, all_cells, sigma, ray, newCell, newIdx, source, inside);
             }
         }
     }
@@ -129,7 +132,10 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, Ray ray, Cell_handle 
     return 0;
 }
 
-void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, bool inside){
+void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, VNC_map& all_vertices, bool inside){
+
+    double sigma = all_vertices.find(vit)->second.second;
+
 
 //    Vector camera;
 //    if(vit->info() == 0){
@@ -188,7 +194,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
                     float dist2 = CGAL::squared_distance(*p, source);
-                    score = cellScore(dist2, inside);
+                    score = cellScore(dist2, sigma, inside);
                 }
                 // else result is a line
                 else{
@@ -216,7 +222,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                 int newIdx = mirror_fac.second;
 
                 // go to next cell
-                traverseCells(Dt, all_cells, ray, newCell, newIdx, source, inside);
+                traverseCells(Dt, all_cells, sigma, ray, newCell, newIdx, source, inside);
             }
         }
         // put outside score of infinite cell very high
@@ -232,7 +238,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 
 }
 
-void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells){
+void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VNC_map& all_vertices){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -261,9 +267,9 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells){
     Delaunay::Finite_vertices_iterator vit;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
         // collect outside votes
-        firstCell(Dt, vit, all_cells, 0);
+        firstCell(Dt, vit, all_cells, all_vertices, 0);
         // collect inside votes
-        firstCell(Dt, vit, all_cells, 1);
+        firstCell(Dt, vit, all_cells, all_vertices, 1);
     }
     // now that all rays have been traced, apply the last function to all the cells:
     float gamma = 2.0;
