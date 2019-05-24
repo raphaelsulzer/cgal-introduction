@@ -123,7 +123,7 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
     }
 }
 
-void checkEnergyTerms(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int num_iterations)
+void checkEnergyTerms(const Delaunay& Dt, Cell_map& all_cells, float area_weight)
 {
 
     int num_cells = all_cells.size();

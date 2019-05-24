@@ -85,12 +85,11 @@ Delaunay triangulationFromFile(std::string ifn)
 
 //    std::vector<Point> ply = readPlyWithO(ifn);
 
-//    std::vector<PN> ply = readPlyWithN(ifn);
-//    std::vector<Vector> infos;
+    std::vector<PN> ply = readPlyWithN(ifn);
+    std::vector<Vector> infos;
 
-
-    std::vector<PC> ply = readPlyWithC(ifn);
-    std::vector<int> infos;
+//    std::vector<PC> ply = readPlyWithC(ifn);
+//    std::vector<int> infos;
 
     std::vector<Point> points;
     for (std::size_t i = 0; i < ply.size (); ++ i)

@@ -7,27 +7,55 @@
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-float cellScore(float dist2, double eig3, bool inside){
+std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 
-    float sigma;
+    float score_inside;
+    float score_outside;
+    // noise
+    float sigma_d = eig3;
+    // scene thickness
+    float sigma_o = 0.1;
+    // scale of the outside area??
+    float sigma_e = 1.0;
+    // not to be confused with the following, which means if I am walking inside/outside
     if(inside){
         //        sigma = 0.05;
-        sigma = eig3;
-        // truncate inside ray
-        // in efficient volumetric fusion paper they also introduce outside limit of 3*sigma, simply for having "a shorter walk in the 3DT".
-//        if(dist2 > 8*sigma)
-//            dist2=0;
+        score_inside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_o),2));
+        score_outside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
     }
     else {
-//        sigma = 0.25;
-        // good with normals
-//        sigma = eig3*5;
-        sigma = eig3;
+        score_outside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_e),2));
+        score_inside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
     }
+//    if(score_inside != score_inside || score_outside != score_outside)
+//        std::cout << score_outside << "  " << score_inside << std::endl;
 
-    float S = 1 - exp(-dist2/(2*sigma*sigma));
-    return S;
+    // first element is the outside score, second the inside score
+    std::pair<float,float> sigmas(score_outside, score_inside);
+    return sigmas;
 }
+
+//float cellScore(float dist2, double eig3, bool inside){
+
+//    float sigma;
+//    if(inside){
+//        //        sigma = 0.05;
+//        sigma = eig3;
+//        // truncate inside ray
+//        // in efficient volumetric fusion paper they also introduce outside limit of 3*sigma, simply for having "a shorter walk in the 3DT".
+////        if(dist2 > 8*sigma)
+////            dist2=0;
+//    }
+//    else {
+////        sigma = 0.25;
+//        // good with normals
+////        sigma = eig3*5;
+//        sigma = eig3;
+//    }
+
+//    float S = 1 - exp(-dist2/(2*sigma*sigma));
+//    return S;
+//}
 
 
 int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
@@ -59,7 +87,7 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
                 // check if ray triangle intersection is a point (probably in most cases)
                 // or a line segment (if ray lies inside the triangle)
                 // if result is a point
-                float score;
+                std::pair<float,float> score;
                 if (const Point* p = boost::get<Point>(&*result))
                 {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
                     // get the distance of this point to the current source:
@@ -87,12 +115,15 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
                 }
                 // now locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
-                if(!inside){
-                    std::get<1>(all_cells.find(current_cell)->second) += score;
-                }
-                else {
-                    std::get<2>(all_cells.find(current_cell)->second) += score;
-                }
+//                if(!inside){
+//                    std::get<1>(all_cells.find(current_cell)->second) += score;
+//                }
+//                else {
+//                    std::get<2>(all_cells.find(current_cell)->second) += score;
+//                }
+//                std::cout << "outside score: " << score.first << "  inside score: " << score.second << std::endl;
+                std::get<1>(all_cells.find(current_cell)->second) += score.first;
+                std::get<2>(all_cells.find(current_cell)->second) += score.second;
 
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                 Facet mirror_fac = Dt.mirror_facet(fac);
@@ -139,21 +170,20 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 
     double sigma = all_vertices.find(vit)->second.second;
 
-
-    Vector camera;
-    if(vit->info() == 0){
-        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
-    }
-    else if(vit->info() == 1){
-        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
-    }
-    else{
-        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
-    }
-
+    // ray constructed from point origin camera sensor center
+//    Vector camera;
+//    if(vit->info() == 0){
+//        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
+//    }
+//    else if(vit->info() == 1){
+//        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
+//    }
+//    else{
+//        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
+//    }
+//    Ray ray(vit->point(), camera);
     // ray constructed from point origin to (end of) normal
-//    Ray ray(vit->point(), vit->info());
-    Ray ray(vit->point(), camera);
+    Ray ray(vit->point(), vit->info());
 
     // make the inside ray
     if(inside){
@@ -189,7 +219,8 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                 // check if ray triangle intersection is a point (probably in most cases) or a line segment (if ray lies inside the triangle).
                 // so far this is not used (and not needed) since I am not handling the unlikely case where the ray goes through a triangle
                 // if result is a point
-                float score;
+//                float score;
+                std::pair<float,float> score;
                 Point source = vit->point();
                 if (const Point* p = boost::get<Point>(&*result)){
                 //std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
@@ -206,16 +237,18 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                     std::cout << "segment 3:  " << *s << std::endl;
                     // for now just return in this case, until it is solved
                     //continue;
-                    score = 0;
+                    score = std::make_pair(0.0, 0.0);
                 }
                 // now locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
-                if(!inside){
-                    std::get<1>(all_cells.find(current_cell)->second) += score;
-                }
-                else {
-                    std::get<2>(all_cells.find(current_cell)->second) += score;
-                }
+//                if(!inside){
+//                    std::get<1>(all_cells.find(current_cell)->second) += score;
+//                }
+//                else {
+//                    std::get<2>(all_cells.find(current_cell)->second) += score;
+//                }
+                std::get<1>(all_cells.find(current_cell)->second) += score.first;
+                std::get<2>(all_cells.find(current_cell)->second) += score.second;
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                 // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
                 // and check if there is an intersection
@@ -276,13 +309,13 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VNC_map& all_vertice
         firstCell(Dt, vit, all_cells, all_vertices, 1);
     }
     // now that all rays have been traced, apply the last function to all the cells:
-    float gamma = 2.0;
-    Cell_map::iterator it;
-    for(it = all_cells.begin(); it!=all_cells.end(); it++)
-    {
-        std::get<1>(it->second) = 1 - exp(-std::get<1>(it->second)/gamma);
-        std::get<2>(it->second) = 1 - exp(-std::get<2>(it->second)/gamma);
-    }
+//    float gamma = 2.0;
+//    Cell_map::iterator it;
+//    for(it = all_cells.begin(); it!=all_cells.end(); it++)
+//    {
+//        std::get<1>(it->second) = 1 - exp(-std::get<1>(it->second)/gamma);
+//        std::get<2>(it->second) = 1 - exp(-std::get<2>(it->second)/gamma);
+//    }
 }
 
 

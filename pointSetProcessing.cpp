@@ -123,18 +123,19 @@ void pca(Delaunay& Dt, VNC_map& all_vertices){
         std::vector<Vertex_handle>::iterator avt;
         int nn = 0;
         for(avt = av.begin(); avt < av.end(); avt++){
-            if(!Dt.is_infinite(*avt))
+            if(!Dt.is_infinite(*avt)){
                 adj_points.push_back(Dt.point(*avt));
-            nn++;
+                nn++;
+            }
         }
         Point centroid = CGAL::centroid(adj_points.begin(), adj_points.end(), CGAL::Dimension_tag<0>());
         Eigen::MatrixXd m(3,nn);
-        Vector p;
+        Vector v;
         for(int i = 0; i < nn; i++){
-            p = adj_points[i]-centroid;
-            m(0,i) = p.x();
-            m(1,i) = p.y();
-            m(2,i) = p.z();
+            v = adj_points[i]-centroid;
+            m(0,i) = v.x();
+            m(1,i) = v.y();
+            m(2,i) = v.z();
         }
         if(nn<1)
             std::cout<<"no neighbours" << std::endl;
@@ -147,20 +148,20 @@ void pca(Delaunay& Dt, VNC_map& all_vertices){
         double eig1;
         double eig2;
         double eig3;
+        double q,p2,p,r,phi;
+        Eigen::MatrixXd B(3,3);
         Eigen::MatrixXd I(3,3);
         I = I.setIdentity();
-        if (p1 == 0.0){
+        if (p1 <= 1e-8){
            eig1 = A(0,0);
            eig2 = A(1,1);
            eig3 = A(2,2);}
         else{
-           double q = A.trace()/3.0;
-           double p2 = pow((A(0,0) - q),2.0) + pow((A(1,1) - q),2.0) + pow((A(2,2) - q),2.0) + 2.0 * p1;
-           double p = sqrt(p2 / 6.0);
-           Eigen::MatrixXd B(3,3);
+           q = A.trace()/3.0;
+           p2 = pow((A(0,0) - q),2.0) + pow((A(1,1) - q),2.0) + pow((A(2,2) - q),2.0) + 2.0 * p1;
+           p = sqrt(p2 / 6.0);
            B = (1.0 / p) * (A - q * I);
-           double r = B.determinant() / 2.0;
-           double phi;
+           r = B.determinant() / 2.0;
            if (r <= -1.01)
               phi = M_PI / 3.0;
            else if (r >= 0.99)
@@ -184,8 +185,15 @@ void pca(Delaunay& Dt, VNC_map& all_vertices){
 
         double norm = sqrt(EV(0,0)*EV(0,0)+EV(1,0)*EV(1,0)+EV(2,0)*EV(2,0));
 
+        if(eig3 != eig3){
+            std::cout << "eig3 changed from NaN to 0" << std::endl;
+            eig3 = 0.0;
+        }
+
         all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
 //        all_vertices[vft]->second = eig3;
+
+
     }
 }
 
