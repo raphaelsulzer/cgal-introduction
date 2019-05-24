@@ -35,6 +35,8 @@ std::vector<PC> readPlyWithC(std::string fname)
     std::vector<PC> points; // store points
     std::ifstream in(fname);
 
+    // if runtime error here, change the camera_index type
+    // from float to int IN THE PLY FILE
     CGAL::read_ply_points_with_properties
       (in,
        std::back_inserter (points),
@@ -71,7 +73,6 @@ std::vector<PC> readPlyWithC(std::string fname)
 //}
 
 // generate a Delaunay triangulation from a PLY file
-//Delaunay triangulationFromFile(const char* ifn, const char* option)
 Delaunay triangulationFromFile(std::string ifn)
 {
 
@@ -84,11 +85,12 @@ Delaunay triangulationFromFile(std::string ifn)
 
 //    std::vector<Point> ply = readPlyWithO(ifn);
 
-    std::vector<PN> ply = readPlyWithN(ifn);
-    std::vector<Vector> infos;
+//    std::vector<PN> ply = readPlyWithN(ifn);
+//    std::vector<Vector> infos;
 
-//    std::vector<PC> ply = readPlyWithC(ifn);
-//    std::vector<int> infos;
+
+    std::vector<PC> ply = readPlyWithC(ifn);
+    std::vector<int> infos;
 
     std::vector<Point> points;
     for (std::size_t i = 0; i < ply.size (); ++ i)

@@ -10,10 +10,11 @@
 int main()
 {
 
-//    std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string ifn = path+"fontaine_10000.ply";
-    std::string ofn = path+"fontaine_10000_";
+    std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string ifn = path+"fontaine/fontaine_10000_camera";
+    std::string ofn = ifn;
+    ifn+=".ply";
 
 //    std::string ifn = path+"2cube_10000sampled_messyNormals.ply";
 //    std::string ofn = path+"2cube_10000sampled_messyNormals";
@@ -37,7 +38,7 @@ int main()
     GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 10.0, -1);
 
     // Dt, all_cells, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
-    exportSoup(Dt, all_cells, ofn, 1, 1, 1);
+    exportSoup(Dt, all_cells, ofn, 1, 0, 0);
 
     return 0;
 }

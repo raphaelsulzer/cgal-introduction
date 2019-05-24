@@ -14,13 +14,15 @@ float cellScore(float dist2, double eig3, bool inside){
         //        sigma = 0.05;
         sigma = eig3;
         // truncate inside ray
+        // in efficient volumetric fusion paper they also introduce outside limit of 3*sigma, simply for having "a shorter walk in the 3DT".
 //        if(dist2 > 8*sigma)
 //            dist2=0;
     }
-    // in efficient volumetric fusion paper they also introduce outside limit of 3*sigma, simply for having "a shorter walk in the 3DT".
     else {
 //        sigma = 0.25;
-        sigma = eig3*5;
+        // good with normals
+//        sigma = eig3*5;
+        sigma = eig3;
     }
 
     float S = 1 - exp(-dist2/(2*sigma*sigma));
@@ -63,6 +65,7 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
                     float dist2 = CGAL::squared_distance(*p, source);
+                    // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                     score = cellScore(dist2, sigma, inside);
 
                 }
@@ -137,20 +140,20 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
     double sigma = all_vertices.find(vit)->second.second;
 
 
-//    Vector camera;
-//    if(vit->info() == 0){
-//        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
-//    }
-//    else if(vit->info() == 1){
-//        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
-//    }
-//    else{
-//        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
-//    }
+    Vector camera;
+    if(vit->info() == 0){
+        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
+    }
+    else if(vit->info() == 1){
+        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
+    }
+    else{
+        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
+    }
 
     // ray constructed from point origin to (end of) normal
-    Ray ray(vit->point(), vit->info());
-//    Ray ray(vit->point(), camera);
+//    Ray ray(vit->point(), vit->info());
+    Ray ray(vit->point(), camera);
 
     // make the inside ray
     if(inside){
@@ -194,6 +197,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
                     float dist2 = CGAL::squared_distance(*p, source);
+                    // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                     score = cellScore(dist2, sigma, inside);
                 }
                 // else result is a line

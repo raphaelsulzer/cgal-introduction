@@ -8,8 +8,8 @@
 // for matrix operations, use Eigen lib
 #include <Eigen/Dense>
 
-#include <pcl/point_types.h>
-#include <pcl/features/normal_3d.h>
+//#include <pcl/point_types.h>
+//#include <pcl/features/normal_3d.h>
 
 //typedef CGAL::Simple_cartesian<double> K;
 typedef CGAL::Search_traits_3<Kernel> TreeTraits;

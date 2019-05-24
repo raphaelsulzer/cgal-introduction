@@ -33,7 +33,7 @@ typedef CGAL::Triangulation_vertex_base_with_info_3<int, Kernel> VCb;
 
 
 typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel>            Cb;         // cell base
-typedef CGAL::Triangulation_data_structure_3<VNb, Cb>               Tds;        // triangulation data structure
+typedef CGAL::Triangulation_data_structure_3<VCb, Cb>               Tds;        // triangulation data structure
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
 typedef Delaunay::Point                                             Point;
 typedef Delaunay::Edge                                              Edge;
