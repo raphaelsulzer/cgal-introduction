@@ -16,6 +16,7 @@ typedef CGAL::Search_traits_3<Kernel> TreeTraits;
 typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
 typedef Neighbor_search::Tree Tree;
 
+// PCA with kNN neighborhood
 //void pca(Delaunay& Dt, VNC_map& all_vertices){
 
 //    // calculate the size of the smallest eigenvalue, which sould serve as a good measurement of noise. and use that as the sigma for the score computation
@@ -109,9 +110,8 @@ typedef Neighbor_search::Tree Tree;
 //    }
 //}
 
-
+// PCA with Delaunay neighborhood
 void pca(Delaunay& Dt, VNC_map& all_vertices){
-
 
     Delaunay::Finite_vertices_iterator vft;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
@@ -195,6 +195,7 @@ void pca(Delaunay& Dt, VNC_map& all_vertices){
 
 
     }
+    std::cout << "Calculated noise per point with PCA..." << std::endl;
 }
 
 
@@ -243,6 +244,11 @@ std::vector<PointVectorPair> estimateNormalsFun(const std::vector<Point>& points
     std::cout << "Normals calculated!" << std::endl;
     return pointVectorPairs;
 };
+
+
+////////////////////////////////////////////////////////////
+/////////////////// postprocessing functions ////////////////
+////////////////////////////////////////////////////////////
 
 
 

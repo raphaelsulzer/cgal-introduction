@@ -198,7 +198,8 @@ void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, std::pair<Point, d
 
 
 
-void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool normals, bool optimized, bool prune_faces)
+void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool normals, bool optimized, bool prune_faces,
+                Polyhedron& mesh, std::vector<Triangle>& tris)
 {
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
@@ -315,11 +316,12 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
         }
 
 
-
+        // check if two neighbouring cells have the same label, and if so (and the prunce_faces export function is active) continue to next face
         if(clabel == mlabel && prune_faces){
             continue;
         }
 
+        // if label of neighbouring cells is not the same...
         // start printed facet line with a 3
         fo << 3 << ' ';
         // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
@@ -344,27 +346,24 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
         }
 
         fo << std::endl;
+
+
+        //// OFF export
+        // get the triangle
+        Triangle tri = Dt.triangle(*fft);
+        tris.push_back(tri);
+        mesh.make_triangle(tri.vertex(0),tri.vertex(1),tri.vertex(2));
+
     }
-
-//    fo.clear();
-//    fo.seekg(170,std::ios_base::beg);
-
-//    // rewrite the number of faces line in the file, by substracting the number of pruned faces
-//    int sub = nf - deletedFaceCount;
-//    unsigned int currentLine = 0;
-//    while ( currentLine < 10 )
-//    {
-//         fo.ignore( std::numeric_limits<std::streamsize>::max(), '\n');
-//         ++currentLine;
-//    }
-//    fo << "element face " << sub << std::endl;
-
-//    exportEdges(fo, Dt, all_cells, Vertices);
 
     fo.close();
 
+
+
+
+
+
     std::cout << "before face count: " << nf << std::endl;
     std::cout << "remaining faces: " << sub << std::endl;
-//    std::cout << "Delaunay triangulation done and exported to PLY file!" << std::endl;
     std::cout << "Exported to " << path << std::endl;
 }

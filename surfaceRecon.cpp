@@ -4,6 +4,12 @@
 #include "rayTracing.cpp"
 #include "optimization.cpp"
 
+
+
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// MAIN ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -12,7 +18,7 @@ int main()
 
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string ifn = path+"fontaine/fontaine_200000_normals";
+    std::string ifn = path+"fontaine/fontaine_10000_normals";
     std::string ofn = ifn;
     ifn+=".ply";
 
@@ -39,10 +45,31 @@ int main()
     // Dt, all_cells, file_output, area_weight, iteration
     GeneralGraph_DArraySArraySpatVarying(Dt, all_cells, 15.0, -1);
 
+    Polyhedron mesh;
+    std::vector<Triangle> tris;
+
     // Dt, all_cells, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
-    exportSoup(Dt, all_cells, ofn, 1, 1, 0);
+    exportSoup(Dt, all_cells, ofn, 1, 1, 1, mesh, tris);
+
+    std::vector<Point> pts;
+    Delaunay::Finite_vertices_iterator vit;
+    for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
+        pts.push_back(vit->point());
+    }
+
+    CGAL::Polygon_mesh_processing::orient_polygon_soup(pts, tris);
+
 
     // TODO: implement a quality check function that measures the distance between the mesh and the point cloud
+    // replace the ray tracing - it takes to long.
+
+    // export a Polyhedron surface mesh (as .OFF)
+//    unsigned int nb_components_to_keep = 2;
+//    unsigned int erased_components = mesh.keep_largest_connected_components(nb_components_to_keep);
+//    std::cout << "number of erased components: " << erased_components << std::endl;
+//    std::ofstream out("/home/raphael/Dropbox/Studium/PhD/data/sampleData/tet-oriented1.off");
+//    out << mesh;
+//    out.close();
 
     return 0;
 }

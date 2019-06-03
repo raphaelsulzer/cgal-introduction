@@ -61,3 +61,20 @@ typedef Kernel::Triangle_3                                          Triangle;
 typedef Kernel::Intersect_3                                         Intersect;
 typedef Kernel::Segment_3                                           Segment;
 
+
+// Polyhedron surface
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Polyhedron_items_with_id_3.h>
+#include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
+#include <CGAL/Polygon_mesh_processing/orientation.h>
+
+
+typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_with_id_3>      Polyhedron;
+
+
+
+
+
+
