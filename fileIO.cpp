@@ -198,8 +198,9 @@ void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, std::pair<Point, d
 
 
 
-void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool normals, bool optimized, bool prune_faces,
-                Polyhedron& mesh, std::vector<Triangle>& tris)
+void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
+                std::string path, bool normals, bool optimized, bool prune_faces,
+                std::vector<Point>& points, std::vector<std::vector<int>>& polygons)
 {
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
@@ -261,8 +262,8 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
 
     // give every vertex from the triangulation an index starting at 0
     // and already print the point coordinates, color and normal of the vertex to the PLY file
-    Vertex_map Vertices;
     int index = 0;
+    Vertex_map Vertices;
     Delaunay::Finite_vertices_iterator vft;
     for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
         Vertices[vft] = index;
@@ -270,6 +271,8 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
         fo << vft->point() << " "                           // coordinates
            << vft->info() << std::endl;                     // normal
         index++;
+        points.push_back(vft->point());
+
     }
 
     // Save the facets to the PLY file
@@ -321,6 +324,7 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
             continue;
         }
 
+        std::vector<int> polygon_indecis;
         // if label of neighbouring cells is not the same...
         // start printed facet line with a 3
         fo << 3 << ' ';
@@ -332,9 +336,14 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
             // vertices is a map of all vertices of the triangulation to an index
             v = c->vertex(j%4);
             fo << Vertices.find(v)->second << ' ';
+
+            // add the stuff to a list of Polygons
+            polygon_indecis.push_back(Vertices.find(v)->second);
         }
+        polygons.push_back(polygon_indecis);
 
 
+        // color the facets (if !prune_faces, meaning coloring is active)
         if(clabel == 1 && mlabel == 1 && !prune_faces){
             fo << " 0 191 255";
         }
@@ -349,18 +358,14 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells, std::string path, bool 
 
 
         //// OFF export
-        // get the triangle
-        Triangle tri = Dt.triangle(*fft);
-        tris.push_back(tri);
-        mesh.make_triangle(tri.vertex(0),tri.vertex(1),tri.vertex(2));
+//        // get the triangle
+//        Triangle tri = Dt.triangle(*fft);
+////        tris.push_back(tri);
+//        mesh.make_triangle(tri.vertex(0),tri.vertex(1),tri.vertex(2));
 
     }
 
     fo.close();
-
-
-
-
 
 
     std::cout << "before face count: " << nf << std::endl;
