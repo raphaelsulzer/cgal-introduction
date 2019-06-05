@@ -111,7 +111,7 @@ typedef Neighbor_search::Tree Tree;
 //}
 
 // PCA with Delaunay neighborhood
-void pca(Delaunay& Dt, VNC_map& all_vertices){
+void pca(Delaunay& Dt, VPS_map& all_vertices){
 
     Delaunay::Finite_vertices_iterator vft;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){

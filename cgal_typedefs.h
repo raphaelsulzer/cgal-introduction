@@ -43,7 +43,7 @@ typedef Delaunay::Vertex_handle                                     Vertex_handl
 // map cell of the Dt, to an index, the outside score, the inside score, and the final label
 typedef std::map<Cell_handle, std::tuple<int, float, float, int>>   Cell_map;
 typedef std::map<Vertex_handle, int>                                Vertex_map;
-typedef std::map<Vertex_handle, std::pair<Point,double>>            VNC_map;
+typedef std::map<Vertex_handle, std::pair<Point,double>>            VPS_map;
 
 // for reading PLY file
 typedef CGAL::cpp11::tuple<Point, int> PC;

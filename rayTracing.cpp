@@ -13,10 +13,10 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
     float score_outside;
     // noise
     float sigma_d = eig3;
-    // scene thickness
-    float sigma_o = 0.1;
-    // scale of the outside area??
-    float sigma_e = 1.0;
+    // scene thickness // good for fontaine dataset is 0.1
+    float sigma_o = 0.01;
+    // scale of the outside area?? // good for fontaine dataset is 1.0
+    float sigma_e = 0.1;
     // not to be confused with the following, which means if I am walking inside/outside
     if(inside){
         //        sigma = 0.05;
@@ -166,7 +166,7 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
     return 0;
 }
 
-void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, VNC_map& all_vertices, bool inside){
+void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, VPS_map& all_vertices, bool inside, bool one_cell){
 
     double sigma = all_vertices.find(vit)->second.second;
 
@@ -254,12 +254,14 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                 // and check if there is an intersection
                 // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
                 // so start from there to put this into a function
-                Facet mirror_fac = Dt.mirror_facet(fac);
-                Cell_handle newCell = mirror_fac.first;
-                int newIdx = mirror_fac.second;
+                if(!one_cell){
+                    Facet mirror_fac = Dt.mirror_facet(fac);
+                    Cell_handle newCell = mirror_fac.first;
+                    int newIdx = mirror_fac.second;
+                    // go to next cell
+                    traverseCells(Dt, all_cells, sigma, ray, newCell, newIdx, source, inside);
+                }
 
-                // go to next cell
-                traverseCells(Dt, all_cells, sigma, ray, newCell, newIdx, source, inside);
             }
         }
         // put outside score of infinite cell very high
@@ -275,7 +277,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 
 }
 
-void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VNC_map& all_vertices){
+void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VPS_map& all_vertices, bool one_cell){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -304,9 +306,9 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VNC_map& all_vertice
     Delaunay::Finite_vertices_iterator vit;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
         // collect outside votes
-        firstCell(Dt, vit, all_cells, all_vertices, 0);
+        firstCell(Dt, vit, all_cells, all_vertices, 0, one_cell);
         // collect inside votes
-        firstCell(Dt, vit, all_cells, all_vertices, 1);
+        firstCell(Dt, vit, all_cells, all_vertices, 1, one_cell);
     }
     // now that all rays have been traced, apply the last function to all the cells:
 //    float gamma = 2.0;

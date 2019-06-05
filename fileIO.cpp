@@ -198,9 +198,108 @@ void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, std::pair<Point, d
 
 
 
-void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
-                std::string path, bool normals, bool optimized, bool prune_faces,
-                std::vector<Point>& points, std::vector<std::vector<int>>& polygons)
+void createSurfaceMesh(const Delaunay& Dt, Cell_map& all_cells,
+                       std::vector<Point>& points, std::vector<std::vector<int>>& polygons, Polyhedron& out_mesh,
+                       bool orient, int nb_components_to_keep)
+{
+
+    // give every vertex from the triangulation an index starting at 0
+    // and already print the point coordinates, color and normal of the vertex to the PLY file
+    int index = 0;
+    Vertex_map Vertices;
+    Delaunay::Finite_vertices_iterator vft;
+    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+        Vertices[vft] = index;
+        index++;
+        points.push_back(vft->point());
+    }
+
+    // get the facets
+    // Save the facets to the PLY file
+    int vidx;
+    // initialise cell and vertex handle
+    Cell_handle c;
+    Vertex_handle v;
+    Delaunay::Finite_facets_iterator fft;
+    for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
+
+        // get vertex and cell index that describes the facet
+        // facet fft is represented by std::pair(cell c, int vidx). vidx is the vertex opposite to the cell.
+        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
+        // see: https://doc.cgal.org/latest/Triangulation_3/index.html
+        c = fft->first;         // cell
+        vidx = fft->second;     // vertex index
+
+        //////// check which faces to prune:
+
+//        // with GC labelling:
+        int clabel = std::get<3>(all_cells.find(c)->second);
+        Cell_handle m = Dt.mirror_facet(*fft).first;
+        int mlabel = std::get<3>(all_cells.find(m)->second);
+
+        // check if two neighbouring cells have the same label, and if so (and the prunce_faces export function is active) continue to next face
+        if(clabel == mlabel){
+            continue;
+        }
+
+        std::vector<int> polygon_indecis;
+        // if label of neighbouring cells is not the same...
+        // start printed facet line with a 3
+        // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
+        // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
+        // so we exactely skip 2 - the opposite vertex.
+        for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
+            // print the indicies of each cell to the file
+            // vertices is a map of all vertices of the triangulation to an index
+            v = c->vertex(j%4);
+            // add the stuff to a list of Polygons
+            polygon_indecis.push_back(Vertices.find(v)->second);
+        }
+        polygons.push_back(polygon_indecis);
+
+    }
+
+    bool oriented;
+    if(orient > 0){oriented = CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);}
+    else{oriented = -1;}
+
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points,polygons,out_mesh);
+
+    std::cout << "Surface mesh created..." << std::endl;
+    std::cout << "Surface mesh oriented: " << oriented << std::endl;
+
+//    Kernel kernel;
+
+//    double max_dist = CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(points,polygons,0.35,kernel);
+
+
+    // TODO: implement a quality check function that measures the distance between the mesh and the point cloud
+    // replace the ray tracing - it takes to long.
+
+    // export a Polyhedron surface mesh (as .OFF)
+    int erased_components;
+    if(nb_components_to_keep > 0){erased_components = out_mesh.keep_largest_connected_components(nb_components_to_keep);}
+    else{erased_components = -1;}
+
+    std::cout << "Number of erased components from surface mesh: " << erased_components << std::endl;
+
+
+}
+
+void exportOFF(Polyhedron& out_mesh, std::string path)
+{
+
+    std::ofstream out(path+".off");
+    out << out_mesh;
+    out.close();
+    std::cout << "Exported to " << path << std::endl;
+
+
+}
+
+
+void exportPLY(const Delaunay& Dt, Cell_map& all_cells,
+                std::string path, bool normals, bool optimized, bool prune_faces)
 {
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
@@ -229,7 +328,6 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
         path+="_colored";
             
     path+=".ply";
-                
     
     std::fstream fo;
     fo.open(path, std::fstream::out);
@@ -271,8 +369,6 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
         fo << vft->point() << " "                           // coordinates
            << vft->info() << std::endl;                     // normal
         index++;
-        points.push_back(vft->point());
-
     }
 
     // Save the facets to the PLY file
@@ -324,7 +420,6 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
             continue;
         }
 
-        std::vector<int> polygon_indecis;
         // if label of neighbouring cells is not the same...
         // start printed facet line with a 3
         fo << 3 << ' ';
@@ -336,11 +431,7 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
             // vertices is a map of all vertices of the triangulation to an index
             v = c->vertex(j%4);
             fo << Vertices.find(v)->second << ' ';
-
-            // add the stuff to a list of Polygons
-            polygon_indecis.push_back(Vertices.find(v)->second);
         }
-        polygons.push_back(polygon_indecis);
 
 
         // color the facets (if !prune_faces, meaning coloring is active)
@@ -355,13 +446,6 @@ void exportSoup(const Delaunay& Dt, Cell_map& all_cells,
         }
 
         fo << std::endl;
-
-
-        //// OFF export
-//        // get the triangle
-//        Triangle tri = Dt.triangle(*fft);
-////        tris.push_back(tri);
-//        mesh.make_triangle(tri.vertex(0),tri.vertex(1),tri.vertex(2));
 
     }
 
