@@ -209,7 +209,7 @@ void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, std::pair<Point, d
 
 void createSurfaceMesh(const Delaunay& Dt, Cell_map& all_cells,
                        std::vector<Point>& points, std::vector<std::vector<int>>& polygons, Polyhedron& out_mesh,
-                       bool orient, int nb_components_to_keep)
+                       int orient, int nb_components_to_keep)
 {
 
     // give every vertex from the triangulation an index starting at 0
@@ -268,7 +268,7 @@ void createSurfaceMesh(const Delaunay& Dt, Cell_map& all_cells,
 
     }
 
-    bool oriented;
+    int oriented;
     if(orient > 0){oriented = CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons);}
     else{oriented = -1;}
 
@@ -276,6 +276,7 @@ void createSurfaceMesh(const Delaunay& Dt, Cell_map& all_cells,
 
     std::cout << "Surface mesh created..." << std::endl;
     std::cout << "Surface mesh oriented: " << oriented << std::endl;
+    std::cout << "... 0 meaning additional vertices were added for orientation" << oriented << std::endl;
 
 //    Kernel kernel;
 
@@ -298,7 +299,8 @@ void createSurfaceMesh(const Delaunay& Dt, Cell_map& all_cells,
 void exportOFF(Polyhedron& out_mesh, std::string path)
 {
 
-    std::ofstream out(path+".off");
+    path = path + ".off";
+    std::ofstream out(path);
     out << out_mesh;
     out.close();
     std::cout << "Exported to " << path << std::endl;

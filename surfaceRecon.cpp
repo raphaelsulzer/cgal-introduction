@@ -16,18 +16,18 @@ int main()
 
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string ifn = path+"fontaine/fontaine_10000_normals";
+    std::string ifn = path+"fontaine/fontaine_10000_camera";
 //    std::string ifn = path+"daratech/daratech25000";
 //    std::string ifn = path+"musee/musee";
     std::string ofn = ifn;
     ifn+=".ply";
 
     // for reading file with normals
-    std::vector<PN> point_with_info;
-    std::vector<Vector> info;
-    // for reading file with camera_index
 //    std::vector<PC> point_with_info;
-//    std::vector<int> info;
+//    std::vector<Vector> info;
+    // for reading file with camera_index
+    std::vector<PC> point_with_info;
+    std::vector<int> info;
     Delaunay Dt = triangulationFromFile(ifn, point_with_info, info);
 
     VPS_map all_vertices;
@@ -38,7 +38,10 @@ int main()
 
     Cell_map all_cells;
 
-    // ray tracing for Dt for saving initial cell labels in all_cells; last parameter is one_cell traversel only
+    bool ray_construction = 0;
+
+    // ray tracing for Dt for saving initial cell labels in all_cells;
+    // parameters: is one_cell traversel only.
     rayTracingFun(Dt, all_cells, all_vertices, 1);
 
 //    checkEnergyTerms(Dt, all_cells, 10.0);
@@ -48,7 +51,7 @@ int main()
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, all_cells, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
-    exportPLY(Dt, all_cells, ofn, 1, 0, 0);
+    exportPLY(Dt, all_cells, ofn, ray_construction, 0, 0);
 
     // create surface mesh
     Polyhedron out_mesh;
@@ -62,7 +65,6 @@ int main()
 //          CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(out_mesh,
 //                                                                   points,
 //                                                                   4000);
-
     double max_dist =
           CGAL::Polygon_mesh_processing::max_distance_to_triangle_mesh<CGAL::Sequential_tag>(points,
                                                                    out_mesh);
