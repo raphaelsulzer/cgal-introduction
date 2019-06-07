@@ -14,9 +14,9 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
     // noise
     float sigma_d = eig3;
     // scene thickness // good for fontaine dataset is 0.1
-    float sigma_o = 0.01;
+    float sigma_o = 1.0;
     // scale of the outside area?? // good for fontaine dataset is 1.0
-    float sigma_e = 0.1;
+    float sigma_e = 1.0;
     // not to be confused with the following, which means if I am walking inside/outside
     if(inside){
         //        sigma = 0.05;

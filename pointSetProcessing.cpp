@@ -16,102 +16,112 @@ typedef CGAL::Search_traits_3<Kernel> TreeTraits;
 typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
 typedef Neighbor_search::Tree Tree;
 
+#include <CGAL/estimate_scale.h>
+
+
 // PCA with kNN neighborhood
-//void pca(Delaunay& Dt, VNC_map& all_vertices){
+void pcaKNN(Delaunay& Dt, VPS_map& all_vertices){
 
-//    // calculate the size of the smallest eigenvalue, which sould serve as a good measurement of noise. and use that as the sigma for the score computation
-//    // problem: this might have a good effect in noise areas, but it also weakens the few important votes in missing data areas
+    // calculate the size of the smallest eigenvalue, which sould serve as a good measurement of noise. and use that as the sigma for the score computation
+    // problem: this might have a good effect in noise areas, but it also weakens the few important votes in missing data areas
 
-//    unsigned int NN = 7;
 
-//    // get the point for every vertex
-//    std::vector<Point> all_points;
-//    Delaunay::Finite_vertices_iterator vft;
-//    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-//        Point p = vft->point();
-//        all_points.push_back(p);
-//    }
-//    // build a kd-tree with all the points
-//    Tree tree(all_points.begin(), all_points.end());
+    // get the point for every vertex
+    std::vector<Point> all_points;
+    Delaunay::Finite_vertices_iterator vft;
+    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+        Point p = vft->point();
+        all_points.push_back(p);
+    }
 
-//    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+    std::size_t NN =  CGAL::estimate_global_k_neighbor_scale(all_points);
 
-//        // set up the neighborhood search function
-//        Neighbor_search search(tree, vft->point(), NN);
+    // build a kd-tree with all the points
+    Tree tree(all_points.begin(), all_points.end());
 
-//        std::vector<Vertex_handle> av;
-//        Dt.adjacent_vertices(vft, std::back_inserter(av));
+    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
 
-//        std::vector<Point> adj_points;
-//        int nn = 0;
-//        for(Neighbor_search::iterator it = search.begin(); it != search.end(); ++it){
-//            adj_points.push_back(it->first);
-//            nn++;
-//        }
-//        Point centroid = CGAL::centroid(adj_points.begin(), adj_points.end(), CGAL::Dimension_tag<0>());
-//        Eigen::MatrixXd m(3,nn);
-//        Vector p;
-//        for(int i = 0; i < nn; i++){
-//            p = adj_points[i]-centroid;
-//            m(0,i) = p.x();
-//            m(1,i) = p.y();
-//            m(2,i) = p.z();
-//        }
-//        if(nn<1)
-//            std::cout<<"no neighbours" << std::endl;
-//        Eigen::MatrixXd A(3,3);
-//        A = (m*(m.transpose()))/nn;
+        // set up the neighborhood search function
+        Neighbor_search search(tree, vft->point(), NN);
 
-//        // compute eigenvalues of the covariance matrix A:
-//        // implemented from here: https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3%C3%973_matrices
-//        double p1 = A(0,1)*A(0,1) + A(0,2)*A(0,2) + A(1,2)*A(1,2);
-//        double eig1;
-//        double eig2;
-//        double eig3;
-//        Eigen::MatrixXd I(3,3);
-//        I = I.setIdentity();
-//        if (p1 == 0.0){
-//           eig1 = A(0,0);
-//           eig2 = A(1,1);
-//           eig3 = A(2,2);}
-//        else{
-//           double q = A.trace()/3.0;
-//           double p2 = pow((A(0,0) - q),2.0) + pow((A(1,1) - q),2.0) + pow((A(2,2) - q),2.0) + 2.0 * p1;
-//           double p = sqrt(p2 / 6.0);
-//           Eigen::MatrixXd B(3,3);
-//           B = (1.0 / p) * (A - q * I);
-//           double r = B.determinant() / 2.0;
-//           double phi;
-//           if (r <= -1.01)
-//              phi = M_PI / 3.0;
-//           else if (r >= 0.99)
-//              phi = 0.0;
-//           else
-//              phi = acos(r) / 3.0;
-//           // the eigenvalues satisfy eig3 <= eig2 <= eig1
-//           eig1 = q + 2.0 * p * cos(phi);
-//           eig3 = q + 2.0 * p * cos(phi + (2.0*M_PI/3.0));
-//           eig2 = 3.0 * q - eig1 - eig3;
-//        }
-////        eig1 = eig1/(eig1+eig2+eig3);
-////        eig2 = eig2/(eig1+eig2+eig3);
-////        eig3 = eig3/(eig1+eig2+eig3);
-//        // compute eigenvector of the third (smallest) eigenvalue:
-//        Eigen::MatrixXd EV(3,3);
-//        EV = (A-eig1*I)*(A-eig2*I);
-////        std::cout << "eig1: " << eig1 << "  eig2: " << eig2 << "    eig3: " << eig3 << std::endl;
-////        std::cout << "eig3: " << eig3 << std::endl;
-////        std::cout << EV << std::endl << std::endl;
+        std::vector<Vertex_handle> av;
+        Dt.adjacent_vertices(vft, std::back_inserter(av));
 
-//        double norm = sqrt(EV(0,0)*EV(0,0)+EV(1,0)*EV(1,0)+EV(2,0)*EV(2,0));
+        std::vector<Point> adj_points;
+        int nn = 0;
+        for(Neighbor_search::iterator it = search.begin(); it != search.end(); ++it){
+            adj_points.push_back(it->first);
+            nn++;
+        }
+        Point centroid = CGAL::centroid(adj_points.begin(), adj_points.end(), CGAL::Dimension_tag<0>());
+        Eigen::MatrixXd m(3,nn);
+        Vector p;
+        for(int i = 0; i < nn; i++){
+            p = adj_points[i]-centroid;
+            m(0,i) = p.x();
+            m(1,i) = p.y();
+            m(2,i) = p.z();
+        }
+        if(nn<1)
+            std::cout<<"no neighbours" << std::endl;
+        Eigen::MatrixXd A(3,3);
+        A = (m*(m.transpose()))/nn;
 
-//        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
-////        all_vertices[vft]->second = eig3;
-//    }
-//}
+        // compute eigenvalues of the covariance matrix A:
+        // implemented from here: https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3%C3%973_matrices
+        double p1 = A(0,1)*A(0,1) + A(0,2)*A(0,2) + A(1,2)*A(1,2);
+        double eig1;
+        double eig2;
+        double eig3;
+        Eigen::MatrixXd I(3,3);
+        I = I.setIdentity();
+        if (p1 == 0.0){
+           eig1 = A(0,0);
+           eig2 = A(1,1);
+           eig3 = A(2,2);}
+        else{
+           double q = A.trace()/3.0;
+           double p2 = pow((A(0,0) - q),2.0) + pow((A(1,1) - q),2.0) + pow((A(2,2) - q),2.0) + 2.0 * p1;
+           double p = sqrt(p2 / 6.0);
+           Eigen::MatrixXd B(3,3);
+           B = (1.0 / p) * (A - q * I);
+           double r = B.determinant() / 2.0;
+           double phi;
+           if (r <= -1.01)
+              phi = M_PI / 3.0;
+           else if (r >= 0.99)
+              phi = 0.0;
+           else
+              phi = acos(r) / 3.0;
+           // the eigenvalues satisfy eig3 <= eig2 <= eig1
+           eig1 = q + 2.0 * p * cos(phi);
+           eig3 = q + 2.0 * p * cos(phi + (2.0*M_PI/3.0));
+           eig2 = 3.0 * q - eig1 - eig3;
+        }
+//        eig1 = eig1/(eig1+eig2+eig3);
+//        eig2 = eig2/(eig1+eig2+eig3);
+//        eig3 = eig3/(eig1+eig2+eig3);
+        // compute eigenvector of the third (smallest) eigenvalue:
+        Eigen::MatrixXd EV(3,3);
+        EV = (A-eig1*I)*(A-eig2*I);
+//        std::cout << "eig1: " << eig1 << "  eig2: " << eig2 << "    eig3: " << eig3 << std::endl;
+//        std::cout << "eig3: " << eig3 << std::endl;
+//        std::cout << EV << std::endl << std::endl;
+
+        double norm = sqrt(EV(0,0)*EV(0,0)+EV(1,0)*EV(1,0)+EV(2,0)*EV(2,0));
+
+        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
+//        all_vertices[vft]->second = eig3;
+    }
+    std::cout << "Calculated noise per point with PCA on " << NN << " neighbors..." << std::endl;
+
+}
 
 // PCA with Delaunay neighborhood
-void pca(Delaunay& Dt, VPS_map& all_vertices){
+void pcaDt(Delaunay& Dt, VPS_map& all_vertices){
+
+
+
 
     Delaunay::Finite_vertices_iterator vft;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
@@ -128,6 +138,8 @@ void pca(Delaunay& Dt, VPS_map& all_vertices){
                 nn++;
             }
         }
+
+
         Point centroid = CGAL::centroid(adj_points.begin(), adj_points.end(), CGAL::Dimension_tag<0>());
         Eigen::MatrixXd m(3,nn);
         Vector v;
@@ -195,7 +207,7 @@ void pca(Delaunay& Dt, VPS_map& all_vertices){
 
 
     }
-    std::cout << "Calculated noise per point with PCA..." << std::endl;
+    std::cout << "Calculated noise per point with PCA on Delaunay neighborhood..." << std::endl;
 }
 
 

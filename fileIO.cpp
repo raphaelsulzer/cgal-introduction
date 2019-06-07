@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////
 ///////////////////// FILE I/O ///////////////////////////
 //////////////////////////////////////////////////////////
-std::vector<Point> readPlyWithO(std::string fname)
+std::vector<Point> readPly(std::string fname)
 {
     // Reads a .ply point set file
     std::vector<Point> points; // store points
@@ -15,9 +15,10 @@ std::vector<Point> readPlyWithO(std::string fname)
     return points;
 }
 
-std::vector<PN> readPlyWithN(std::string fname)
+//std::vector<PN> readPlyWithN(std::string fname)
+std::vector<PN> readPly(std::string fname, std::vector<PN>& points)
 {
-    std::vector<PN> points; // store points
+//    std::vector<PN> points; // store points
     std::ifstream in(fname);
 
     CGAL::read_ply_points_with_properties
@@ -30,9 +31,10 @@ std::vector<PN> readPlyWithN(std::string fname)
     return points;
 }
 
-std::vector<PC> readPlyWithC(std::string fname)
+////std::vector<PC> readPlyWithC(std::string fname)
+std::vector<PC> readPly(std::string fname, std::vector<PC>& points)
 {
-    std::vector<PC> points; // store points
+//    std::vector<PC> points; // store points
     std::ifstream in(fname);
 
     // if runtime error here, change the camera_index type
@@ -73,7 +75,8 @@ std::vector<PC> readPlyWithC(std::string fname)
 //}
 
 // generate a Delaunay triangulation from a PLY file
-Delaunay triangulationFromFile(std::string ifn)
+template<typename PNC, typename NC>
+Delaunay triangulationFromFile(std::string ifn, std::vector<PNC>& points_in, std::vector<NC>& info_in)
 {
 
 //    if(std::strcmp(option,"O"))
@@ -85,26 +88,32 @@ Delaunay triangulationFromFile(std::string ifn)
 
 //    std::vector<Point> ply = readPlyWithO(ifn);
 
-    std::vector<PN> ply = readPlyWithN(ifn);
-    std::vector<Vector> infos;
+//    std::vector<PN> ply = readPlyWithN(ifn);
+//    std::vector<Vector> infos;
+
+    std::vector<PNC> points_out = readPly(ifn, points_in);
+//    if (typeid(NC) == typeid(PC)){
+//        ply = readPlyWithC(ifn);}
+//    else{
+//        std::cout << "read with normal" << std::endl;}
+//        //ply = readPlyWithN(ifn);}
 
 //    std::vector<PC> ply = readPlyWithC(ifn);
-//    std::vector<int> infos;
 
     std::vector<Point> points;
-    for (std::size_t i = 0; i < ply.size (); ++ i)
+    for (std::size_t i = 0; i < points_out.size (); ++ i)
     {
         // make vector of points
-        points.push_back(get<0>(ply[i]));
+        points.push_back(get<0>(points_out[i]));
         //       // make vector of infos as: tuple(normal, color, intensity)
         //       infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
         // make vector of infos as: tuple(normal, color, intensity)
-        infos.push_back(get<1>(ply[i]));
+        info_in.push_back(get<1>(points_out[i]));
     }
 
     // make the triangulation
-    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),infos.begin() )),
-    boost::make_zip_iterator(boost::make_tuple( points.end(),infos.end() ) )  );
+    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),info_in.begin() )),
+    boost::make_zip_iterator(boost::make_tuple( points.end(),info_in.end() ) )  );
     std::cout << "Triangulation done.." << std::endl;
     return Dt;
 }
