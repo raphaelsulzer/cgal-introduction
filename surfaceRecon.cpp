@@ -17,19 +17,24 @@ int main()
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string ifn = path+"fontaine/fontaine_10000_normals";
-    std::string ifn = path+"office/clouds/office_50000";
+    std::string ifn = path+"office/clouds/office_15000";
 //    std::string ifn = path+"daratech/daratech25000";
 //    std::string ifn = path+"musee/musee";
     std::string ofn = ifn;
     ifn+=".ply";
 
     // for reading file with normals
-    std::vector<PN> point_with_info;
-    std::vector<Vector> info;
+//    std::vector<PN> point_with_info;
+//    std::vector<Vector> info;
     // for reading file with camera_index
 //    std::vector<PC> point_with_info;
 //    std::vector<int> info;
-    Delaunay Dt = triangulationFromFile(ifn, point_with_info, info);
+    // for reading file with camera_index
+//    std::vector<PNC> point_with_info;
+//    std::vector<NC> info;
+
+    std::vector<PCN> ply_lines;
+    Delaunay Dt = triangulationFromFile(ifn, ply_lines);
 
     VPS_map all_vertices;
     // populate the VPS_map all vertices with vertex, point and sigma for every vertex of the Dt
@@ -39,7 +44,8 @@ int main()
 
     Cell_map all_cells;
 
-    bool ray_construction = 0;
+    // 0 = camera, 1 = normal
+    bool ray_construction = 1;
 
     // ray tracing for Dt for saving initial cell labels in all_cells;
     // parameters: is one_cell traversel only.
@@ -52,7 +58,7 @@ int main()
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, all_cells, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
-    exportPLY(Dt, all_cells, ofn, ray_construction, 0, 0);
+    exportPLY(Dt, all_cells, ofn, ray_construction, 1, 1);
 
     // create surface mesh
     Polyhedron out_mesh;

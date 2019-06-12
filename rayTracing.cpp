@@ -187,7 +187,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 //    ray=Ray(vit->point(), camera);
 
     // ray constructed from point origin to (end of) normal
-    ray=Ray(vit->point(), vit->info());
+    ray=Ray(vit->point(), get<2>(vit->info()));
 
 
     // make the inside ray

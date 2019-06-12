@@ -4,50 +4,74 @@
 //////////////////////////////////////////////////////////
 ///////////////////// FILE I/O ///////////////////////////
 //////////////////////////////////////////////////////////
-std::vector<Point> readPly(std::string fname)
-{
-    // Reads a .ply point set file
-    std::vector<Point> points; // store points
-    std::ifstream in(fname);
-    CGAL::read_ply_points(in, std::back_inserter (points));
+//std::vector<Point> readPly(std::string fname)
+//{
+//    // Reads a .ply point set file
+//    std::vector<Point> points; // store points
+//    std::ifstream in(fname);
+//    CGAL::read_ply_points(in, std::back_inserter (points));
 
-    std::cout << "PLY file read..." << std::endl;
-    return points;
-}
+//    std::cout << "PLY file read..." << std::endl;
+//    return points;
+//}
 
-//std::vector<PN> readPlyWithN(std::string fname)
-std::vector<PN> readPly(std::string fname, std::vector<PN>& points)
-{
-//    std::vector<PN> points; // store points
-    std::ifstream in(fname);
+////std::vector<PN> readPlyWithN(std::string fname)
+//std::vector<PN> readPly(std::string fname, std::vector<PN>& points)
+//{
+////    std::vector<PN> points; // store points
+//    std::ifstream in(fname);
 
-    CGAL::read_ply_points_with_properties
-      (in,
-       std::back_inserter (points),
-       CGAL::make_ply_point_reader (PointN_map()),
-       CGAL::make_ply_normal_reader (Normal_map()));
+//    CGAL::read_ply_points_with_properties
+//      (in,
+//       std::back_inserter (points),
+//       CGAL::make_ply_point_reader (PointN_map()),
+//       CGAL::make_ply_normal_reader (Normal_map()));
 
-    std::cout << "PLY file with normals read..." << std::endl;
-    return points;
-}
+//    std::cout << "PLY file with normals read..." << std::endl;
+//    return points;
+//}
 
-////std::vector<PC> readPlyWithC(std::string fname)
-std::vector<PC> readPly(std::string fname, std::vector<PC>& points)
-{
-//    std::vector<PC> points; // store points
-    std::ifstream in(fname);
+////std::vector<PN> readPlyWithN(std::string fname)
+//std::vector<PNC> readPly(std::string fname, std::vector<PNC>& points)
+//{
+////    std::vector<PN> points; // store points
+//    std::ifstream in(fname);
 
-    // if runtime error here, change the camera_index type
-    // from float to int IN THE PLY FILE
-    CGAL::read_ply_points_with_properties
-      (in,
-       std::back_inserter (points),
-       CGAL::make_ply_point_reader (PointC_map()),
-       std::make_pair (Camera_map(), CGAL::PLY_property<int>("camera_index")));
+//    CGAL::read_ply_points_with_properties
+//      (in,
+//       std::back_inserter (points),
+//       CGAL::make_ply_point_reader (PointNC_map()),
+//       std::make_tuple (Color_map(),
+//                               CGAL::Construct_array(),
+//                               CGAL::PLY_property<unsigned char>("red"),
+//                               CGAL::PLY_property<unsigned char>("green"),
+//                               CGAL::PLY_property<unsigned char>("blue")),
+//       CGAL::make_ply_normal_reader (NormalC_map()));
 
-    std::cout << "PLY file with camera index read..." << std::endl;
-    return points;
-}
+//    std::cout << "PLY file with normals read..." << std::endl;
+//    return points;
+//}
+
+
+
+//////std::vector<PC> readPlyWithC(std::string fname)
+//std::vector<PC> readPly(std::string fname, std::vector<PC>& points)
+//{
+////    std::vector<PC> points; // store points
+//    std::ifstream in(fname);
+
+//    // if runtime error here, change the camera_index type
+//    // from float to int IN THE PLY FILE
+//    CGAL::read_ply_points_with_properties
+//      (in,
+//       std::back_inserter (points),
+//       CGAL::make_ply_point_reader (PointC_map()),
+//       std::make_pair (Camera_map(), CGAL::PLY_property<int>("camera_index")));
+
+//    std::cout << "PLY file with camera index read..." << std::endl;
+//    return points;
+//}
+
 
 //// generate a Delaunay triangulation from a PLY file
 //Delaunay triangulationFromFile(const char* ifn)
@@ -74,49 +98,93 @@ std::vector<PC> readPly(std::string fname, std::vector<PC>& points)
 //   return Dt;
 //}
 
+//// generate a Delaunay triangulation from a PLY file
+//template<typename PNC, typename NC>
+//Delaunay triangulationFromFile(std::string ifn, std::vector<PNC>& points_in, std::vector<NC>& info_in)
+//{
+
+////    if(std::strcmp(option,"O"))
+////        std::vector<Point> ply = readPlyWithO(ifn);
+////    else if(std::strcmp(option,"N"))
+////        std::vector<PN> ply = readPlyWithN(ifn);
+////    else if(std::strcmp(option,"C"))
+////        std::vector<PC> ply = readPlyWithC(ifn);
+
+////    std::vector<Point> ply = readPlyWithO(ifn);
+
+////    std::vector<PN> ply = readPlyWithN(ifn);
+////    std::vector<Vector> infos;
+
+//    std::vector<PNC> points_out = readPly(ifn, points_in);
+////    if (typeid(NC) == typeid(PC)){
+////        ply = readPlyWithC(ifn);}
+////    else{
+////        std::cout << "read with normal" << std::endl;}
+////        //ply = readPlyWithN(ifn);}
+
+////    std::vector<PC> ply = readPlyWithC(ifn);
+
+//    std::vector<Point> points;
+//    for (std::size_t i = 0; i < points_out.size (); ++ i)
+//    {
+//        // make vector of points
+//        points.push_back(get<0>(points_out[i]));
+//       // make vector of infos as: tuple(normal, color, intensity)
+//       info_in.push_back(std::make_tuple(get<1>(points_out[i]), get<2>(points_out[i]));
+//        // make vector of infos as: normal
+////        info_in.push_back(get<1>(points_out[i]));
+//    }
+
+//    // make the triangulation
+//    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),info_in.begin() )),
+//    boost::make_zip_iterator(boost::make_tuple( points.end(),info_in.end() ) )  );
+//    std::cout << "Triangulation done.." << std::endl;
+//    return Dt;
+//}
+
+
 // generate a Delaunay triangulation from a PLY file
-template<typename PNC, typename NC>
-Delaunay triangulationFromFile(std::string ifn, std::vector<PNC>& points_in, std::vector<NC>& info_in)
+Delaunay triangulationFromFile(std::string ifn, std::vector<PCN> ply_lines)
 {
 
-//    if(std::strcmp(option,"O"))
-//        std::vector<Point> ply = readPlyWithO(ifn);
-//    else if(std::strcmp(option,"N"))
-//        std::vector<PN> ply = readPlyWithN(ifn);
-//    else if(std::strcmp(option,"C"))
-//        std::vector<PC> ply = readPlyWithC(ifn);
+    //    std::vector<PC> points; // store points
+    std::ifstream in(ifn);
 
-//    std::vector<Point> ply = readPlyWithO(ifn);
-
-//    std::vector<PN> ply = readPlyWithN(ifn);
-//    std::vector<Vector> infos;
-
-    std::vector<PNC> points_out = readPly(ifn, points_in);
-//    if (typeid(NC) == typeid(PC)){
-//        ply = readPlyWithC(ifn);}
-//    else{
-//        std::cout << "read with normal" << std::endl;}
-//        //ply = readPlyWithN(ifn);}
-
-//    std::vector<PC> ply = readPlyWithC(ifn);
+    // read the ply
+    typedef CGAL::Nth_of_tuple_property_map<0, PCN> Point_map;
+    typedef CGAL::Nth_of_tuple_property_map<1, PCN> Color_map;
+    typedef CGAL::Nth_of_tuple_property_map<2, PCN> Normal_map;
+    CGAL::read_ply_points_with_properties
+      (in,
+       std::back_inserter (ply_lines),
+       CGAL::make_ply_point_reader (Point_map()),
+       std::make_tuple (Color_map(),
+                               CGAL::Construct_array(),
+                               CGAL::PLY_property<unsigned char>("red"),
+                               CGAL::PLY_property<unsigned char>("green"),
+                               CGAL::PLY_property<unsigned char>("blue")),
+       CGAL::make_ply_normal_reader (Normal_map())
+       );
 
     std::vector<Point> points;
-    for (std::size_t i = 0; i < points_out.size (); ++ i)
+    std::vector<IdxColNorm> infos;
+    for (int i = 0; i < ply_lines.size (); ++ i)
     {
         // make vector of points
-        points.push_back(get<0>(points_out[i]));
-        //       // make vector of infos as: tuple(normal, color, intensity)
-        //       infos.push_back(std::make_tuple(get<1>(ply[i]), get<2>(ply[i]), get<3>(ply[i])));
-        // make vector of infos as: tuple(normal, color, intensity)
-        info_in.push_back(get<1>(points_out[i]));
+        points.push_back(get<0>(ply_lines[i]));
+        // make vector of infos as: tuple(idx, normal, color)
+        infos.push_back(std::make_tuple(i, get<1>(ply_lines[i]), get<2>(ply_lines[i])));
     }
 
     // make the triangulation
-    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple( points.begin(),info_in.begin() )),
-    boost::make_zip_iterator(boost::make_tuple( points.end(),info_in.end() ) )  );
+    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple(points.begin(), infos.begin() )),
+    boost::make_zip_iterator(boost::make_tuple(points.end(), infos.end() ) )  );
     std::cout << "Triangulation done.." << std::endl;
     return Dt;
 }
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////
@@ -349,6 +417,9 @@ void exportPLY(const Delaunay& Dt, Cell_map& all_cells,
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
+    fo << "property uchar red" << std::endl;
+    fo << "property uchar green" << std::endl;
+    fo << "property uchar blue" << std::endl;
     if(normals){
         fo << "property float nx" << std::endl;
         fo << "property float ny" << std::endl;
@@ -377,8 +448,10 @@ void exportPLY(const Delaunay& Dt, Cell_map& all_cells,
     for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
         Vertices[vft] = index;
         // print data to file
-        fo << vft->point() << " "                           // coordinates
-           << vft->info() << std::endl;                     // normal
+        fo  << vft->point() << " "                           // coordinates
+            << int(get<1>(vft->info())[0]) << " " << int(get<1>(vft->info())[1]) << " " << int(get<1>(vft->info())[2]) << " "             // color
+            << get<2>(vft->info()) << std::endl;                    // normal
+
         index++;
     }
 
