@@ -276,7 +276,7 @@ void createSurfaceMesh(const Delaunay& Dt, Cell_map& all_cells,
 
     std::cout << "Surface mesh created..." << std::endl;
     std::cout << "Surface mesh oriented: " << oriented << std::endl;
-    std::cout << "... 0 meaning additional vertices were added for orientation" << oriented << std::endl;
+    std::cout << "... 0 meaning additional vertices were added for orientation" << std::endl;
 
 //    Kernel kernel;
 

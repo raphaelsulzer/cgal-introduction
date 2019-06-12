@@ -16,18 +16,19 @@ int main()
 
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string ifn = path+"fontaine/fontaine_10000_camera";
+//    std::string ifn = path+"fontaine/fontaine_10000_normals";
+    std::string ifn = path+"office/clouds/office_50000";
 //    std::string ifn = path+"daratech/daratech25000";
 //    std::string ifn = path+"musee/musee";
     std::string ofn = ifn;
     ifn+=".ply";
 
     // for reading file with normals
-//    std::vector<PC> point_with_info;
-//    std::vector<Vector> info;
+    std::vector<PN> point_with_info;
+    std::vector<Vector> info;
     // for reading file with camera_index
-    std::vector<PC> point_with_info;
-    std::vector<int> info;
+//    std::vector<PC> point_with_info;
+//    std::vector<int> info;
     Delaunay Dt = triangulationFromFile(ifn, point_with_info, info);
 
     VPS_map all_vertices;

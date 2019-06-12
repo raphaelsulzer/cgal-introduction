@@ -36,6 +36,7 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 }
 
 //float cellScore(float dist2, double eig3, bool inside){
+      // implementation according to Efficient volumetric fusion paper
 
 //    float sigma;
 //    if(inside){
@@ -171,21 +172,22 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
     double sigma = all_vertices.find(vit)->second.second;
 
     Ray ray;
-    // ray constructed from point origin camera sensor center
-    Vector camera;
-    if(vit->info() == 0){
-        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
-    }
-    else if(vit->info() == 1){
-        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
-    }
-    else{
-        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
-    }
-    ray=Ray(vit->point(), camera);
 
-//    // ray constructed from point origin to (end of) normal
-//    ray=Ray(vit->point(), vit->info());
+    //    // ray constructed from point origin camera sensor center
+//    Vector camera;
+//    if(vit->info() == 0){
+//        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
+//    }
+//    else if(vit->info() == 1){
+//        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
+//    }
+//    else{
+//        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
+//    }
+//    ray=Ray(vit->point(), camera);
+
+    // ray constructed from point origin to (end of) normal
+    ray=Ray(vit->point(), vit->info());
 
 
     // make the inside ray
