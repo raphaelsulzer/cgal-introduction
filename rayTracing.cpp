@@ -214,7 +214,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
 
             // check if there is an intersection between the current ray and current triangle
-            if (result){
+            if(result){
                 // check if ray triangle intersection is a point (probably in most cases) or a line segment (if ray lies inside the triangle).
                 // so far this is not used (and not needed) since I am not handling the unlikely case where the ray goes through a triangle
                 // if result is a point
@@ -236,6 +236,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                     std::cout << "segment 3:  " << *s << std::endl;
                     // for now just return in this case, until it is solved
                     //continue;
+                    // TOOD: simply calculate the distance to this edge, and then I can also get a score from cellScore()
                     score = std::make_pair(0.0, 0.0);
                 }
                 // now locate the current cell in the global context of the triangulation,
@@ -255,7 +256,11 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                     // go to next cell
                     traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
                 }
-
+            // if there was a match, break the loop around this vertex, so it can go to the next one
+            // this is for speed reasons, although if the ray is hitting more than one facet (i.e. if it hits an edge)
+            // only the first facet will be taken into account
+                // TODO: so once edge case is properly implemented, remove this again
+            break;
             }
         }
         // put outside score of infinite cell very high
@@ -275,18 +280,19 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 
     // "get the score for a tetrahedron" also means I need to keep track of all the tetrahedrons in the Triangulation, thus:
     // give every cell from the triangulation a count, which counts how often it is traversed by rays starting at 0
-    int cindex = 0;
-    Delaunay::All_cells_iterator cft;
-    for (cft = Dt.all_cells_begin(); cft != Dt.all_cells_end(); cft++){
-        // make the map where the key is the cell and the value is:
-        // index
-        cft->info().idx = cindex;
-        cft->info().outside_score = 0.0;
-        cft->info().inside_score = 0.0;
-        cft->info().final_label = 0;
+    // this loop could be replaced by simply giving the struct initial values
+//    int cindex = 0;
+//    Delaunay::All_cells_iterator cft;
+//    for (cft = Dt.all_cells_begin(); cft != Dt.all_cells_end(); cft++){
+//        // make the map where the key is the cell and the value is:
+//        // index
+//        cft->info().idx = cindex;
+//        cft->info().outside_score = 0.0;
+//        cft->info().inside_score = 0.0;
+//        cft->info().final_label = 0;
 
-        cindex++;
-    }
+//        cindex++;
+//    }
     // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
     // iterate over every vertices = iterate over every ray
     // TODO: go in here and map the following to a function

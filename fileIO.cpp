@@ -57,8 +57,8 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
     std::ifstream in(ifn);
 
     // read the ply
-    typedef CGAL::Nth_of_tuple_property_map<0, PNC> Point_map;
-    typedef CGAL::Nth_of_tuple_property_map<1, PNC> Normal_map;
+    typedef CGAL::Nth_of_tuple_property_map<0, PN> Point_map;
+    typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
     CGAL::read_ply_points_with_properties
       (in,
        std::back_inserter (ply_lines),
@@ -76,8 +76,8 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
         // make vector of infos as: tuple(idx, sigma, normal, color)
         vertex_info inf;
         inf.idx = i;
-        Color col;
-        col[0] = 255; col[1] = 255; col[2] = 255;
+        unsigned char red = 255; unsigned char green = 255; unsigned char blue = 255;
+        Color col = CGAL::make_array(red, green, blue);
         inf.color = col;
         inf.normal = get<1>(ply_lines[i]);
         inf.sigma = 0.0;

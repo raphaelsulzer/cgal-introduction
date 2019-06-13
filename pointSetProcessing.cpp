@@ -118,7 +118,7 @@ void pcaKNN(Delaunay& Dt){
 }
 
 // PCA with Delaunay neighborhood
-void pcaDt(Delaunay& Dt, VPS_map& all_vertices){
+void pcaDt(Delaunay& Dt){
 
     Delaunay::Finite_vertices_iterator vft;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
@@ -199,8 +199,9 @@ void pcaDt(Delaunay& Dt, VPS_map& all_vertices){
             eig3 = 0.0;
         }
 
-        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
-//        all_vertices[vft]->second = eig3;
+//        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
+//        vft->info().sigma = vft->info().sigma*eig3;
+        vft->info().sigma = eig3;
 
 
     }

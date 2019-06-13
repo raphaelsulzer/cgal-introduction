@@ -36,10 +36,14 @@ typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
 
 
 struct cell_info{
-    int idx;
-    float outside_score;
-    float inside_score;
-    int final_label;
+    int idx = 0;
+    float outside_score = 0.0;
+    float inside_score = 0.0;
+    int final_label = 0;
+//    int idx;
+//    float outside_score;
+//    float inside_score;
+//    int final_label;
 };
 typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, Kernel>        CB;         // cell base
 

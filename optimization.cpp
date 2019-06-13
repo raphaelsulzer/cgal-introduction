@@ -29,13 +29,13 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
 
     // first set up the array for data costs and set the initial label in the same loop
     float *data = new float[num_cells*num_labels];
-    int idx;
+    int idx = 0;
     Delaunay::All_cells_iterator cft;
     // iterate over the all_cells map
     for(cft = Dt.all_cells_begin(); cft!=Dt.all_cells_end(); cft++)
     {
-        // use the idx of the all_cells map
-        idx = cft->info().idx;
+        // set an index for each cell
+        cft->info().idx = idx;
         // I am initializing my label s.t. if the outside vote is bigger than the inside vote, than it should be labelled 1 (outside) - and vice versa (0 = inside)
         // that means the cost/penalty for labelling a cell that initially has label 1 with the opposite label, is the opposite vote (so the inside vote)
         // so labelling 0 costs outside votes
@@ -48,6 +48,8 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
             {gc->setLabel(idx, 1);}
         else
             {gc->setLabel(idx, 0);}
+        // increase index for next cell
+        idx++;
     }
 
     // next set up the array for smooth costs
