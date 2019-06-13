@@ -26,10 +26,10 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
-typedef std::tuple<int, Color, Vector>                              IdxColNorm;
+typedef std::tuple<int, double, Vector, Color>                      IdxSigNormCol;
 // vertex base for point + info (=vector)
 typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel>         VerNormB;
-typedef CGAL::Triangulation_vertex_base_with_info_3<IdxColNorm, Kernel>     VB;
+typedef CGAL::Triangulation_vertex_base_with_info_3<IdxSigNormCol, Kernel>     VB;
 typedef CGAL::Triangulation_vertex_base_with_info_3<int, Kernel>            VerCamB;
 
 
@@ -47,21 +47,7 @@ typedef std::map<Vertex_handle, int>                                Vertex_map;
 typedef std::map<Vertex_handle, std::pair<Point,double>>            VPS_map;
 
 // for reading PLY file
-typedef CGAL::cpp11::tuple<Point, Color, Vector> PCN;
-
-
-//typedef CGAL::cpp11::tuple<Point, int> PC;
-//typedef CGAL::Nth_of_tuple_property_map<0, PC> PointC_map;
-//typedef CGAL::Nth_of_tuple_property_map<1, PC> Camera_map;
-
-//typedef CGAL::cpp11::tuple<Point, Vector> PN;
-//typedef CGAL::Nth_of_tuple_property_map<0, PN> PointN_map;
-//typedef CGAL::Nth_of_tuple_property_map<1, PN> Normal_map;
-
-//typedef CGAL::cpp11::tuple<Point, Vector, Color> PNC;
-//typedef CGAL::Nth_of_tuple_property_map<0, PNC> PointNC_map;
-//typedef CGAL::Nth_of_tuple_property_map<1, PNC> NormalC_map;
-//typedef CGAL::Nth_of_tuple_property_map<2, PNC> Color_map;
+typedef CGAL::cpp11::tuple<Point, Vector, Color> PNC;
 
 
 ///////// ray tracing /////////

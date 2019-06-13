@@ -167,9 +167,11 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
     return 0;
 }
 
-void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, VPS_map& all_vertices, bool inside, bool one_cell){
+void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, bool inside, bool one_cell){
 
-    double sigma = all_vertices.find(vit)->second.second;
+
+    // get sigma of the current vertex
+    double sigma = get<1>(vit->info());
 
     Ray ray;
 
@@ -282,7 +284,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
 
 }
 
-void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VPS_map& all_vertices, bool one_cell){
+void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, bool one_cell){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -311,9 +313,9 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, VPS_map& all_vertice
     Delaunay::Finite_vertices_iterator vit;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
         // collect outside votes
-        firstCell(Dt, vit, all_cells, all_vertices, 0, one_cell);
+        firstCell(Dt, vit, all_cells, 0, one_cell);
         // collect inside votes
-        firstCell(Dt, vit, all_cells, all_vertices, 1, one_cell);
+        firstCell(Dt, vit, all_cells, 1, one_cell);
     }
     // now that all rays have been traced, apply the last function to all the cells:
 //    float gamma = 2.0;

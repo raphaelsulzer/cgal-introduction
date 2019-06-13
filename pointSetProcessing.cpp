@@ -20,7 +20,7 @@ typedef Neighbor_search::Tree Tree;
 
 
 // PCA with kNN neighborhood
-void pcaKNN(Delaunay& Dt, VPS_map& all_vertices){
+void pcaKNN(Delaunay& Dt){
 
     // calculate the size of the smallest eigenvalue, which sould serve as a good measurement of noise. and use that as the sigma for the score computation
     // problem: this might have a good effect in noise areas, but it also weakens the few important votes in missing data areas
@@ -98,9 +98,7 @@ void pcaKNN(Delaunay& Dt, VPS_map& all_vertices){
            eig3 = q + 2.0 * p * cos(phi + (2.0*M_PI/3.0));
            eig2 = 3.0 * q - eig1 - eig3;
         }
-//        eig1 = eig1/(eig1+eig2+eig3);
-//        eig2 = eig2/(eig1+eig2+eig3);
-//        eig3 = eig3/(eig1+eig2+eig3);
+
         // compute eigenvector of the third (smallest) eigenvalue:
         Eigen::MatrixXd EV(3,3);
         EV = (A-eig1*I)*(A-eig2*I);
@@ -110,8 +108,10 @@ void pcaKNN(Delaunay& Dt, VPS_map& all_vertices){
 
         double norm = sqrt(EV(0,0)*EV(0,0)+EV(1,0)*EV(1,0)+EV(2,0)*EV(2,0));
 
-        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
-//        all_vertices[vft]->second = eig3;
+        // save result as a map of Delaunay vertice and eigenvalue
+//        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
+        // save the result directly in the vertex_base of the Delaunay
+        get<1>(vft->info()) = eig3;
     }
     std::cout << "Calculated noise per point with PCA on " << NN << " neighbors..." << std::endl;
 
