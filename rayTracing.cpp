@@ -59,7 +59,7 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 //}
 
 
-int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
+int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
 {
 
     // input::
@@ -116,15 +116,8 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
                 }
                 // now locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
-//                if(!inside){
-//                    std::get<1>(all_cells.find(current_cell)->second) += score;
-//                }
-//                else {
-//                    std::get<2>(all_cells.find(current_cell)->second) += score;
-//                }
-//                std::cout << "outside score: " << score.first << "  inside score: " << score.second << std::endl;
-                std::get<1>(all_cells.find(current_cell)->second) += score.first;
-                std::get<2>(all_cells.find(current_cell)->second) += score.second;
+                current_cell->info().outside_score += score.first;
+                current_cell->info().inside_score += score.second;
 
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                 Facet mirror_fac = Dt.mirror_facet(fac);
@@ -153,21 +146,20 @@ int traverseCells(const Delaunay& Dt, Cell_map& all_cells, double sigma, Ray ray
                         return 0;
                     }
                 }
-                traverseCells(Dt, all_cells, sigma, ray, newCell, newIdx, source, inside);
+                traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
             }
         }
     }
     // put outside score of infinite cell very high
     else{
-        // set outside score
-        std::get<1>(all_cells.find(current_cell)->second)+=1;
-        // set inside score
-        std::get<2>(all_cells.find(current_cell)->second)+=0;
+        current_cell->info().outside_score+=1;
+        current_cell->info().inside_score+=0;
+
     }
     return 0;
 }
 
-void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell_map& all_cells, bool inside, bool one_cell){
+void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool inside, bool one_cell){
 
 
     // get sigma of the current vertex
@@ -248,14 +240,9 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                 }
                 // now locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
-//                if(!inside){
-//                    std::get<1>(all_cells.find(current_cell)->second) += score;
-//                }
-//                else {
-//                    std::get<2>(all_cells.find(current_cell)->second) += score;
-//                }
-                std::get<1>(all_cells.find(current_cell)->second) += score.first;
-                std::get<2>(all_cells.find(current_cell)->second) += score.second;
+                current_cell->info().outside_score += score.first;
+                current_cell->info().inside_score += score.second;
+
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                 // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
                 // and check if there is an intersection
@@ -266,7 +253,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;
                     // go to next cell
-                    traverseCells(Dt, all_cells, sigma, ray, newCell, newIdx, source, inside);
+                    traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
                 }
 
             }
@@ -274,17 +261,15 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, Cell
         // put outside score of infinite cell very high
         else{
 //            std::cout << "infinite cell score set" << std::endl;
-            // set outside score
-            std::get<1>(all_cells.find(current_cell)->second)+=1.0;
-            // set inside score
-            std::get<2>(all_cells.find(current_cell)->second)+=0.0;
+            current_cell->info().outside_score+=1;
+            current_cell->info().inside_score+=0;
         }
     }
 
 
 }
 
-void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, bool one_cell){
+void rayTracingFun(const Delaunay& Dt, bool one_cell){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -295,13 +280,11 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, bool one_cell){
     for (cft = Dt.all_cells_begin(); cft != Dt.all_cells_end(); cft++){
         // make the map where the key is the cell and the value is:
         // index
-        std::get<0>(all_cells[cft]) = cindex;
-        // outside votes
-        std::get<1>(all_cells[cft]) = 0.0;
-        // inside votes
-        std::get<2>(all_cells[cft]) = 0.0;
-        // final label
-        std::get<3>(all_cells[cft]) = 0;
+        cft->info().idx = cindex;
+        cft->info().outside_score = 0.0;
+        cft->info().inside_score = 0.0;
+        cft->info().final_label = 0;
+
         cindex++;
     }
     // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
@@ -313,9 +296,9 @@ void rayTracingFun(const Delaunay& Dt, Cell_map& all_cells, bool one_cell){
     Delaunay::Finite_vertices_iterator vit;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
         // collect outside votes
-        firstCell(Dt, vit, all_cells, 0, one_cell);
+        firstCell(Dt, vit, 0, one_cell);
         // collect inside votes
-        firstCell(Dt, vit, all_cells, 1, one_cell);
+        firstCell(Dt, vit, 1, one_cell);
     }
     // now that all rays have been traced, apply the last function to all the cells:
 //    float gamma = 2.0;

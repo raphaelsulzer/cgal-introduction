@@ -16,34 +16,35 @@
 //// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with
 //// w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
 //std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
-void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cells, float area_weight, int num_iterations)
+void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int num_iterations)
 {
 
     std::cout << "Starting Optimization..." << std::endl;
 
-    int num_cells = all_cells.size();
+//    int num_cells = all_cells.size();
+    int num_cells = Dt.number_of_cells();
+
     int num_labels = 2;
     GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_cells,num_labels);
-
 
     // first set up the array for data costs and set the initial label in the same loop
     float *data = new float[num_cells*num_labels];
     int idx;
-    Cell_map::iterator it;
+    Delaunay::All_cells_iterator cft;
     // iterate over the all_cells map
-    for(it = all_cells.begin(); it!=all_cells.end(); it++)
+    for(cft = Dt.all_cells_begin(); cft!=Dt.all_cells_end(); cft++)
     {
         // use the idx of the all_cells map
-        idx = std::get<0>(it->second);
+        idx = cft->info().idx;
         // I am initializing my label s.t. if the outside vote is bigger than the inside vote, than it should be labelled 1 (outside) - and vice versa (0 = inside)
-        // that means the cost/penalty for labelling an cell that initially has label 1 with the opposite label, is the opposite vote (so the inside vote)
+        // that means the cost/penalty for labelling a cell that initially has label 1 with the opposite label, is the opposite vote (so the inside vote)
         // so labelling 0 costs outside votes
-        data[idx*2+0] = std::get<1>(it->second);
+        data[idx*2+0] = cft->info().outside_score;
         // and labelling 1 costs inside votes
-        data[idx*2+1] = std::get<2>(it->second);
+        data[idx*2+1] = cft->info().inside_score;
 
         // set an initial label
-        if(std::get<1>(it->second) > std::get<2>(it->second))
+        if(cft->info().outside_score > cft->info().inside_score)
             {gc->setLabel(idx, 1);}
         else
             {gc->setLabel(idx, 0);}
@@ -62,17 +63,16 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
 
         // set neighborhood:
         int current_index;
-        Cell_map::iterator it2;
+        int neighbour_index;
         // iterate over the all_cells map
-        for(it2 = all_cells.begin(); it2!=all_cells.end(); it2++)
+        for(cft = Dt.all_cells_begin(); cft!=Dt.all_cells_end(); cft++)
         {
-
-            current_index = std::get<0>(it2->second);
-            Cell_handle current_cell = it2->first;
+            Cell_handle current_cell = cft;
+            current_index = current_cell->info().idx;
             for(int i = 0; i < 4; i++){
 
                 Cell_handle neighbour_cell = current_cell->neighbor(i);
-                int neighbour_index = std::get<0>(all_cells.find(neighbour_cell)->second);
+                neighbour_index = neighbour_cell->info().idx;
 
                 // if current_cell and neighbour_cell are BOTH infinite, then continue
                 if(Dt.is_infinite(current_cell) && Dt.is_infinite(neighbour_cell)){
@@ -108,13 +108,15 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
 
         // save the results in the all_cells Cell_map
         int idx3;
-        Cell_map::iterator it3;
         // iterate over the all_cells map
-        for(it3 = all_cells.begin(); it3!=all_cells.end(); it3++)
+        for(cft = Dt.all_cells_begin(); cft!=Dt.all_cells_end(); cft++)
         {
-            idx3 = std::get<0>(it3->second);
-            std::get<3>(it3->second) = gc->whatLabel(idx3);
+            idx3 = cft->info().idx;
+//            std::get<3>(it3->second) = gc->whatLabel(idx3);
+            cft->info().final_label = gc->whatLabel(idx3);
+
         }
+
 
         delete gc;
     }
@@ -123,6 +125,8 @@ void GeneralGraph_DArraySArraySpatVarying(const Delaunay& Dt, Cell_map& all_cell
     }
 }
 
+
+// manually calculate energy terms for checking for correctness
 void checkEnergyTerms(const Delaunay& Dt, Cell_map& all_cells, float area_weight)
 {
 
