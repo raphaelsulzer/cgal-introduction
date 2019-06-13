@@ -4,19 +4,12 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
-#    main.cpp \
-#    readPlyWithCn.cpp \
-#    readPly.cpp \
-#    info_insert_with_zip_iterator.cpp \
-#    exportTri.cpp \
-#    rayTriIntersection.cpp \
-#    main.cpp
     fileIO.cpp \
     rayTracing.cpp \
     surfaceRecon.cpp \
     optimization.cpp \
     pointSetProcessing.cpp
-#    energy-minimization.cpp
+
 
 QMAKE_CXXFLAGS += -std=c++11
 

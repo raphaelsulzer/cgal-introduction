@@ -111,7 +111,7 @@ void pcaKNN(Delaunay& Dt){
         // save result as a map of Delaunay vertice and eigenvalue
 //        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
         // save the result directly in the vertex_base of the Delaunay
-        get<1>(vft->info()) = eig3;
+        vft->info().sigma = eig3;
     }
     std::cout << "Calculated noise per point with PCA on " << NN << " neighbors..." << std::endl;
 
@@ -119,9 +119,6 @@ void pcaKNN(Delaunay& Dt){
 
 // PCA with Delaunay neighborhood
 void pcaDt(Delaunay& Dt, VPS_map& all_vertices){
-
-
-
 
     Delaunay::Finite_vertices_iterator vft;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
@@ -270,10 +267,9 @@ void createSurfaceMesh(const Delaunay& Dt, std::vector<Point>& points, std::vect
     // give every vertex from the triangulation an index starting at 0
     // and already print the point coordinates, color and normal of the vertex to the PLY file
     int index = 0;
-    Vertex_map Vertices;
     Delaunay::Finite_vertices_iterator vft;
     for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-        Vertices[vft] = index;
+        vft->info().idx = index;
         index++;
         points.push_back(vft->point());
     }
@@ -317,7 +313,8 @@ void createSurfaceMesh(const Delaunay& Dt, std::vector<Point>& points, std::vect
             // vertices is a map of all vertices of the triangulation to an index
             v = c->vertex(j%4);
             // add the stuff to a list of Polygons
-            polygon_indecis.push_back(Vertices.find(v)->second);
+//            polygon_indecis.push_back(Vertices.find(v)->second);
+            polygon_indecis.push_back(v->info().idx);
         }
         polygons.push_back(polygon_indecis);
 

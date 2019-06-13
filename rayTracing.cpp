@@ -163,7 +163,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
 
     // get sigma of the current vertex
-    double sigma = get<1>(vit->info());
+    double sigma = vit->info().sigma;
 
     Ray ray;
 
@@ -181,7 +181,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 //    ray=Ray(vit->point(), camera);
 
     // ray constructed from point origin to (end of) normal
-    ray=Ray(vit->point(), get<2>(vit->info()));
+    ray=Ray(vit->point(), vit->info().normal);
 
 
     // make the inside ray

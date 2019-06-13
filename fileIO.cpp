@@ -28,13 +28,60 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PNC> ply_lines)
        );
 
     std::vector<Point> points;
-    std::vector<IdxSigNormCol> infos;
+//    std::vector<IdxSigNormCol> infos;
+    std::vector<vertex_info> infos;
     for (int i = 0; i < ply_lines.size (); ++ i)
     {
         // make vector of points
         points.push_back(get<0>(ply_lines[i]));
         // make vector of infos as: tuple(idx, sigma, normal, color)
-        infos.push_back(std::make_tuple(i, 0.0, get<1>(ply_lines[i]), get<2>(ply_lines[i])));
+        vertex_info inf;
+        inf.idx = i;
+        inf.color = get<2>(ply_lines[i]);
+        inf.normal = get<1>(ply_lines[i]);
+        inf.sigma = 0.0;
+        infos.push_back(inf);
+    }
+
+    // make the triangulation
+    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple(points.begin(), infos.begin() )),
+    boost::make_zip_iterator(boost::make_tuple(points.end(), infos.end() ) )  );
+    std::cout << "Triangulation done.." << std::endl;
+    return Dt;
+}
+
+Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
+{
+
+    //    std::vector<PC> points; // store points
+    std::ifstream in(ifn);
+
+    // read the ply
+    typedef CGAL::Nth_of_tuple_property_map<0, PNC> Point_map;
+    typedef CGAL::Nth_of_tuple_property_map<1, PNC> Normal_map;
+    CGAL::read_ply_points_with_properties
+      (in,
+       std::back_inserter (ply_lines),
+       CGAL::make_ply_point_reader (Point_map()),
+       CGAL::make_ply_normal_reader (Normal_map())
+       );
+
+    std::vector<Point> points;
+//    std::vector<IdxSigNormCol> infos;
+    std::vector<vertex_info> infos;
+    for (int i = 0; i < ply_lines.size (); ++ i)
+    {
+        // make vector of points
+        points.push_back(get<0>(ply_lines[i]));
+        // make vector of infos as: tuple(idx, sigma, normal, color)
+        vertex_info inf;
+        inf.idx = i;
+        Color col;
+        col[0] = 255; col[1] = 255; col[2] = 255;
+        inf.color = col;
+        inf.normal = get<1>(ply_lines[i]);
+        inf.sigma = 0.0;
+        infos.push_back(inf);
     }
 
     // make the triangulation
@@ -211,15 +258,18 @@ void exportPLY(const Delaunay& Dt,
     // give every vertex from the triangulation an index starting at 0
     // and already print the point coordinates, color and normal of the vertex to the PLY file
     int index = 0;
-    Vertex_map Vertices;
     Delaunay::Finite_vertices_iterator vft;
     for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-        Vertices[vft] = index;
+        // reset the vertex index here, because I need to know the order of exactly this loop here
+        // for the indexing of the facets in the PLY file
+        vft->info().idx = index;
         // print data to file
-        fo  << vft->point() << " "                           // coordinates
-            << int(get<3>(vft->info())[0]) << " " << int(get<3>(vft->info())[1]) << " " << int(get<3>(vft->info())[2]) << " "             // color
-            << get<2>(vft->info()) << std::endl;                    // normal
-
+        // coordinates
+        fo  << vft->point() << " "
+        // color
+            << int(vft->info().color[0]) <<  " " << int(vft->info().color[1]) <<  " " << int(vft->info().color[2]) <<  " "
+        // normal
+            << vft->info().normal << std::endl;
         index++;
     }
 
@@ -282,7 +332,7 @@ void exportPLY(const Delaunay& Dt,
             // print the indicies of each cell to the file
             // vertices is a map of all vertices of the triangulation to an index
             v = c->vertex(j%4);
-            fo << Vertices.find(v)->second << ' ';
+            fo << v->info().idx << ' ';
         }
 
 

@@ -1,20 +1,6 @@
 #ifndef CGAL_TYPEDEFS_H
 #define CGAL_TYPEDEFS_H
 
-struct cell_info{
-    int idx;
-    float outside_score;
-    float inside_score;
-    int final_label;
-};
-
-struct vertex_info{
-    int idx;
-    float outside_score;
-    float inside_score;
-    int final_label;
-};
-
 
 ///////// FILE I/O /////////
 #include <boost/iterator/zip_iterator.hpp>
@@ -39,15 +25,25 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
-typedef std::tuple<int, double, Vector, Color>                      IdxSigNormCol;
-typedef CGAL::Triangulation_vertex_base_with_info_3<IdxSigNormCol, Kernel>     VB;
-//// vertex base for point + info (=vector or camera)
-//typedef CGAL::Triangulation_vertex_base_with_info_3<Vector, Kernel>         VerNormB;
-//typedef CGAL::Triangulation_vertex_base_with_info_3<int, Kernel>            VerCamB;
+
+struct vertex_info{
+    int idx;
+    double sigma;
+    Color color;
+    Vector normal;
+};
+typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
 
 
+struct cell_info{
+    int idx;
+    float outside_score;
+    float inside_score;
+    int final_label;
+};
+typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, Kernel>        CB;         // cell base
 
-typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, Kernel>           CB;         // cell base
+// Delaunay triangulation data structure
 typedef CGAL::Triangulation_data_structure_3<VB, CB>                Tds;        // triangulation data structure
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
 typedef Delaunay::Point                                             Point;
@@ -55,12 +51,16 @@ typedef Delaunay::Edge                                              Edge;
 typedef Delaunay::Facet                                             Facet;
 typedef Delaunay::Cell_handle                                       Cell_handle;
 typedef Delaunay::Vertex_handle                                     Vertex_handle;
+
 // map cell of the Dt, to an index, the outside score, the inside score, and the final label
-typedef std::map<Cell_handle, std::tuple<int, float, float, int>>   Cell_map;   // not really needed anymore, just for old code
+// not really needed anymore, just for old code
+typedef std::map<Cell_handle, std::tuple<int, float, float, int>>   Cell_map;
 typedef std::map<Vertex_handle, int>                                Vertex_map;
+typedef std::map<Vertex_handle, std::pair<Point,double>>            VPS_map;
 
 ///////// read PLY /////////
 typedef CGAL::cpp11::tuple<Point, Vector, Color> PNC;
+typedef CGAL::cpp11::tuple<Point, Vector> PN;
 
 ///////// ray tracing /////////
 typedef Kernel::Ray_3                                               Ray;
