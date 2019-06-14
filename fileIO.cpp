@@ -7,6 +7,8 @@
 // generate a Delaunay triangulation from a PLY file
 Delaunay triangulationFromFile(std::string ifn, std::vector<PNC> ply_lines)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
 
     //    std::vector<PC> points; // store points
     std::ifstream in(ifn);
@@ -46,12 +48,16 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PNC> ply_lines)
     // make the triangulation
     Delaunay Dt( boost::make_zip_iterator(boost::make_tuple(points.begin(), infos.begin() )),
     boost::make_zip_iterator(boost::make_tuple(points.end(), infos.end() ) )  );
-    std::cout << "Triangulation done.." << std::endl;
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Triangulation done in " << duration.count() << "s" << std::endl;
     return Dt;
 }
 
 Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
 {
+    auto start = std::chrono::high_resolution_clock::now();
 
     //    std::vector<PC> points; // store points
     std::ifstream in(ifn);
@@ -87,7 +93,10 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
     // make the triangulation
     Delaunay Dt( boost::make_zip_iterator(boost::make_tuple(points.begin(), infos.begin() )),
     boost::make_zip_iterator(boost::make_tuple(points.end(), infos.end() ) )  );
-    std::cout << "Triangulation done.." << std::endl;
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Triangulation done in " << duration.count() << "s" << std::endl;
     return Dt;
 }
 
@@ -195,6 +204,8 @@ void exportPLY(const Delaunay& Dt,
                 std::string path,
                 bool normals, bool optimized, bool prune_or_color)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
     Delaunay::size_type nf = Dt.number_of_finite_facets();
@@ -357,4 +368,7 @@ void exportPLY(const Delaunay& Dt,
     std::cout << "before face count: " << nf << std::endl;
     std::cout << "remaining faces: " << sub << std::endl;
     std::cout << "Exported to " << path << std::endl;
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "...in " << duration.count() << "s" << std::endl;
 }

@@ -22,6 +22,8 @@ typedef Neighbor_search::Tree Tree;
 // PCA with kNN neighborhood
 void pcaKNN(Delaunay& Dt){
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     // calculate the size of the smallest eigenvalue, which sould serve as a good measurement of noise. and use that as the sigma for the score computation
     // problem: this might have a good effect in noise areas, but it also weakens the few important votes in missing data areas
 
@@ -113,7 +115,10 @@ void pcaKNN(Delaunay& Dt){
         // save the result directly in the vertex_base of the Delaunay
         vft->info().sigma = eig3;
     }
-    std::cout << "Calculated noise per point with PCA on " << NN << " neighbors..." << std::endl;
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Calculated noise per point with PCA on " << NN << " neighbors in " << duration.count() << "s" << std::endl;
 
 }
 

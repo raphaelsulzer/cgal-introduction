@@ -170,6 +170,8 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
     Ray ray(vit->point(), vit->info().normal);
 
     // make the inside ray
+    // in fact MicMac saves the camera normals pointing away from the camera,
+    // so I take the opposite ray for outside traversal and the normal ray for inside
     if(inside){
         ray = ray.opposite();
     }
@@ -264,6 +266,8 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
     // iterate over every vertices = iterate over every ray
     // TODO: go in here and map the following to a function
@@ -285,6 +289,9 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 //        std::get<1>(it->second) = 1 - exp(-std::get<1>(it->second)/gamma);
 //        std::get<2>(it->second) = 1 - exp(-std::get<2>(it->second)/gamma);
 //    }
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Ray tracing done in " << duration.count() << "s" << std::endl;
 }
 
 
