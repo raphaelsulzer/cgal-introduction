@@ -203,7 +203,6 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // check if ray triangle intersection is a point (probably in most cases) or a line segment (if ray lies inside the triangle).
                 // so far this is not used (and not needed) since I am not handling the unlikely case where the ray goes through a triangle
                 // if result is a point
-//                float score;
                 std::pair<float,float> score;
                 Point source = vit->point();
                 if (const Point* p = boost::get<Point>(&*result)){
@@ -245,8 +244,9 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
             // this is only done for speed reasons, it shouldn't have any influence on the label
                 // because a ray can only hit more than one facet of a cell if it hits another point of the cell
                 // in which case it goes THROUGH a facet of the cell, in which case the intersection is not a point
-                // but an edge
-            //break;
+                // but an edge.
+                // it does however make a difference if this is turn on or not. why??
+            break;
             }
         }
         // put outside score of infinite cell very high
