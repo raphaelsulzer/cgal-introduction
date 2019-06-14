@@ -91,6 +91,10 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
 
                 // call the neighbourhood function
                 gc->setNeighbors(current_index, neighbour_index, area_weight*area);
+
+                // TODO: what would be nice if I could make like a second grade neighborhood function, in order
+                // to penalize facets (=different labels between neighboring cells) even higher if facets from the same cell
+                // also already have different labels
             }
         }
 

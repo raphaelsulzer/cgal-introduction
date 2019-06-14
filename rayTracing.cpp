@@ -165,24 +165,9 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
     // get sigma of the current vertex
     double sigma = vit->info().sigma;
 
-    Ray ray;
-
-    //    // ray constructed from point origin camera sensor center
-//    Vector camera;
-//    if(vit->info() == 0){
-//        camera = Vector(-0.360035117847216257, -0.0243440832633011854, 0.284447917373549908);
-//    }
-//    else if(vit->info() == 1){
-//        camera = Vector(-0.144933279455665032, -10.4598329635251179, -6.34409732148353278);
-//    }
-//    else{
-//        camera = Vector(-0.229706673957515983, 9.05508818222588552, -9.21427702085086331);
-//    }
-//    ray=Ray(vit->point(), camera);
 
     // ray constructed from point origin to (end of) normal
-    ray=Ray(vit->point(), vit->info().normal);
-
+    Ray ray(vit->point(), vit->info().normal);
 
     // make the inside ray
     if(inside){
@@ -257,10 +242,11 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                     traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
                 }
             // if there was a match, break the loop around this vertex, so it can go to the next one
-            // this is for speed reasons, although if the ray is hitting more than one facet (i.e. if it hits an edge)
-            // only the first facet will be taken into account
-                // TODO: so once edge case is properly implemented, remove this again
-            break;
+            // this is only done for speed reasons, it shouldn't have any influence on the label
+                // because a ray can only hit more than one facet of a cell if it hits another point of the cell
+                // in which case it goes THROUGH a facet of the cell, in which case the intersection is not a point
+                // but an edge
+            //break;
             }
         }
         // put outside score of infinite cell very high
@@ -278,21 +264,6 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
-    // "get the score for a tetrahedron" also means I need to keep track of all the tetrahedrons in the Triangulation, thus:
-    // give every cell from the triangulation a count, which counts how often it is traversed by rays starting at 0
-    // this loop could be replaced by simply giving the struct initial values
-//    int cindex = 0;
-//    Delaunay::All_cells_iterator cft;
-//    for (cft = Dt.all_cells_begin(); cft != Dt.all_cells_end(); cft++){
-//        // make the map where the key is the cell and the value is:
-//        // index
-//        cft->info().idx = cindex;
-//        cft->info().outside_score = 0.0;
-//        cft->info().inside_score = 0.0;
-//        cft->info().final_label = 0;
-
-//        cindex++;
-//    }
     // from Efficient volumetric fusion paper, it follows that I need to sum over all rays to get the score for a tetrahedron
     // iterate over every vertices = iterate over every ray
     // TODO: go in here and map the following to a function
