@@ -21,9 +21,7 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
 
     std::cout << "Starting Optimization..." << std::endl;
 
-//    int num_cells = all_cells.size();
     int num_cells = Dt.number_of_cells();
-
     int num_labels = 2;
     GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(num_cells,num_labels);
 
@@ -136,7 +134,7 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
 void checkEnergyTerms(const Delaunay& Dt, Cell_map& all_cells, float area_weight)
 {
 
-    int num_cells = all_cells.size();
+    int num_cells = Dt.number_of_cells();
     int num_labels = 2;
 
     int* label = new int[num_cells];
