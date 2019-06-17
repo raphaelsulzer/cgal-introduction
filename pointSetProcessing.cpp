@@ -2,8 +2,11 @@
 
 // for neighborhood search
 #include <CGAL/Orthogonal_incremental_neighbor_search.h>
+#include <CGAL/Incremental_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
+#include <CGAL/Search_traits_adapter.h>
 #include <CGAL/centroid.h>
+#include <CGAL/estimate_scale.h>
 
 // for matrix operations, use Eigen lib
 #include <Eigen/Dense>
@@ -11,12 +14,58 @@
 //#include <pcl/point_types.h>
 //#include <pcl/features/normal_3d.h>
 
+typedef boost::tuple<Point, vertex_info>                    point_info;
+
 //typedef CGAL::Simple_cartesian<double> K;
 typedef CGAL::Search_traits_3<Kernel> TreeTraits;
+typedef CGAL::Search_traits_adapter<point_info,
+  CGAL::Nth_of_tuple_property_map<0, point_info>,
+  TreeTraits>                                               Traits;
+
 typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
 typedef Neighbor_search::Tree Tree;
 
-#include <CGAL/estimate_scale.h>
+typedef CGAL::Orthogonal_incremental_neighbor_search<Traits> Incremental_neighbor_search;
+typedef Incremental_neighbor_search::Tree Incremental_Tree;
+
+
+void copyInfo(std::vector<Point>& a_points, std::vector<vertex_info>& a_info, std::vector<Point>& t_points, std::vector<vertex_info>& t_info)
+{
+//    std::size_t NN =  CGAL::estimate_global_k_neighbor_scale(a_points);
+
+    Incremental_Tree tree(boost::make_zip_iterator(boost::make_tuple( a_points.begin(),a_info.begin() )),
+              boost::make_zip_iterator(boost::make_tuple( a_points.end(), a_info.end() ) ));
+
+    for(int i = 0; i < t_points.size(); i++)
+    {
+        Incremental_neighbor_search search(tree, t_points[i]);
+        Incremental_neighbor_search::iterator it = search.begin();
+
+        // index of nearest neighbor in other cloud
+        int idx = boost::get<1>(it->first).idx;
+
+        t_info[i].normal = a_info[idx].normal;
+        t_info[i].color = a_info[idx].color;
+
+        a_points.push_back(t_points[i]);
+        a_info.push_back(t_info[i]);
+    }
+}
+
+Delaunay makeDelaunayWithInfo(std::vector<Point>& points, std::vector<vertex_info>& info)
+{
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // make the triangulation
+    Delaunay Dt( boost::make_zip_iterator(boost::make_tuple(points.begin(), info.begin() )),
+    boost::make_zip_iterator(boost::make_tuple(points.end(), info.end() ) )  );
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Triangulation done in " << duration.count() << "s" << std::endl;
+    return Dt;
+}
+
 
 
 // PCA with kNN neighborhood

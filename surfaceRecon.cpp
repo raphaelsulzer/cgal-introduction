@@ -17,14 +17,29 @@ int main()
 
 //    std::string ifn = path+"fontaine/fontaine_10000_normals";
 //    std::string ifn = path+"office/clouds/office_15000";
-//    std::string ifn = path+"daratech/daratech25000";
-    std::string ifn = path+"musee/museeAP_1m";
+    std::string ifn = path+"daratech/daratech25000";
+//    std::string ifn = path+"musee/museeAP_05m";
+    std::string ifn2 = path+"musee/TLS_registered";
     std::string ofn = ifn;
     ifn+=".ply";
+    ifn2+=".ply";
 
-    // init a vector that has the correct elements of the PLY file, so either PNC or PN
-    std::vector<PNC> ply_lines;
-    Delaunay Dt = triangulationFromFile(ifn, ply_lines);
+    std::vector<Point> a_points;
+    std::vector<Point> t_points;
+    std::vector<vertex_info> a_infos;
+    std::vector<vertex_info> t_infos;
+
+    readPLY(ifn, a_points, a_infos);
+//    readPLY(ifn2, t_points, t_infos);
+//    copyInfo(a_points, a_infos, t_points, t_infos);
+
+
+//    // init a vector that has the correct elements of the PLY file, so either PNC or PN
+//    std::vector<PNC> ply_lines;
+//    Delaunay Dt = triangulationFromFile(ifn, ply_lines);
+
+
+    Delaunay Dt = makeDelaunayWithInfo(a_points, a_infos);
 
 
     // calculate noise per point and save it in the vertex_info of the Dt
@@ -43,7 +58,7 @@ int main()
 //    checkEnergyTerms(Dt, all_cells, 10.0);
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 50, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 0.01, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
