@@ -29,6 +29,42 @@ typedef CGAL::Orthogonal_incremental_neighbor_search<Traits> Incremental_neighbo
 typedef Incremental_neighbor_search::Tree Incremental_Tree;
 
 
+
+
+std::vector<Point> sampleTriangulation(std::vector<Point>& all_points)
+{
+
+    std::tuple<int, double> x_min;
+    std::tuple<int, double> y_min;
+    std::tuple<int, double> z_min;
+
+    std::tuple<int, double> x_max;
+    std::tuple<int, double> y_max;
+    std::tuple<int, double> z_max;
+    for(int i = 0; i < all_points.size(); i++)
+    {
+        double x_coord = all_points[i].x();
+        double y_coord = all_points[i].y();
+        double z_coord = all_points[i].z();
+
+
+
+    }
+
+
+
+
+}
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////// Triangulation ///////////////////////
+////////////////////////////////////////////////////////////
 void copyInfo(std::vector<Point>& a_points, std::vector<vertex_info>& a_info, std::vector<Point>& t_points, std::vector<vertex_info>& t_info)
 {
 //    std::size_t NN =  CGAL::estimate_global_k_neighbor_scale(a_points);
@@ -67,23 +103,25 @@ Delaunay makeDelaunayWithInfo(std::vector<Point>& points, std::vector<vertex_inf
 }
 
 
-
+////////////////////////////////////////////////////////////
+///////////////////////////// PCA //////////////////////////
+////////////////////////////////////////////////////////////
 // PCA with kNN neighborhood
-void pcaKNN(Delaunay& Dt){
+void pcaKNN(Delaunay& Dt, std::vector<Point>& all_points){
 
     auto start = std::chrono::high_resolution_clock::now();
+    std::cout << "Start PCA..." << std::endl;
 
     // calculate the size of the smallest eigenvalue, which sould serve as a good measurement of noise. and use that as the sigma for the score computation
     // problem: this might have a good effect in noise areas, but it also weakens the few important votes in missing data areas
 
-
-    // get the point for every vertex
-    std::vector<Point> all_points;
+//    // get the point for every vertex
     Delaunay::Finite_vertices_iterator vft;
-    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-        Point p = vft->point();
-        all_points.push_back(p);
-    }
+//    std::vector<Point> all_points;
+//    for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+//        Point p = vft->point();
+//        all_points.push_back(p);
+//    }
 
     std::size_t NN =  CGAL::estimate_global_k_neighbor_scale(all_points);
 
@@ -174,6 +212,9 @@ void pcaKNN(Delaunay& Dt){
 // PCA with Delaunay neighborhood
 void pcaDt(Delaunay& Dt){
 
+    auto start = std::chrono::high_resolution_clock::now();
+    std::cout << "Start PCA..." << std::endl;
+
     Delaunay::Finite_vertices_iterator vft;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
 
@@ -259,7 +300,9 @@ void pcaDt(Delaunay& Dt){
 
 
     }
-    std::cout << "Calculated noise per point with PCA on Delaunay neighborhood..." << std::endl;
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Calculated noise per point with PCA on Delaunay neighborhood in " << duration.count() << "s" << std::endl;
 }
 
 
