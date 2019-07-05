@@ -25,14 +25,17 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
+typedef CGAL::cpp11::array<float, 3>                                Sensor;
 
 struct vertex_info{
     int idx;
     double sigma;
     Color color;
     Vector normal;
+    Sensor sensor;
 };
 typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
+
 
 
 struct cell_info{
@@ -56,6 +59,8 @@ typedef Delaunay::Facet                                             Facet;
 typedef Delaunay::Cell_handle                                       Cell_handle;
 typedef Delaunay::Vertex_handle                                     Vertex_handle;
 
+typedef boost::tuple<Point, vertex_info>                            point_info;
+
 // map cell of the Dt, to an index, the outside score, the inside score, and the final label
 // not really needed anymore, just for old code
 typedef std::map<Cell_handle, std::tuple<int, float, float, int>>   Cell_map;
@@ -65,6 +70,7 @@ typedef std::map<Vertex_handle, std::pair<Point,double>>            VPS_map;
 ///////// read PLY /////////
 typedef CGAL::cpp11::tuple<Point, Vector, Color> PNC;
 typedef CGAL::cpp11::tuple<Point, Vector> PN;
+typedef CGAL::cpp11::tuple<Point, Sensor> PS;
 
 ///////// ray tracing /////////
 typedef Kernel::Ray_3                                               Ray;
@@ -83,6 +89,42 @@ typedef Kernel::Segment_3                                           Segment;
 #include <CGAL/tags.h>
 
 typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_with_id_3>      Polyhedron;
+
+// Simplification function
+#include <CGAL/Surface_mesh_simplification/edge_collapse.h>
+// Stop-condition policy
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/LindstromTurk.h>
+namespace SMS = CGAL::Surface_mesh_simplification;
+
+
+
+// for PCA / neighborhood search
+// for neighborhood search
+#include <CGAL/Orthogonal_incremental_neighbor_search.h>
+#include <CGAL/Incremental_neighbor_search.h>
+#include <CGAL/Search_traits_3.h>
+#include <CGAL/Search_traits_adapter.h>
+#include <CGAL/centroid.h>
+#include <CGAL/estimate_scale.h>
+
+// for matrix operations, use Eigen lib
+#include <Eigen/Dense>
+
+//#include <pcl/point_types.h>
+//#include <pcl/features/normal_3d.h>
+
+
+typedef CGAL::Search_traits_3<Kernel> TreeTraits;
+typedef CGAL::Search_traits_adapter<point_info,
+  CGAL::Nth_of_tuple_property_map<0, point_info>,
+  TreeTraits>                                               Traits;
+
+typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
+typedef Neighbor_search::Tree Tree;
+
+typedef CGAL::Orthogonal_incremental_neighbor_search<Traits> Incremental_neighbor_search;
+typedef Incremental_neighbor_search::Tree Incremental_Tree;
 
 
 #endif // CGAL_TYPEDEFS_H

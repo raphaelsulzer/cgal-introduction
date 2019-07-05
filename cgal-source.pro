@@ -8,12 +8,13 @@ SOURCES += \
     rayTracing.cpp \
     surfaceRecon.cpp \
     optimization.cpp \
-    pointSetProcessing.cpp
+    meshProcessing.cpp \
+    pointsetprocessing.cpp
 
 
 QMAKE_CXXFLAGS += -std=c++11
 
-# surpress wired warnings
+# surpress weird warnings
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-variable -Wno-unused-parameter
 
 ### UBUNTU

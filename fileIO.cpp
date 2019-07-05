@@ -101,6 +101,84 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
 }
 
 
+
+void readMeshPLY(std::string ifn)
+{
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "File " << ifn << " read in " << duration.count() << "s" << std::endl;
+
+
+}
+
+
+void readPLYWithSensor(std::string ifn, std::vector<Point>& points, std::vector<vertex_info>& infos)
+{
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::vector<PS> ply_lines;
+
+    //    std::vector<PC> points; // store points
+    std::ifstream in(ifn);
+
+    // read the ply
+    typedef CGAL::Nth_of_tuple_property_map<0, PS> Point_map;
+    typedef CGAL::Nth_of_tuple_property_map<1, PS> Sensor_map;
+    CGAL::read_ply_points_with_properties
+      (in,
+       std::back_inserter (ply_lines),
+       CGAL::make_ply_point_reader (Point_map()),
+       std::make_tuple (Sensor_map(),
+                               CGAL::Construct_array(),
+                               CGAL::PLY_property<float>("x0"),
+                               CGAL::PLY_property<float>("y0"),
+                               CGAL::PLY_property<float>("z0"))
+       );
+
+
+    for (int i = 0; i < ply_lines.size (); ++ i)
+    {
+        // make vector of points
+        points.push_back(get<0>(ply_lines[i]));
+        // make vector of infos as: tuple(idx, sigma, normal, color)
+        vertex_info inf;
+        inf.idx = i;
+        inf.sensor = get<1>(ply_lines[i]);
+        inf.sigma = 0.0;
+        infos.push_back(inf);
+    }
+
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "File " << ifn << " read in " << duration.count() << "s" << std::endl;
+}
+
+
 void readPLY(std::string ifn, std::vector<Point>& points, std::vector<vertex_info>& infos)
 {
 
@@ -245,6 +323,57 @@ void exportOFF(Polyhedron& out_mesh, std::string path)
 
 
 }
+
+void fixSensorCenter(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos){
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+    path=path+"_fixedNormals.ply";
+
+    std::fstream fo;
+    fo.open(path, std::fstream::out);
+
+    fo << "ply" << std::endl;
+    fo << "format ascii 1.0" << std::endl;
+    fo << "element vertex " << points.size() << std::endl;
+    fo << "property float x" << std::endl;
+    fo << "property float y" << std::endl;
+    fo << "property float z" << std::endl;
+    fo << "property float nx" << std::endl;
+    fo << "property float ny" << std::endl;
+    fo << "property float nz" << std::endl;
+//    fo << "property uchar red" << std::endl;
+//    fo << "property uchar green" << std::endl;
+//    fo << "property uchar blue" << std::endl;
+    fo << "end_header" << std::endl;
+    fo << std::setprecision(8);
+
+    for(int i=0; i < points.size(); i++){
+
+        Vector sensor(infos[i].sensor[0] - points[i].x(), infos[i].sensor[1] - points[i].y(), infos[i].sensor[2] - points[i].z());
+        sensor=sensor/std::sqrt(sensor.squared_length());
+        // print data to file
+        // coordinates
+        fo  << points[i] << " "
+       // normal
+            << sensor << std::endl;
+//            << infos[i].normal << std::endl;
+        // color
+//            << int(infos[i].color[0]) <<  " " << int(infos[i].color[1]) <<  " " << int(infos[i].color[2]) <<  std::endl;
+
+    }
+    fo.close();
+
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "File exported to " << path << " in " << duration.count() << "s" << std::endl;
+
+
+}
+
+
 
 void exportPLY(const Delaunay& Dt,
                 std::string path,
