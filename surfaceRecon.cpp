@@ -5,6 +5,38 @@
 #include "rayTracing.cpp"
 #include "optimization.cpp"
 
+#include <CGAL/IO/PLY_reader.h>
+
+#include <stdio.h>
+#include "ply.h"
+//#include "rply.c"
+
+static int vertex_cb(p_ply_argument argument) {
+    long eol;
+    ply_get_argument_user_data(argument, NULL, &eol);
+    printf("%g", ply_get_argument_value(argument));
+    if (eol) printf("\n");
+    else printf(" ");
+    return 1;
+}
+
+static int face_cb(p_ply_argument argument) {
+    long length, value_index;
+    ply_get_argument_property(argument, NULL, &length, &value_index);
+    switch (value_index) {
+        case 0:
+        case 1:
+            printf("%g ", ply_get_argument_value(argument));
+            break;
+        case 2:
+            printf("%g\n", ply_get_argument_value(argument));
+            break;
+        default:
+            break;
+    }
+    return 1;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// MAIN ///////////////////////////////////////////
@@ -19,24 +51,68 @@ int main()
 //    std::string ifn = path+"office/clouds/office_15000";
 //    std::string ifn = path+"daratech/daratech25000";
 //    std::string ifn = path+"musee/museeAP_05m";
-    std::string ifn = path+"musee/Est1.mesh";
+    std::string ifn = path+"musee/Est1.mesh_cut";
 //    std::string ifn2 = path+"musee/TLS_registered";
     std::string ofn = ifn;
     ifn+=".ply";
+
+    Mesh_ply aMesh;
+    Import_PLY("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/Est1.mesh_cut.ply", &aMesh);
 
 //    std::string input = "/home/raphael/PhD_local/data/museeZoologic/TLS/EMSMesh/Est1.mesh.off";
 //    std::string output = "/home/raphael/PhD_local/data/museeZoologic/TLS/EMSMesh/Est1.mesh_decimated.off";
 
 //    decimateSurfaceMesh(input, output);
 
-    std::vector<Point> a_points;
-    std::vector<vertex_info> a_infos;
-    readPLYWithSensor(ifn, a_points, a_infos);
+//    std::vector<Point> a_points;
+//    std::vector<vertex_info> a_infos;
+//    readPLYWithSensor(ifn, a_points, a_infos);
 
-    fixSensorCenter(ofn, a_points, a_infos);
+//    fixSensorCenter(ofn, a_points, a_infos);
+
+//    long nvertices, ntriangles;
+//    p_ply ply = ply_open("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/Est1.mesh_cut.ply", NULL, 0, NULL);
+//    ply_read_header(ply);
+//    nvertices = ply_set_read_cb(ply, "vertex", "x", vertex_cb, NULL, 0);
+//    ply_set_read_cb(ply, "vertex", "y", vertex_cb, NULL, 0);
+//    ply_set_read_cb(ply, "vertex", "z", vertex_cb, NULL, 1);
+//    ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", face_cb, NULL, 0);
+//    printf("%ld\n%ld\n", nvertices, ntriangles);
+//    ply_read(ply);
+//    ply_close(ply);
+
+
+
+
+
+//    // else try polygon soup
+//    std::vector<Kernel::Point_3> points;
+//    std::vector<std::vector<std::size_t> > polygons;
+//    std::vector<CGAL::Color> fcolors;
+//    std::vector<CGAL::Color> vcolors;
+
+//    std::ifstream in(ifn);
+//    CGAL::read_PLY(in, points, polygons, fcolors, vcolors);
+
+//    std::vector<std::vector<std::size_t> > polygons_sample;
+//    for(std::size_t i = 0; i < 10; i++)
+//    {
+//        std::cout << polygons[i][0] << std::endl;
+
+//    }
+
+//    CGAL::read_PLY(in, points, polygons);
+
+
+
 
     // TODO: save the sensor mesh as an off file, e.g. with Meshlab and read it into a surface mesh with CGAL
     // then do the tetrahedron - tetrahedron intersection
+    // problem is that Meshlab and CC both mess up the OFF file.
+    // another problem is that Meshlab cannot export the additional information (namely sensor center) and CC even messes up PLY files
+    // this means I cannot read in the original PLY file, neither with Meshlab nor with CC and also not with CGAL
+    // not with CGAL because the original PLY loader does not allow to read in the mesh structure, and in order to write one myself, the
+    // file would have to be ASCII not Binary
 
 
 ////    std::vector<Point> t_points;

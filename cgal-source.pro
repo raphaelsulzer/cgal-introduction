@@ -9,8 +9,10 @@ SOURCES += \
     surfaceRecon.cpp \
     optimization.cpp \
     meshProcessing.cpp \
-    pointsetprocessing.cpp
-
+    pointsetprocessing.cpp \
+    mesh.cpp \
+    ply.cpp \
+    rply.c
 
 QMAKE_CXXFLAGS += -std=c++11
 
@@ -21,13 +23,15 @@ QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-variable -Wno-unused-parameter
 unix:!macx{
     INCLUDEPATH +=  /usr/local/include \
                     /usr/include/eigen3 \
-                    /usr/lib/gco-v3.0-master
+                    /usr/lib/gco-v3.0-master \
+                    /home/raphael/PhD_local/cpp/rPLY
 
     LIBS += \
     -L/usr/local/lib/ -lCGAL \
     -L/usr/lib/ -lgmp \
     -L/usr/lib/ -lmpfr \
-    -L/usr/lib/gco-v3.0-master/build/ -lgco \
+    -L/usr/lib/gco-v3.0-master/build/ -lgco
+#    -L/usr/lib/librply-master/bin/ -lrply
 }
 
 ### MAC OS
