@@ -8,7 +8,7 @@
 #include <CGAL/IO/PLY_reader.h>
 
 #include <stdio.h>
-#include "ply.h"
+#include "rply.h"
 //#include "rply.c"
 
 static int vertex_cb(p_ply_argument argument) {
@@ -56,8 +56,8 @@ int main()
     std::string ofn = ifn;
     ifn+=".ply";
 
-    Mesh_ply aMesh;
-    Import_PLY("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/Est1.mesh_cut.ply", &aMesh);
+//    Mesh_ply aMesh;
+//    Import_PLY("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/Est1.mesh_cut.ply", &aMesh);
 
 //    std::string input = "/home/raphael/PhD_local/data/museeZoologic/TLS/EMSMesh/Est1.mesh.off";
 //    std::string output = "/home/raphael/PhD_local/data/museeZoologic/TLS/EMSMesh/Est1.mesh_decimated.off";
@@ -70,16 +70,16 @@ int main()
 
 //    fixSensorCenter(ofn, a_points, a_infos);
 
-//    long nvertices, ntriangles;
-//    p_ply ply = ply_open("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/Est1.mesh_cut.ply", NULL, 0, NULL);
-//    ply_read_header(ply);
-//    nvertices = ply_set_read_cb(ply, "vertex", "x", vertex_cb, NULL, 0);
-//    ply_set_read_cb(ply, "vertex", "y", vertex_cb, NULL, 0);
-//    ply_set_read_cb(ply, "vertex", "z", vertex_cb, NULL, 1);
-//    ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", face_cb, NULL, 0);
-//    printf("%ld\n%ld\n", nvertices, ntriangles);
-//    ply_read(ply);
-//    ply_close(ply);
+    long nvertices, ntriangles;
+    p_ply ply = ply_open("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/Est1.mesh_cut.ply", 0);
+    ply_read_header(ply);
+    nvertices = ply_set_read_cb(ply, "vertex", "x", vertex_cb, NULL, 0);
+    ply_set_read_cb(ply, "vertex", "y", vertex_cb, NULL, 0);
+    ply_set_read_cb(ply, "vertex", "z", vertex_cb, NULL, 1);
+    ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", face_cb, NULL, 0);
+    printf("%ld\n%ld\n", nvertices, ntriangles);
+    ply_read(ply);
+    ply_close(ply);
 
 
 
