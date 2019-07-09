@@ -135,48 +135,48 @@ void readMeshPLY(std::string ifn)
 }
 
 
-void readPLYWithSensor(std::string ifn, std::vector<Point>& points, std::vector<vertex_info>& infos)
-{
+//void readPLYWithSensor(std::string ifn, std::vector<Point>& points, std::vector<vertex_info>& infos)
+//{
 
-    auto start = std::chrono::high_resolution_clock::now();
+//    auto start = std::chrono::high_resolution_clock::now();
 
-    std::vector<PS> ply_lines;
+//    std::vector<PS> ply_lines;
 
-    //    std::vector<PC> points; // store points
-    std::ifstream in(ifn);
+//    //    std::vector<PC> points; // store points
+//    std::ifstream in(ifn);
 
-    // read the ply
-    typedef CGAL::Nth_of_tuple_property_map<0, PS> Point_map;
-    typedef CGAL::Nth_of_tuple_property_map<1, PS> Sensor_map;
-    CGAL::read_ply_points_with_properties
-      (in,
-       std::back_inserter (ply_lines),
-       CGAL::make_ply_point_reader (Point_map()),
-       std::make_tuple (Sensor_map(),
-                               CGAL::Construct_array(),
-                               CGAL::PLY_property<float>("x0"),
-                               CGAL::PLY_property<float>("y0"),
-                               CGAL::PLY_property<float>("z0"))
-       );
-
-
-    for (int i = 0; i < ply_lines.size (); ++ i)
-    {
-        // make vector of points
-        points.push_back(get<0>(ply_lines[i]));
-        // make vector of infos as: tuple(idx, sigma, normal, color)
-        vertex_info inf;
-        inf.idx = i;
-        inf.sensor = get<1>(ply_lines[i]);
-        inf.sigma = 0.0;
-        infos.push_back(inf);
-    }
+//    // read the ply
+//    typedef CGAL::Nth_of_tuple_property_map<0, PS> Point_map;
+//    typedef CGAL::Nth_of_tuple_property_map<1, PS> Sensor_map;
+//    CGAL::read_ply_points_with_properties
+//      (in,
+//       std::back_inserter (ply_lines),
+//       CGAL::make_ply_point_reader (Point_map()),
+//       std::make_tuple (Sensor_map(),
+//                               CGAL::Construct_array(),
+//                               CGAL::PLY_property<float>("x0"),
+//                               CGAL::PLY_property<float>("y0"),
+//                               CGAL::PLY_property<float>("z0"))
+//       );
 
 
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-    std::cout << "File " << ifn << " read in " << duration.count() << "s" << std::endl;
-}
+//    for (int i = 0; i < ply_lines.size (); ++ i)
+//    {
+//        // make vector of points
+//        points.push_back(get<0>(ply_lines[i]));
+//        // make vector of infos as: tuple(idx, sigma, normal, color)
+//        vertex_info inf;
+//        inf.idx = i;
+//        inf.sensor = get<1>(ply_lines[i]);
+//        inf.sigma = 0.0;
+//        infos.push_back(inf);
+//    }
+
+
+//    auto stop = std::chrono::high_resolution_clock::now();
+//    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+//    std::cout << "File " << ifn << " read in " << duration.count() << "s" << std::endl;
+//}
 
 
 void readPLY(std::string ifn, std::vector<Point>& points, std::vector<vertex_info>& infos)
@@ -439,7 +439,7 @@ void exportPLY(const Delaunay& Dt,
         fo << "property uchar blue" << std::endl;
     }
     fo << "end_header" << std::endl;
-    fo << std::setprecision(3);
+    fo << std::setprecision(8);
 
     // give every vertex from the triangulation an index starting at 0
     // and already print the point coordinates, color and normal of the vertex to the PLY file

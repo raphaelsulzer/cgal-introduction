@@ -32,7 +32,7 @@ struct vertex_info{
     double sigma;
     Color color;
     Vector normal;
-    Sensor sensor;
+    Vector sensor;
 };
 typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
 

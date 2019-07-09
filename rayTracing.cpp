@@ -168,7 +168,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
     // ray constructed from point origin to (end of) normal
     // introduces a ray r with source p and with a direction given by v.
-    Ray ray(vit->point(), vit->info().normal);
+    Ray ray(vit->point(), vit->info().sensor);
 
     // make the inside ray
     // in fact MicMac saves the camera normals pointing away from the camera,
