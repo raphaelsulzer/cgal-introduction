@@ -5,11 +5,7 @@
 #include "pointSetProcessing.cpp"
 #include "rayTracing.cpp"
 #include "optimization.cpp"
-
-#include <CGAL/IO/PLY_reader.h>
-
-#include <stdio.h>
-#include "ply.h"
+#include "plyDefinition.cpp"
 
 
 void readSensorMesh(std::string ofn, Mesh_ply aMesh){
@@ -75,6 +71,14 @@ void readSensorMesh(std::string ofn, Mesh_ply aMesh){
 
     }
 
+    // TODO: save the sensor mesh as an off file, e.g. with Meshlab and read it into a surface mesh with CGAL
+    // then do the tetrahedron - tetrahedron intersection
+    // problem is that Meshlab and CC both mess up the OFF file.
+    // another problem is that Meshlab cannot export the additional information (namely sensor center) and CC even messes up PLY files
+    // this means I cannot read in the original PLY file, neither with Meshlab nor with CC and also not with CGAL
+    // not with CGAL because the original PLY loader does not allow to read in the mesh structure, and in order to write one myself, the
+    // file would have to be ASCII not Binary
+
 }
 
 
@@ -87,23 +91,20 @@ int main()
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-//    std::string ifn = path+"fontaine/fontaine_10000_normals";
-//    std::string ifn = path+"office/clouds/office_15000";
+    std::string ifn = path+"musee/Est1.mesh_cut2";
 //    std::string ifn = path+"daratech/daratech25000";
-//    std::string ifn = path+"musee/museeAP_05m";
-    std::string ifn = path+"musee/Est1.mesh_cut";
-//    std::string ifn2 = path+"musee/TLS_registered";
     std::string ofn = ifn;
     ifn+=".ply";
 
-    Mesh_ply aMesh;
-    Import_PLY(ifn.c_str(), &aMesh);
 
-
-
+    // read ASCII PLY with normal
     std::vector<Point> a_points;
     std::vector<vertex_info> a_infos;
-//    readPLYWithSensor(ifn, a_points, a_infos);
+//    readPLY(ifn, a_points, a_infos);
+
+    // read Binary PLY with sensor
+    Mesh_ply aMesh;
+    Import_PLY(ifn.c_str(), &aMesh);
 
     for(int i = 0; i < aMesh.mVertices.size(); i++){
         Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
@@ -114,33 +115,32 @@ int main()
         a_infos.push_back(vec_inf);
     }
 
-    // TODO: save the sensor mesh as an off file, e.g. with Meshlab and read it into a surface mesh with CGAL
-    // then do the tetrahedron - tetrahedron intersection
-    // problem is that Meshlab and CC both mess up the OFF file.
-    // another problem is that Meshlab cannot export the additional information (namely sensor center) and CC even messes up PLY files
-    // this means I cannot read in the original PLY file, neither with Meshlab nor with CC and also not with CGAL
-    // not with CGAL because the original PLY loader does not allow to read in the mesh structure, and in order to write one myself, the
-    // file would have to be ASCII not Binary
 
 
+    std::vector<std::vector<int>> sensor_triangle;
+    for(int i = 0; i < aMesh.mIndices.size()/3; i++){
+        std::vector<int> poly(3);
+        poly[0] = aMesh.mIndices[(i*3)%3+0];
+        poly[1] = aMesh.mIndices[(i*3)%3+1];
+        poly[2] = aMesh.mIndices[(i*3)%3+2];
+        sensor_triangle.push_back(poly);
+    }
+
+
+    // combine point clouds
 //    std::vector<Point> t_points;
 //    std::vector<vertex_info> t_infos;
 //    readPLY(ifn2, t_points, t_infos);
 //    ifn2+=".ply";
 
-    // combine point clouds
 //    copyInfo(a_points, a_infos, t_points, t_infos);
 //    a_points.insert(a_points.end(), t_points.begin(), t_points.end());
 //    a_infos.insert(a_infos.end(), t_infos.begin(), t_infos.end());
 
 
-
-//    // init a vector that has the correct elements of the PLY file, so either PNC or PN
-//    std::vector<PNC> ply_lines;
-//    Delaunay Dt = triangulationFromFile(ifn, ply_lines);
-
-
     Delaunay Dt = makeDelaunayWithInfo(a_points, a_infos);
+
+    iterateOverTetras(Dt, a_points, a_infos, sensor_triangle);
 
     // calculate noise per point and save it in the vertex_info of the Dt
     pcaKNN(Dt, a_points);
@@ -153,8 +153,6 @@ int main()
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
     rayTracingFun(Dt, 1);
-
-
 
     // Dt, area_weight, iteration
     GeneralGraph_DArraySArraySpatVarying(Dt, 0.1, -1);

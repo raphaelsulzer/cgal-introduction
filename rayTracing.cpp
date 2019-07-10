@@ -295,4 +295,52 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
     std::cout << "Ray tracing done in " << duration.count() << "s" << std::endl;
 }
 
+/////////////////////////////////////////////////////////////////
+/////////////////////// Tetrahedron tracing /////////////////////
+/////////////////////////////////////////////////////////////////
+///
+///
+///
+///
+/// cannot simply look for the sensor tetrahedron from the same 3 points, because the connection is broken when combining different sensors. Meaning I will have
+/// Delaunay surface triangles that are formed by points from different sensors.
+
+void iterateOverTetras(Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_triangle){
+
+    Delaunay::Finite_cells_iterator cit;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+
+        for(int i =0; i < sensor_triangle.size(); i++){
+
+
+            Nef nef(*cit);
+
+
+        }
+        // make Nef polyhedron from the Delaunay tetra
+        //
+
+
+
+
+
+
+    }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 

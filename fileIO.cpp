@@ -455,7 +455,7 @@ void exportPLY(const Delaunay& Dt,
         // color
             << int(vft->info().color[0]) <<  " " << int(vft->info().color[1]) <<  " " << int(vft->info().color[2]) <<  " "
         // normal
-            << vft->info().normal << std::endl;
+            << vft->info().sensor << std::endl;
         index++;
     }
 
