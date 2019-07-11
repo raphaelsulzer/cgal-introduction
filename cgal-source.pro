@@ -9,11 +9,12 @@ SOURCES += \
     surfaceRecon.cpp \
     optimization.cpp \
     meshProcessing.cpp \
-    mesh.cpp \
     pointSetProcessing.cpp \
     plyDefinition.cpp \
     colmapPLY.cpp \
-    rPLY.c
+    rPLY.c \
+    main.cpp \
+    meshPLY.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 

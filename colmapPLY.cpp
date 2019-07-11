@@ -1,9 +1,8 @@
 #include <cgal_typedefs.h>
 
 
-
 // for colmap fused.ply.vis(binary format)
-bool LoadVisibilityFile(const char* pszVisFile, std::vector<std::vector<int>>& vis_info)
+bool loadVisibilityFile(const char* pszVisFile, std::vector<std::vector<int>>& vis_info)
 {
     FILE * fp = fopen(pszVisFile, "rb");
     if (fp == NULL){
@@ -62,7 +61,7 @@ Eigen::Vector3d ProjectionCenterFromPose(const Eigen::Vector4d& qvec,
   return quat * -tvec;
 }
 
-bool LoadImageFile(const char* pszImageFile, std::map<int, Point>& image_proj_center)
+bool loadImageFile(const char* pszImageFile, std::map<int, Point>& image_proj_center)
 {
     FILE * fp = fopen(pszImageFile, "rb");
     if (fp == NULL){
@@ -136,3 +135,5 @@ bool LoadImageFile(const char* pszImageFile, std::map<int, Point>& image_proj_ce
 
     return true;
 }
+
+

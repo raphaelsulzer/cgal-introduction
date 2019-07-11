@@ -77,6 +77,10 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
             int idx = (oppositeVertex+i)%4;
 
             Triangle tri = Dt.triangle(current_cell, idx);
+            if(tri.squared_area() < 0.0001){
+                std::cout << "weirdly small triangle skiped" << std::endl;
+                return 0;
+            }
             Facet fac = std::make_pair(current_cell, idx);
 
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
@@ -94,13 +98,14 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
                     float dist2 = CGAL::squared_distance(*p, source);
+                    //std::cout << dist2 << std::endl;
                     // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                     score = cellScore(dist2, sigma, inside);
 
                 }
                 else{
                     const Segment* s = boost::get<Segment>(&*result);
-                    std::cout << "segment 3:  " << *s << std::endl;
+                    std::cout << "segment 3 intersection behind the first cell:  " << *s << std::endl;
 
                     // get the three edges of the current triangle
                     // check how they intersect with the current ray
@@ -220,7 +225,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // else result is a line
                 else{
                     const Segment* s = boost::get<Segment>(&*result);
-                    std::cout << "segment 3:  " << *s << std::endl;
+                    std::cout << "segment 3 intersection in first cell:  " << *s << std::endl;
                     // for now just return in this case, until it is solved
                     //continue;
                     // TOOD: simply calculate the distance to this edge, and then I can also get a score from cellScore()
@@ -236,7 +241,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // and check if there is an intersection
                 // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
                 // so start from there to put this into a function
-                if(!one_cell){
+                if(!inside){
                     Facet mirror_fac = Dt.mirror_facet(fac);
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;
@@ -304,33 +309,38 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 ///
 /// cannot simply look for the sensor tetrahedron from the same 3 points, because the connection is broken when combining different sensors. Meaning I will have
 /// Delaunay surface triangles that are formed by points from different sensors.
+// TODO:
+// 1. do the full ray tracing to the outside, but not to the inside
+// simply replace the one_cell if-statement with one_cell && inside
+// 2. get the correct sensor orientation from COLMAP or from seperate depth map from each image from MicMac
+// 3. intersect a sensor topology tetrahedron (formed by 3 pixels next to each other, or LiDAR points next to each other and their (almost common -> barycenter) ray source
+// use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
 
-void iterateOverTetras(Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_triangle){
+//void iterateOverTetras(Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_triangle){
 
-    Delaunay::Finite_cells_iterator cit;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+//    Delaunay::Finite_cells_iterator cit;
+//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
 
-        for(int i =0; i < sensor_triangle.size(); i++){
+//        for(int i =0; i < sensor_triangle.size(); i++){
 
+//            Polyhedron poly;
+//            poly.make_tetrahedron(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point());
+//            Nef nef(poly);
+////            Nef n1(Plane(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point(), -1));
+////            Nef n2(Plane(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(3)->point(), -1));
+////            Nef n3(Plane(cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
+////            Nef n4(Plane(cit->vertex(0)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
+////            Nef n1(Plane(1.25, 2.5, 5.1, -1));
+////            Nef N1(Plane( 1, 0, 0,-1));
 
-            Nef nef(*cit);
-
-
-        }
-        // make Nef polyhedron from the Delaunay tetra
-        //
-
-
-
-
-
-
-    }
+////            Nef nef = n1+n2+n3+n4;
 
 
-
-
-}
+//        }
+//        // make Nef polyhedron from the Delaunay tetra
+//        //
+//    }
+//}
 
 
 

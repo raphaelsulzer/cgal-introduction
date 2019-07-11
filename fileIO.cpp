@@ -1,4 +1,6 @@
 #include <cgal_typedefs.h>
+#include "plyDefinition.cpp"
+#include "colmapPLY.cpp"
 
 
 //////////////////////////////////////////////////////////
@@ -102,30 +104,84 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
 
 
 
-void readMeshPLY(std::string ifn)
+void readBinaryPLY(std::string ifn, std::vector<Point>& points, std::vector<vertex_info>& infos, bool colmap)
 {
-
     auto start = std::chrono::high_resolution_clock::now();
 
+    // read Binary PLY with sensor
+    Mesh_ply aMesh;
+    Import_PLY(ifn.c_str(), &aMesh);
+
+    if(colmap){
+
+        std::string sensor_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused.ply.vis";
+        std::vector<std::vector<int>> vis_info;
+        loadVisibilityFile(sensor_file.c_str(), vis_info);
+
+        std::map<int, Point> sensor_map;
+        std::string image_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/sfm_result/images.bin";
+        loadImageFile(image_file.c_str(), sensor_map);
+
+        for(int i = 0; i < aMesh.mVertices.size(); i++){
+            // save point
+            Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
+            points.push_back(pt);
+            // sensor
+            // get the first of the cameras of this point
+            Point sensor_location = sensor_map.find(vis_info[i][0])->second;
+    //        Vector vec(sensor_location.x() - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
+            Vector vec = sensor_location - pt;
+            vertex_info vec_inf;
+            vec_inf.sensor = vec;
+            // color
+            unsigned char r,g,b;
+            if(aMesh.mvColors.size() > 0){
+                r = aMesh.mvColors[i].x * 256;
+                g = aMesh.mvColors[i].y * 256;
+                b = aMesh.mvColors[i].z * 256;
+            }
+            std::array<unsigned char, 3> col = {r,g,b};
+            vec_inf.color = col;
+            // save vertex info
+            infos.push_back(vec_inf);
+        }
+    }
+    else{
+        for(int i = 0; i < aMesh.mVertices.size(); i++){
+            // save points
+            Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
+            points.push_back(pt);
+            // sensor
+//            Vector vec(aMesh.mNormals[i].x - pt.x(), aMesh.mNormals[i].y - pt.y(), aMesh.mNormals[i].z - pt.z());
+            Vector vec(aMesh.mvCapture[i].x - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
+            vertex_info vec_inf;
+            vec_inf.sensor = vec;
+            // color
+            unsigned char r,g,b;
+            if(aMesh.mvColors.size() > 0){
+                r = aMesh.mvColors[i].x * 256;
+                g = aMesh.mvColors[i].y * 256;
+                b = aMesh.mvColors[i].z * 256;
+            }
+            std::array<unsigned char, 3> col = {r,g,b};
+            vec_inf.color = col;
+            // save vertex info
+            infos.push_back(vec_inf);
+        }
+    }
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//    std::vector<std::vector<int>> sensor_triangle;
+//    for(int i = 0; i < aMesh.mIndices.size()/3; i++){
+//        std::vector<int> poly(3);
+//        poly[0] = aMesh.mIndices[(i*3)%3+0];
+//        poly[1] = aMesh.mIndices[(i*3)%3+1];
+//        poly[2] = aMesh.mIndices[(i*3)%3+2];
+//        sensor_triangle.push_back(poly);
+//    }
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
@@ -214,7 +270,7 @@ void readPLY(std::string ifn, std::vector<Point>& points, std::vector<vertex_inf
         vertex_info inf;
         inf.idx = i;
         inf.color = get<2>(ply_lines[i]);
-        inf.normal = get<1>(ply_lines[i]);
+        inf.sensor = get<1>(ply_lines[i]);
         inf.sigma = 0.0;
         infos.push_back(inf);
     }
@@ -276,10 +332,15 @@ void exportEdges(std::fstream& fo, const Delaunay& Dt, const Cell_map& all_cells
     std::cout << "edge count is: " << edge_count << std::endl;
 }
 
-void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, std::pair<Point, double>>& all_vertices, std::string path){
+void exportPoints(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos){
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+    path+="_fixedSensor.ply";
 
     // get number of vertices and triangles of the triangulation
-    Delaunay::size_type nv = Dt.number_of_vertices();
+    Delaunay::size_type nv = points.size();
 
     std::fstream fo;
     fo.open(path, std::fstream::out);
@@ -293,22 +354,26 @@ void exportSimple(const Delaunay& Dt, std::map<Vertex_handle, std::pair<Point, d
     fo << "property float nx" << std::endl;
     fo << "property float ny" << std::endl;
     fo << "property float nz" << std::endl;
-    fo << "property float curvature" << std::endl;
+    fo << "property uchar red" << std::endl;
+    fo << "property uchar green" << std::endl;
+    fo << "property uchar blue" << std::endl;
     fo << "end_header" << std::endl;
-    fo << std::setprecision(3);
+    fo << std::setprecision(8);
 
 
     Delaunay::Finite_vertices_iterator vft;
-    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-        Point normal = all_vertices.find(vft)->second.first;
-        double curvature = all_vertices.find(vft)->second.second;
+    for(int i = 0; i < points.size(); i++){
         // print data to file
-        fo << vft->point() << " "                           // coordinates
-           << normal << " "
-           << curvature << std::endl;                     // normal
+        fo << points[i] << " "                           // coordinates
+           << infos[i].sensor << " "
+           << int(infos[i].color[0]) << " " << int(infos[i].color[1]) << " " << int(infos[i].color[2]) << std::endl;                     // normal
     }
 
     fo.close();
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "File exported to " << path << " in " << duration.count() << "s" << std::endl;
 
 }
 
@@ -433,11 +498,11 @@ void exportPLY(const Delaunay& Dt,
     else
         fo << "element face " << nf << std::endl;
     fo << "property list uchar int vertex_indices" << std::endl;
-    if(!prune_or_color){
-        fo << "property uchar red" << std::endl;
-        fo << "property uchar green" << std::endl;
-        fo << "property uchar blue" << std::endl;
-    }
+//    if(!prune_or_color){
+    fo << "property uchar red" << std::endl;
+    fo << "property uchar green" << std::endl;
+    fo << "property uchar blue" << std::endl;
+//    }
     fo << "end_header" << std::endl;
     fo << std::setprecision(8);
 
@@ -522,16 +587,29 @@ void exportPLY(const Delaunay& Dt,
         }
 
 
+//        // color the facets (if !prune_faces, meaning coloring is active)
+//        if(clabel == 1 && mlabel == 1 && !prune_or_color){
+//            fo << " 0 191 255";
+//        }
+//        else if(clabel == 0 && mlabel == 0 && !prune_or_color){
+//            fo << "255 0 0";
+//        }
+//        else if(!prune_or_color){
+//            fo << "0 255 0";
+//        }
+
         // color the facets (if !prune_faces, meaning coloring is active)
-        if(clabel == 1 && mlabel == 1 && !prune_or_color){
+        if(clabel == 1 && mlabel == 1){
             fo << " 0 191 255";
         }
-        else if(clabel == 0 && mlabel == 0 && !prune_or_color){
+        else if(clabel == 0 && mlabel == 0){
             fo << "255 0 0";
         }
-        else if(!prune_or_color){
+        else{
             fo << "0 255 0";
         }
+
+
 
         fo << std::endl;
 

@@ -128,9 +128,11 @@ typedef Incremental_neighbor_search::Tree Incremental_Tree;
 
 
 // Tetrahedron intersection
-#include <CGAL/OFF_to_nef_3.h>
-typedef CGAL::Nef_polyhedron_3<Kernel> Nef;
-
+#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/Extended_homogeneous.h>
+#include <CGAL/Exact_integer.h>
+typedef CGAL::Nef_polyhedron_3<CGAL::Extended_homogeneous<CGAL::Exact_integer>> Nef;
+typedef Nef::Plane_3  Plane;
 
 #endif // CGAL_TYPEDEFS_H
 

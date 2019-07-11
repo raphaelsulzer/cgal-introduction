@@ -19,7 +19,7 @@ void copyInfo(std::vector<Point>& a_points, std::vector<vertex_info>& a_info, st
         // index of nearest neighbor in other cloud
         int idx = boost::get<1>(it->first).idx;
 
-        t_info[i].normal = a_info[idx].normal;
+//        t_info[i].normal = a_info[idx].normal;
         t_info[i].color = a_info[idx].color;
 
         a_points.push_back(t_points[i]);

@@ -343,9 +343,9 @@ void Import_PLY(const char * aFileName, Mesh_ply * aMesh)
   long ftexCoordCount = ply_set_read_cb(ply, "face", "texcoord", PLYFaceTexCoordCallback, &state, 0);
   long fLabelCount = ply_set_read_cb(ply, "face", "label", PLYFaceLabelCallback, &state, 0);
 
-  // Sanity check
-  if ((faceCount < 1) || (vertexCount < 1))
-    throw runtime_error("Empty PLY mesh - invalid file format?");
+//  // Sanity check
+//  if ((faceCount < 1) || (vertexCount < 1))
+//    throw runtime_error("Empty PLY mesh - invalid file format?");
 
   // Prepare the mesh
   aMesh->mIndices.resize(faceCount * 3);
