@@ -77,11 +77,11 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
             int idx = (oppositeVertex+i)%4;
 
             Triangle tri = Dt.triangle(current_cell, idx);
-//            double tri_area;
-//            if(tri_area < 1e-100){
-//                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
+            double tri_area = tri.squared_area();
+            if(tri_area < 1e-100){
+                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
 //                return 0;
-//            }
+            }
             Facet fac = std::make_pair(current_cell, idx);
 
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
@@ -89,7 +89,7 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
               result = intersection(tri, ray);
 
             // check if there is an intersection between the current ray and current triangle
-            if (result) {
+            if (result){
                 // check if ray triangle intersection is a point (probably in most cases)
                 // or a line segment (if ray lies inside the triangle)
                 // if result is a point
@@ -317,34 +317,82 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 // 3. intersect a sensor topology tetrahedron (formed by 3 pixels next to each other, or LiDAR points next to each other and their (almost common -> barycenter) ray source
 // use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
 
-//void iterateOverTetras(Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_triangle){
+//void iterateOverTetras(Delaunay& Dt){
 
 //    Delaunay::Finite_cells_iterator cit;
 //    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
 
-//        for(int i =0; i < sensor_triangle.size(); i++){
-
-//            Polyhedron poly;
-//            poly.make_tetrahedron(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point());
-//            Nef nef(poly);
-////            Nef n1(Plane(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point(), -1));
-////            Nef n2(Plane(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(3)->point(), -1));
-////            Nef n3(Plane(cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
-////            Nef n4(Plane(cit->vertex(0)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
-////            Nef n1(Plane(1.25, 2.5, 5.1, -1));
-////            Nef N1(Plane( 1, 0, 0,-1));
-
-////            Nef nef = n1+n2+n3+n4;
+//        Plane planes[5];
 
 
+//        planes[0] = Plane(Point(-1024, 1192, -80),
+//                            Point(-1024, 1192, -88),
+//                            Point(-1152, 1216, -88));
+
+//        planes[1] = Plane(Point(-1152, 1216, -88),
+//                            Point(-1152, 1200, -88),
+//                            Point(-1152, 1200, -80));
+
+//        planes[2] = Plane(Point(-1024, 1192, -88),
+//                            Point(-1152, 1200, -88),
+//                            Point(-1152, 1216, -88));
+
+//        planes[3] = Plane(Point(-1024, 1192, -80),
+//                            Point(-1152, 1200, -80),
+//                            Point(-1024, 1192, -88));
+
+//        planes[4] = Plane(Point(-1152, 1216, -88),
+//                            Point(-1152, 1200, -80),
+//                            Point(-1024, 1192, -80));
+
+//        Polyhedron_3 P;
+
+
+//        CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P);
+//        assert(P.is_closed());
+
+//        for (Polyhedron_3::Point_iterator pIt = P.points_begin(); pIt != P.points_end(); ++pIt)
+//        {
+//            std::cout << *pIt << std::endl;
 //        }
+
+//        std::cout << '\n';
+
+//        Nef_polyhedron newNef(P);
+
+
+////        Polyhedron poly;
+////        poly.make_tetrahedron(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point());
+////        Nef nef(poly);
+
+////        Plane pl1(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point());
+////        Point p1(1,0,2);
+////        Point p2(5,3,3);
+////        Point p3(7,0,1);
+////        Nef_Plane pl1(p1,p2,p3);
+
+
+////        Nef n1(pl1);
+////        Nef n2(Plane(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(3)->point(), -1));
+////        Nef n3(Plane(cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
+////        Nef n4(Plane(cit->vertex(0)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
+////        Nef n1(Plane(1.25, 2.5, 5.1, -1));
+////        Nef N1(Plane( 1, 0, 0,-1));
+
+////        Nef nef = n1+n2+n3+n4;
+
+
+
 //        // make Nef polyhedron from the Delaunay tetra
 //        //
 //    }
 //}
 
-
-
+// COLMAP Delaunay meshing stems from
+// P. Labatut, J‐P. Pons, and R. Keriven. "Robust and efficient surface
+// reconstruction from range data". Computer graphics forum, 2009.
+//
+// and can be found in meshing.h in colmap/src/mvs
 
 
 

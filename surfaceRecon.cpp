@@ -9,6 +9,7 @@
 void readSensorMesh(std::string ofn, Mesh_ply aMesh){
 
 
+
     Polyhedron out_mesh;
 
     std::vector<Point> points;
@@ -28,46 +29,46 @@ void readSensorMesh(std::string ofn, Mesh_ply aMesh){
         polygons.push_back(poly);
     }
 
-    std::cout<< "orientation: " << CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons) << std::endl;
-//    std::cout << CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(polygons) << std::endl;
+//    std::cout<< "orientation: " << CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons) << std::endl;
+////    std::cout << CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(polygons) << std::endl;
 
-    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, out_mesh);
-
-
-    //    decimateSurfaceMesh(input, output);
+//    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, out_mesh);
 
 
-    std::fstream fo;
-    fo.open(ofn, std::fstream::out);
-    fo << "ply" << std::endl;
-    fo << "format ascii 1.0" << std::endl;
-    fo << "element vertex " << out_mesh.size_of_vertices() << std::endl;
-    fo << "property float x" << std::endl;
-    fo << "property float y" << std::endl;
-    fo << "property float z" << std::endl;
-    fo << "property float nx" << std::endl;
-    fo << "property float ny" << std::endl;
-    fo << "property float nz" << std::endl;
-    fo << "end_header" << std::endl;
-    fo << std::setprecision(8);
+//    //    decimateSurfaceMesh(input, output);
 
-    Polyhedron::Point_iterator pit;
-//    int i = 0;
-    for(pit = out_mesh.points_begin(); pit != out_mesh.points_end(); pit++){
-        fo << *pit << " " << pvm.find(*pit)->second.second << std::endl;
-//        std::cout << i << std::endl;
-//        std::cout << *pit << " " << pvm.find(*pit)->second.second << std::endl;
-//        i++;
-    }
 
-    fo.close();
+//    std::fstream fo;
+//    fo.open(ofn, std::fstream::out);
+//    fo << "ply" << std::endl;
+//    fo << "format ascii 1.0" << std::endl;
+//    fo << "element vertex " << out_mesh.size_of_vertices() << std::endl;
+//    fo << "property float x" << std::endl;
+//    fo << "property float y" << std::endl;
+//    fo << "property float z" << std::endl;
+//    fo << "property float nx" << std::endl;
+//    fo << "property float ny" << std::endl;
+//    fo << "property float nz" << std::endl;
+//    fo << "end_header" << std::endl;
+//    fo << std::setprecision(8);
 
-    Polyhedron::Facet_iterator fit;
-    for(fit = out_mesh.facets_begin(); fit < out_mesh.facets_end(); fit++){
+//    Polyhedron::Point_iterator pit;
+////    int i = 0;
+//    for(pit = out_mesh.points_begin(); pit != out_mesh.points_end(); pit++){
+//        fo << *pit << " " << pvm.find(*pit)->second.second << std::endl;
+////        std::cout << i << std::endl;
+////        std::cout << *pit << " " << pvm.find(*pit)->second.second << std::endl;
+////        i++;
+//    }
 
-        fit;
+//    fo.close();
 
-    }
+//    Polyhedron::Facet_iterator fit;
+//    for(fit = out_mesh.facets_begin(); fit < out_mesh.facets_end(); fit++){
+
+//        fit;
+
+//    }
 
     // TODO: save the sensor mesh as an off file, e.g. with Meshlab and read it into a surface mesh with CGAL
     // then do the tetrahedron - tetrahedron intersection
@@ -87,17 +88,20 @@ void surfaceReconstruction()
 
 
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut_alligned";
-//    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
+    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
 //    std::string ifn2 = path1+"musee/Est1.mesh_cut2";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn2;
+//    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
+
     ifn1+=".ply";
     ifn2+=".ply";
+
 
 
 //     read ASCII PLY with normal
@@ -116,6 +120,8 @@ void surfaceReconstruction()
 //    exportPoints(ofn, a_points, a_infos);
 
     Delaunay Dt = makeDelaunayWithInfo(a_points, a_infos);
+
+//    iterateOverTetras(Dt);
 
 //    iterateOverTetras(Dt, a_points, a_infos, sensor_triangle);
 
