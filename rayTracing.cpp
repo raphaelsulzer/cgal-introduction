@@ -322,6 +322,7 @@ void iterateOverTetras(const Delaunay& Dt){
     // make Nef polyhedron from the Delaunay tetra
     Delaunay::Finite_cells_iterator cit;
     int i = 0;
+    Polyhedron P;
     for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
 
         Plane planes[4];
@@ -349,17 +350,18 @@ void iterateOverTetras(const Delaunay& Dt){
 //        for(plane in planes)
 //            assert(plane->has_on_negative_side(origin))
 
-        Polyhedron P;
-//        make_tetrahedron(p0,p1,p2,p3);
-        CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P, centroid);
-//        assert(P.is_closed());
+        P.make_tetrahedron(p0,p1,p2,p3);
+//        CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P, centroid);
+////        assert(P.is_closed());
 
-        Polyhedron_Exact target;
-        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> modifier(P);
-        target.delegate(modifier);
 
-        Nef_polyhedron newNef(target);
     }
+    Polyhedron_Exact target;
+//    Nef_polyhedron target;
+    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> modifier(P);
+    target.delegate(modifier);
+
+    Nef_polyhedron newNef(target);
 }
 
 // COLMAP Delaunay meshing stems from
