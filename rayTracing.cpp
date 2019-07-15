@@ -317,76 +317,50 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 // 3. intersect a sensor topology tetrahedron (formed by 3 pixels next to each other, or LiDAR points next to each other and their (almost common -> barycenter) ray source
 // use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
 
-//void iterateOverTetras(Delaunay& Dt){
+void iterateOverTetras(const Delaunay& Dt){
 
-//    Delaunay::Finite_cells_iterator cit;
-//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+    // make Nef polyhedron from the Delaunay tetra
+    Delaunay::Finite_cells_iterator cit;
+    int i = 0;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
 
-//        Plane planes[5];
+        Plane planes[4];
 
+        i++;
 
-//        planes[0] = Plane(Point(-1024, 1192, -80),
-//                            Point(-1024, 1192, -88),
-//                            Point(-1152, 1216, -88));
+        Point p0 = cit->vertex(0)->point();
+        Point p1 = cit->vertex(1)->point();
+        Point p2 = cit->vertex(2)->point();
+        Point p3 = cit->vertex(3)->point();
 
-//        planes[1] = Plane(Point(-1152, 1216, -88),
-//                            Point(-1152, 1200, -88),
-//                            Point(-1152, 1200, -80));
+        Point centroid = CGAL::centroid(p0,p1,p2,p3);
 
-//        planes[2] = Plane(Point(-1024, 1192, -88),
-//                            Point(-1152, 1200, -88),
-//                            Point(-1152, 1216, -88));
+        // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
+        // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
+        // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
+        // and the cell centroid has to be on the NEGATIVE side of the plane
+        planes[0] = Plane(p0,p2,p1);
+        planes[1] = Plane(p0,p1,p3);
+        planes[2] = Plane(p1,p2,p3);
+        planes[3] = Plane(p0,p3,p2);
 
-//        planes[3] = Plane(Point(-1024, 1192, -80),
-//                            Point(-1152, 1200, -80),
-//                            Point(-1024, 1192, -88));
+        // get exact syntax by simply changing the orientation of one plane and you will go to an assertion violation of CGAL
+        // where it is done
+//        for(plane in planes)
+//            assert(plane->has_on_negative_side(origin))
 
-//        planes[4] = Plane(Point(-1152, 1216, -88),
-//                            Point(-1152, 1200, -80),
-//                            Point(-1024, 1192, -80));
-
-//        Polyhedron_3 P;
-
-
-//        CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P);
+        Polyhedron P;
+//        make_tetrahedron(p0,p1,p2,p3);
+        CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P, centroid);
 //        assert(P.is_closed());
 
-//        for (Polyhedron_3::Point_iterator pIt = P.points_begin(); pIt != P.points_end(); ++pIt)
-//        {
-//            std::cout << *pIt << std::endl;
-//        }
+        Polyhedron_Exact target;
+        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> modifier(P);
+        target.delegate(modifier);
 
-//        std::cout << '\n';
-
-//        Nef_polyhedron newNef(P);
-
-
-////        Polyhedron poly;
-////        poly.make_tetrahedron(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point());
-////        Nef nef(poly);
-
-////        Plane pl1(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(2)->point());
-////        Point p1(1,0,2);
-////        Point p2(5,3,3);
-////        Point p3(7,0,1);
-////        Nef_Plane pl1(p1,p2,p3);
-
-
-////        Nef n1(pl1);
-////        Nef n2(Plane(cit->vertex(0)->point(), cit->vertex(1)->point(), cit->vertex(3)->point(), -1));
-////        Nef n3(Plane(cit->vertex(1)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
-////        Nef n4(Plane(cit->vertex(0)->point(), cit->vertex(2)->point(), cit->vertex(3)->point(), -1));
-////        Nef n1(Plane(1.25, 2.5, 5.1, -1));
-////        Nef N1(Plane( 1, 0, 0,-1));
-
-////        Nef nef = n1+n2+n3+n4;
-
-
-
-//        // make Nef polyhedron from the Delaunay tetra
-//        //
-//    }
-//}
+        Nef_polyhedron newNef(target);
+    }
+}
 
 // COLMAP Delaunay meshing stems from
 // P. Labatut, J‐P. Pons, and R. Keriven. "Robust and efficient surface

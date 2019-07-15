@@ -21,7 +21,7 @@
 #include <CGAL/IO/read_ply_points.h>
 #include <CGAL/Euclidean_distance.h>
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel         Kernel;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
@@ -129,17 +129,19 @@ typedef Incremental_neighbor_search::Tree Incremental_Tree;
 
 
 //// Tetrahedron intersection
-//#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-//#include <CGAL/Convex_hull_3/dual/halfspace_intersection_3.h>
-//#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Convex_hull_3/dual/halfspace_intersection_3.h>
+#include <CGAL/Convex_hull_3/dual/halfspace_intersection_with_constructions_3.h>
+#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/Polyhedron_copy_3.h>
 
-//typedef Kernel::Plane_3 Plane;
+typedef Kernel::Plane_3 Plane;
 
-//typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-//typedef K::Plane_3 Plane_3;
-//typedef K::Point_3 Point_3;
-//typedef CGAL::Polyhedron_3<K> Polyhedron_3;
-//typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
+typedef CGAL::Exact_predicates_exact_constructions_kernel K;
+typedef K::Plane_3 Plane_3;
+typedef K::Point_3 Point_3;
+typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
+typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
 
 
 ////#include <CGAL/Nef_polyhedron_3.h>
