@@ -379,14 +379,11 @@ void exportPoints(std::string path, std::vector<Point>& points, std::vector<vert
 
 void exportOFF(Polyhedron& out_mesh, std::string path)
 {
-
     path = path + ".off";
     std::ofstream out(path);
     out << out_mesh;
     out.close();
     std::cout << "Exported to " << path << std::endl;
-
-
 }
 
 void fixSensorCenter(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos){
@@ -439,6 +436,101 @@ void fixSensorCenter(std::string path, std::vector<Point>& points, std::vector<v
 }
 
 
+//void exportCellCenter(std::string path, const Delaunay& Dt){
+
+//    Delaunay::size_type nc = Dt.number_of_finite_cells();
+
+//    path+="_cellScore.ply";
+//    std::fstream fo;
+//    fo.open(path, std::fstream::out);
+//    fo << "ply" << std::endl;
+//    fo << "format ascii 1.0" << std::endl;
+//    fo << "element vertex " << nc << std::endl;
+//    fo << "property float x" << std::endl;
+//    fo << "property float y" << std::endl;
+//    fo << "property float z" << std::endl;
+//    fo << "property float inside" << std::endl;
+//    fo << "property float outside" << std::endl;
+//    fo << "end_header" << std::endl;
+//    fo << std::setprecision(8);
+
+
+//    Delaunay::Finite_cells_iterator cft;
+////    std::vector<double> inside_scores;
+////    std::vector<double> outside_scores;
+////    for(cft = Dt.finite_cells_begin(); cft!=Dt.finite_cells_end(); cft++)
+////    {
+////        inside_scores.push_back(cft->info().inside_score);
+////        outside_scores.push_back(cft->info().outside_score);
+////    }
+
+////    double inside_max = *std::max_element(inside_scores.begin(), inside_scores.end());
+////    double outside_max = *std::max_element(outside_scores.begin(), outside_scores.end());
+
+////    double inside_scale = 255.0/inside_max;
+////    double outside_scale = 255.0/outside_max;
+
+//    // iterate over the all_cells map
+//    for(cft = Dt.finite_cells_begin(); cft!=Dt.finite_cells_end(); cft++)
+//    {
+
+//        Point p1 = cft->vertex(0)->point();
+//        Point p2 = cft->vertex(1)->point();
+//        Point p3 = cft->vertex(2)->point();
+//        Point p4 = cft->vertex(3)->point();
+
+//        Point centroid = CGAL::centroid(p1,p2,p3,p4);
+
+//        double inside = cft->info().inside_score;
+//        double outside = cft->info().outside_score;
+
+////        std::cout << centroid << " " << int(red*inside_scale) << " " << 0 <<  " " << int(blue*outside_scale) << std::endl;
+
+////        fo  << centroid << " " << int(red*inside_scale) << " " << 0 <<  " " << int(blue*outside_scale) << std::endl;
+//        fo  << centroid << " " << inside << " " << outside << std::endl;
+//    }
+//    fo.close();
+
+//}
+
+
+void exportCellCenter(std::fstream& fo, const Delaunay& Dt){
+
+
+    Delaunay::Finite_cells_iterator cit;
+
+    std::vector<double> inside_scores;
+    std::vector<double> outside_scores;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        inside_scores.push_back(cit->info().inside_score);
+        outside_scores.push_back(cit->info().outside_score);
+    }
+
+    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
+    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
+//    double inside_scale = *std::max_element(Dt.finite_cells_begin()->info().inside_score, Dt.finite_cells_end()->info().inside_score);
+//    double outside_scale = *std::max_element(Dt.finite_cells_begin()->info().outside_score, Dt.finite_cells_end()->info().outside_score);
+
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        Point p1 = cit->vertex(0)->point();
+        Point p2 = cit->vertex(1)->point();
+        Point p3 = cit->vertex(2)->point();
+        Point p4 = cit->vertex(3)->point();
+
+        Point centroid = CGAL::centroid(p1,p2,p3,p4);
+
+        double inside_score = cit->info().inside_score;
+        double outside_score = cit->info().outside_score;
+
+        fo << centroid << " " << int(inside_score*inside_scale) << " 0 " << int(outside_score*outside_scale) << " 0 0 0" << std::endl;
+    }
+
+}
+
+
+
+
+
 
 void exportPLY(const Delaunay& Dt,
                 std::string path,
@@ -449,6 +541,8 @@ void exportPLY(const Delaunay& Dt,
     // get number of vertices and triangles of the triangulation
     Delaunay::size_type nv = Dt.number_of_vertices();
     Delaunay::size_type nf = Dt.number_of_finite_facets();
+    Delaunay::size_type nc = Dt.number_of_finite_cells();
+
 
     // calculate how many faces to print
     Delaunay::Finite_facets_iterator fft;
@@ -479,7 +573,7 @@ void exportPLY(const Delaunay& Dt,
 
     fo << "ply" << std::endl;
     fo << "format ascii 1.0" << std::endl;
-    fo << "element vertex " << nv << std::endl;
+    fo << "element vertex " << nv+nc << std::endl;
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
@@ -523,6 +617,13 @@ void exportPLY(const Delaunay& Dt,
             << vft->info().sensor << std::endl;
         index++;
     }
+
+
+    // export cell center
+    exportCellCenter(fo, Dt);
+
+
+
 
     // Save the facets to the PLY file
     int vidx;

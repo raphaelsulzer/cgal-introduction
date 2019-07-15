@@ -90,9 +90,9 @@ void surfaceReconstruction()
     std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-    std::string ifn1 = path1+"musee/fused_fixedSensor_cut_alligned";
-//    std::string ifn2 = path1+"musee/Est1_cut3_sampled";
-    std::string ifn2 = path1+"musee/Est1.mesh_cut2";
+    std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut_alligned";
+    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
+//    std::string ifn2 = path1+"musee/Est1.mesh_cut2";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn2;
@@ -100,18 +100,18 @@ void surfaceReconstruction()
     ifn2+=".ply";
 
 
-    // read ASCII PLY with normal
-    std::vector<Point> a_points;
-    std::vector<vertex_info> a_infos;
-    readPLY(ifn1, a_points, a_infos);
+//     read ASCII PLY with normal
+//    std::vector<Point> a_points;
+//    std::vector<vertex_info> a_infos;
+//    readPLY(ifn1, a_points, a_infos);
     std::vector<Point> t_points;
     std::vector<vertex_info> t_infos;
     readBinaryPLY(ifn2, t_points, t_infos, 0);
 
-//    auto a_points = t_points;
-//    auto a_infos = t_infos;
+    auto a_points = t_points;
+    auto a_infos = t_infos;
 
-    copyInfo(a_points, a_infos, t_points, t_infos);
+//    copyInfo(a_points, a_infos, t_points, t_infos);
 
 //    exportPoints(ofn, a_points, a_infos);
 
@@ -136,14 +136,12 @@ void surfaceReconstruction()
     rayTracingFun(Dt, 1);
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.05, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 0.01, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
     exportPLY(Dt, ofn, ray_construction, 1, 0);
     exportPLY(Dt, ofn, ray_construction, 1, 1);
-
-
 
 
 

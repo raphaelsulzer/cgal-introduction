@@ -77,10 +77,11 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
             int idx = (oppositeVertex+i)%4;
 
             Triangle tri = Dt.triangle(current_cell, idx);
-            if(tri.squared_area() < 0.0001){
-                std::cout << "weirdly small triangle skiped" << std::endl;
-                return 0;
-            }
+//            double tri_area;
+//            if(tri_area < 1e-100){
+//                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
+//                return 0;
+//            }
             Facet fac = std::make_pair(current_cell, idx);
 
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
@@ -241,7 +242,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // and check if there is an intersection
                 // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
                 // so start from there to put this into a function
-                if(!inside){
+                if(!one_cell){
                     Facet mirror_fac = Dt.mirror_facet(fac);
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;

@@ -18,7 +18,6 @@
 //std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
 void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int num_iterations)
 {
-
     std::cout << "Starting Optimization..." << std::endl;
 
     int num_cells = Dt.number_of_cells();
