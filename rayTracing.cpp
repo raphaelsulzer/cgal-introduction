@@ -242,7 +242,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // and check if there is an intersection
                 // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
                 // so start from there to put this into a function
-                if(!one_cell){
+                if(!inside){
                     Facet mirror_fac = Dt.mirror_facet(fac);
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;
