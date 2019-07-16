@@ -196,12 +196,8 @@ void createSurfaceMesh(const Delaunay& Dt, std::vector<Point>& points, std::vect
     std::cout << "... 0 meaning additional vertices were added for orientation" << std::endl;
 
 //    Kernel kernel;
-
 //    double max_dist = CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(points,polygons,0.35,kernel);
 
-
-    // TODO: implement a quality check function that measures the distance between the mesh and the point cloud
-    // replace the ray tracing - it takes to long.
 
     // export a Polyhedron surface mesh (as .OFF)
     int erased_components;

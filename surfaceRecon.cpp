@@ -6,11 +6,9 @@
 #include "rayTracing.cpp"
 #include "optimization.cpp"
 
-void readSensorMesh(std::string ofn, Mesh_ply aMesh){
+void readSensorMesh(std::string ofn){
 
-
-
-    Polyhedron out_mesh;
+    Mesh_ply aMesh;
 
     std::vector<Point> points;
     std::map<Point, std::pair<int, Vector>> pvm;
@@ -86,10 +84,8 @@ void readSensorMesh(std::string ofn, Mesh_ply aMesh){
 void surfaceReconstruction()
 {
 
-
-
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut_alligned";
     std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
@@ -102,15 +98,14 @@ void surfaceReconstruction()
     ifn1+=".ply";
     ifn2+=".ply";
 
-
-
 //     read ASCII PLY with normal
 //    std::vector<Point> a_points;
 //    std::vector<vertex_info> a_infos;
 //    readPLY(ifn1, a_points, a_infos);
     std::vector<Point> t_points;
     std::vector<vertex_info> t_infos;
-    readBinaryPLY(ifn2, t_points, t_infos, 0);
+    std::vector<std::vector<int>> t_polys;
+    readBinaryPLY(ifn2, t_points, t_infos, t_polys, 0);
 
     auto a_points = t_points;
     auto a_infos = t_infos;
@@ -121,7 +116,7 @@ void surfaceReconstruction()
 
     Delaunay Dt = makeDelaunayWithInfo(a_points, a_infos);
 
-    iterateOverTetras(Dt);
+    iterateOverTetras(Dt, t_points, t_infos, t_polys);
 
 //    iterateOverTetras(Dt, a_points, a_infos, sensor_triangle);
 
@@ -132,10 +127,6 @@ void surfaceReconstruction()
 
     // 0 = camera, 1 = normal
     bool ray_construction = 1;
-
-    std::vector<Point> p100(a_points.begin(), a_points.begin()+100);
-    std::vector<vertex_info> v100(a_infos.begin(), a_infos.begin()+100);
-
 
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
@@ -150,7 +141,6 @@ void surfaceReconstruction()
     exportPLY(Dt, ofn, ray_construction, 1, 1);
 
     exportCellCenter(ofn, Dt);
-
 
 
 //    // create surface mesh

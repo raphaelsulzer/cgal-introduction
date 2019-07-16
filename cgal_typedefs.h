@@ -25,6 +25,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
 
 // vertext base for point + info (=vector, color, intensity)
 typedef Kernel::Vector_3                                            Vector;
+typedef Kernel::Point_3                                             Point;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
 typedef CGAL::cpp11::array<float, 3>                                Sensor;
 
@@ -33,7 +34,8 @@ struct vertex_info{
     double sigma;
     Color color;
     Vector normal;
-    Vector sensor;
+    Vector sensor_vec;
+    Point sensor_pos;
 };
 typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
 
@@ -54,7 +56,7 @@ typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, Kernel>        CB; 
 // Delaunay triangulation data structure
 typedef CGAL::Triangulation_data_structure_3<VB, CB>                Tds;        // triangulation data structure
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
-typedef Delaunay::Point                                             Point;
+//typedef Delaunay::Point                                             Point;
 typedef Delaunay::Edge                                              Edge;
 typedef Delaunay::Facet                                             Facet;
 typedef Delaunay::Cell_handle                                       Cell_handle;
@@ -127,6 +129,20 @@ typedef Neighbor_search::Tree Tree;
 typedef CGAL::Orthogonal_incremental_neighbor_search<Traits> Incremental_neighbor_search;
 typedef Incremental_neighbor_search::Tree Incremental_Tree;
 
+////AABB tree
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+
+typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
+typedef CGAL::AABB_traits<Kernel, Primitive> AABB_Traits;
+typedef CGAL::AABB_tree<AABB_Traits> AABB_Tree;
+typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Segment>::Type > Segment_intersection;
+typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Point>::Type > Point_intersection;
+typedef AABB_Tree::Primitive_id Primitive_id;
+
 
 //// Tetrahedron intersection
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -135,13 +151,13 @@ typedef Incremental_neighbor_search::Tree Incremental_Tree;
 #include <CGAL/Nef_polyhedron_3.h>
 #include <CGAL/Polyhedron_copy_3.h>
 
-typedef Kernel::Plane_3 Plane;
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-typedef K::Plane_3 Plane_3;
-typedef K::Point_3 Point_3;
+typedef K::Point_3 Point_Exact;
 typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
 typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
+
+typedef Kernel::Plane_3 Plane;
 
 
 ////#include <CGAL/Nef_polyhedron_3.h>

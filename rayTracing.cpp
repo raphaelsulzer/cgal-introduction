@@ -174,7 +174,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
     // ray constructed from point origin to (end of) normal
     // introduces a ray r with source p and with a direction given by v.
-    Ray ray(vit->point(), vit->info().sensor);
+    Ray ray(vit->point(), vit->info().sensor_vec);
 
     // make the inside ray
     // in fact MicMac saves the camera normals pointing away from the camera,
@@ -317,52 +317,115 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 // 3. intersect a sensor topology tetrahedron (formed by 3 pixels next to each other, or LiDAR points next to each other and their (almost common -> barycenter) ray source
 // use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
 
-void iterateOverTetras(const Delaunay& Dt){
 
-    // make Nef polyhedron from the Delaunay tetra
-    Delaunay::Finite_cells_iterator cit;
-    int i = 0;
-    Polyhedron P;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info> infos, std::vector<std::vector<int>>& polys){
 
-        Plane planes[4];
+    Polyhedron sensor_mesh;
+    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polys);
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polys, sensor_mesh);
 
-        i++;
+    // constructs AABB tree
+    AABB_Tree tree(faces(sensor_mesh).first, faces(sensor_mesh).second, sensor_mesh);
+    // maybe make the tree with a boost zip iterator to have an id
+    // for each facet that i can use to get the polygon in the polygon vector
+    // from the primitive_id
 
-        Point p0 = cit->vertex(0)->point();
-        Point p1 = cit->vertex(1)->point();
-        Point p2 = cit->vertex(2)->point();
-        Point p3 = cit->vertex(3)->point();
+    Delaunay::Finite_vertices_iterator vit;
+    for(vit = Dt.finite_vertices_begin(); vit != Dt.finite_vertices_end(); vit++){
 
-        Point centroid = CGAL::centroid(p0,p1,p2,p3);
+        int index = vit->info().idx;
 
-        // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
-        // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
-        // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
-        // and the cell centroid has to be on the NEGATIVE side of the plane
-        planes[0] = Plane(p0,p2,p1);
-        planes[1] = Plane(p0,p1,p3);
-        planes[2] = Plane(p1,p2,p3);
-        planes[3] = Plane(p0,p3,p2);
-
-        // get exact syntax by simply changing the orientation of one plane and you will go to an assertion violation of CGAL
-        // where it is done
-//        for(plane in planes)
-//            assert(plane->has_on_negative_side(origin))
-
-        P.make_tetrahedron(p0,p1,p2,p3);
-//        CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P, centroid);
-////        assert(P.is_closed());
-
+        std::vector<Primitive_id> primitives;
+        tree.all_intersected_primitives(vit->point(), std::back_inserter(primitives));
+        auto prim_id = primitives[0]->facet_begin();
 
     }
-    Polyhedron_Exact target;
-//    Nef_polyhedron target;
-    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> modifier(P);
-    target.delegate(modifier);
 
-    Nef_polyhedron newNef(target);
 }
+
+
+
+
+
+
+
+//void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info> infos, std::vector<std::vector<int>>& polys){
+
+//    // make Nef polyhedron from the Delaunay tetra
+//    Delaunay::Finite_cells_iterator cit;
+//    int j = 0;
+//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+
+//        j++;
+//        Point p0 = cit->vertex(0)->point();
+//        Point p1 = cit->vertex(1)->point();
+//        Point p2 = cit->vertex(2)->point();
+//        Point p3 = cit->vertex(3)->point();
+
+//        // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
+//        // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
+//        // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
+//        // and the cell centroid has to be on the NEGATIVE side of the plane
+//        // DT planes
+//        Plane planes[8];
+//        planes[0] = Plane(p0,p2,p1);
+//        planes[1] = Plane(p0,p1,p3);
+//        planes[2] = Plane(p1,p2,p3);
+//        planes[3] = Plane(p0,p3,p2);
+
+//        // sensor planes
+//        for(int i = 0; i < polys.size(); i++){
+
+//            int i0 = polys[i][0]; int i1 = polys[i][1]; int i2 = polys[i][2];
+//            Point p0 = points[i0];
+//            Point p1 = points[i1];
+//            Point p2 = points[i2];
+//            Point p3 = infos[i0].sensor_pos;
+
+//            planes[4] = Plane(p0,p2,p1);
+//            planes[5] = Plane(p0,p1,p3);
+//            planes[6] = Plane(p1,p2,p3);
+//            planes[7] = Plane(p0,p3,p2);
+
+//            Polyhedron P_full;
+//            try{
+//                CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P_full);
+//                double vol_full = CGAL::Polygon_mesh_processing::volume(P_full);
+//                std::cout << "is closed: "  << P_full.is_closed() << "    full volume: " << vol_full << std::endl;
+//            }
+//            catch(...){}
+//        }
+//    }
+
+
+////    for(int i = 0; i < sensor_planes.size(); i++){
+
+////        Polyhedron P;
+////        CGAL::halfspace_intersection_with_constructions_3(sensor_planes.begin(), sensor_planes.end(), P);
+
+
+
+////    }
+////    for(int i = 0; i < dt_planes.size(); i++){
+
+////        Polyhedron P;
+////        CGAL::halfspace_intersection_with_constructions_3(dt_planes[i].begin(), dt_planes[i].end(), P);
+
+
+
+////    }
+
+
+
+
+
+////    Polyhedron_Exact target;
+//////    Nef_polyhedron target;
+////    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> modifier(P);
+////    target.delegate(modifier);
+
+////    Nef_polyhedron newNef(target);
+//}
 
 // COLMAP Delaunay meshing stems from
 // P. Labatut, J‐P. Pons, and R. Keriven. "Robust and efficient surface
