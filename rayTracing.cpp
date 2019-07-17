@@ -340,6 +340,64 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
         // build ray from vertex to sensor center
         // if ray intersects, one of the cell triangles (like in ray-tracing)
         // make tetra-tetra intersection, and add tetra neighbours to the cue
+        for(int j = 0; j < 3; j++){
+
+            // so we are now considering the Dt vertex sensor_infos[i][j]
+            Vertex_handle current_vertex = sensor_infos[i][j];
+            Ray ray(current_vertex->point(), current_vertex->info().sensor_vec);
+            // vector of incident cells to the current vertex (from vertex iterator vit)
+            std::vector<Cell_handle> inc_cells;
+            Dt.incident_cells(current_vertex, std::back_inserter(inc_cells));
+            for(std::size_t i=0; i < inc_cells.size(); i++){
+                Cell_handle current_cell = inc_cells[i];
+                if(!Dt.is_infinite(current_cell))
+                {
+                    int cellBasedVertexIndex = current_cell->index(vit);
+                    Triangle tri = Dt.triangle(current_cell, cellBasedVertexIndex);
+//                    Facet fac = std::make_pair(current_cell, cellBasedVertexIndex);
+                    // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
+                    // get the intersection of the ray and the triangle
+                    CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
+                      result = intersection(tri, ray);
+                    // check if there is an intersection between the current ray and current triangle
+                    if(result){
+
+                        // calc volume
+                        // make nef from current cell
+                        Polyhedron dt_poly;
+                        dt_poly.make_tetrahedron(sensor_infos[i][0]->point(),
+                                                 sensor_infos[i][1]->point(),
+                                                 sensor_infos[i][2]->point(),
+                                                // for now just take the sensor position of the first point, but can also take a barycenter later
+                                                 sensor_infos[i][0]->info().sensor_pos);
+                        Polyhedron_Exact dt_poly_exact;
+                        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> dt_modifier(dt_poly);
+                        dt_poly_exact.delegate(dt_modifier);
+                        Nef_polyhedron dt_nef(dt_poly_exact);
+                        // make nef from current sensor polygon
+                        Polyhedron senor_poly;
+                        dt_poly.make_tetrahedron(current_cell->vertex(0)->point(),
+                                                 current_cell->vertex(1)->point(),
+                                                 current_cell->vertex(2)->point(),
+                                                 current_cell->vertex(3)->point());
+                        Polyhedron_Exact sensor_poly_exact;
+                        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(dt_poly);
+                        dt_poly_exact.delegate(sensor_modifier);
+                        Nef_polyhedron sensor_nef(dt_poly_exact);
+                        // intersection
+                        Nef_polyhedron intersection_nef = dt_nef*sensor_nef;
+                        intersection_nef.volumes_begin();
+                        // take volume of intersection nef and save it in the cell
+                        // mark as traversed (for the current sensor_tet - thus needs to be unset for next sensor_tet iteration step)
+                        // go to neighbours of current cell and check intersection there
+                        // go to next cell
+                        // go to next sensor polygon/tet
+                    }
+
+                }
+
+
+        }
 
     }
 
