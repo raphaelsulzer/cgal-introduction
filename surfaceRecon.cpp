@@ -84,8 +84,8 @@ void readSensorMesh(std::string ofn){
 void surfaceReconstruction()
 {
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut_alligned";
     std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";

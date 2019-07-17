@@ -337,7 +337,31 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
 
         std::vector<Primitive_id> primitives;
         tree.all_intersected_primitives(vit->point(), std::back_inserter(primitives));
+
+        Polyhedron::Halfedge_around_facet_circulator fac;
+
         auto prim_id = primitives[0]->facet_begin();
+        Point p1 = prim_id->vertex()->point();
+        int id1 = prim_id->vertex()->id();
+        prim_id++;
+        Point p2 = prim_id->vertex()->point();
+        int id2 = prim_id->vertex()->id();
+        prim_id++;
+        Point p3 = prim_id->vertex()->point();
+        prim_id++;
+        Point p4 = prim_id->vertex()->point();
+        // point p4 equals p1 again, which is correct.
+        // problem, segfault at some point and id = -1
+
+
+        int a = 5;
+
+
+//        for(fac = primitives[0]->facet_begin(); fac != primitives[0]->facet_end(); fac++){
+//            Point p = fac->vertex()->point();
+//            std::cout << p << " ";
+//        }
+//        std::endl;
 
     }
 
