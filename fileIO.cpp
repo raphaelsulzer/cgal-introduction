@@ -246,11 +246,30 @@ void readBinaryPLY(std::string ifn, std::vector<Point>& points, std::vector<vert
     }
     for(int i = 0; i < aMesh.mIndices.size()/3; i++){
         std::vector<int> poly(3);
-        poly[0] = aMesh.mIndices[(i*3)+0];
-        poly[1] = aMesh.mIndices[(i*3)+1];
-        poly[2] = aMesh.mIndices[(i*3)+2];
+        int id0 = aMesh.mIndices[(i*3)+0];
+        int id1 = aMesh.mIndices[(i*3)+1];
+        int id2 = aMesh.mIndices[(i*3)+2];
+        poly[0] = id0;
+        poly[1] = id1;
+        poly[2] = id2;
         sensor_triangle.push_back(poly);
+
+        // save incident sensor triangles in each 3DT vertex
+        infos[id0].sensor_tet.push_back(i);
+        infos[id1].sensor_tet.push_back(i);
+        infos[id2].sensor_tet.push_back(i);
+        // basically just integrating the loop below in here.
+
     }
+//    // save incident sensor triangles in each 3DT vertex
+//    for(int i = 0; i < sensor_triangle.size(); i++){
+//        for(int j = 0; j < 3; j++){
+//            int current_vertex = sensor_triangle[i][j];
+//            infos[current_vertex].sensor_tet.push_back(i);
+//        }
+//    }
+
+
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
     std::cout << "File " << ifn << " read in " << duration.count() << "s" << std::endl;

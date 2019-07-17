@@ -36,6 +36,7 @@ struct vertex_info{
     Vector normal;
     Vector sensor_vec;
     Point sensor_pos;
+    std::vector<int> sensor_tet;
 };
 typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
 
