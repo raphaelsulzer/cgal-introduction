@@ -59,8 +59,9 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 //}
 
 
-int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
+int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside, int& counter)
 {
+    counter++;
 
     // input::
     // &Delaunay            Reference to a Delaunay triangulation
@@ -152,7 +153,7 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
                         return 0;
                     }
                 }
-                traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
+                traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside, counter);
             }
         }
     }
@@ -165,7 +166,8 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
     return 0;
 }
 
-void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool inside, bool one_cell){
+void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool inside, bool one_cell,
+               int& counter, int& intersection_count, std::chrono::nanoseconds& duration){
 
 
     // get sigma of the current vertex
@@ -195,6 +197,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
         Cell_handle current_cell = inc_cells[i];
 
+
         if(!Dt.is_infinite(current_cell))
         {
             int cellBasedVertexIndex = current_cell->index(vit);
@@ -203,8 +206,12 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
             // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
             // get the intersection of the ray and the triangle
+            auto start = std::chrono::high_resolution_clock::now();
             CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
               result = intersection(tri, ray);
+            auto stop = std::chrono::high_resolution_clock::now();
+            duration += std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+            intersection_count++;
 
 
             // check if there is an intersection between the current ray and current triangle
@@ -214,7 +221,8 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // if result is a point
                 std::pair<float,float> score;
                 Point source = vit->point();
-                if (const Point* p = boost::get<Point>(&*result)){
+                if(const Point* p = boost::get<Point>(&*result)){
+
                 //std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
 
                     // get the distance of this point to the current source:
@@ -247,7 +255,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;
                     // go to next cell
-                    traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
+                    traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside, counter);
                 }
             // if there was a match, break the loop around this vertex, so it can go to the next one
             // this is only done for speed reasons, it shouldn't have any influence on the label
@@ -282,11 +290,16 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
     // and I pass this iterator around and also pass it from within the traversal function
     // when I want to restart from a point that is hit
     Delaunay::Finite_vertices_iterator vit;
+    int counter = 0;
+    std::chrono::nanoseconds duration(0);
+    int intersection_count = 0;
+
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
+
         // collect outside votes
-        firstCell(Dt, vit, 0, one_cell);
+        firstCell(Dt, vit, 0, one_cell, counter, intersection_count, duration);
         // collect inside votes
-        firstCell(Dt, vit, 1, one_cell);
+        firstCell(Dt, vit, 1, one_cell, counter, intersection_count, duration);
     }
     // now that all rays have been traced, apply the last function to all the cells:
 //    float gamma = 2.0;
@@ -297,8 +310,11 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 //        std::get<2>(it->second) = 1 - exp(-std::get<2>(it->second)/gamma);
 //    }
     auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-    std::cout << "Ray tracing done in " << duration.count() << "s" << std::endl;
+    auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Ray tracing done in " << full_duration.count() << "s" << std::endl;
+    std::cout << "Ray tracing done in " << 1e-9*duration.count() << " s" << " for "  <<
+                 intersection_count << " intersections " <<  1e-3*duration.count()/intersection_count
+              << "ns per intersection" << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -320,9 +336,16 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 
 void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info> infos, std::vector<std::vector<int>>& polys){
 
+
+
     Polyhedron sensor_mesh;
     CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polys);
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polys, sensor_mesh);
+//    std::vector<Polyhedron::Facet> degenerate_faces;
+//    CGAL::Polygon_mesh_processing::remove_degenerate_faces(faces(sensor_mesh), sensor_mesh, std::back_inserter(degenerate_faces));
+    CGAL::Polygon_mesh_processing::remove_degenerate_faces(sensor_mesh);
+
+
 
     // constructs AABB tree
     AABB_Tree tree(faces(sensor_mesh).first, faces(sensor_mesh).second, sensor_mesh);
@@ -333,23 +356,31 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
     Delaunay::Finite_vertices_iterator vit;
     for(vit = Dt.finite_vertices_begin(); vit != Dt.finite_vertices_end(); vit++){
 
-        int index = vit->info().idx;
+//        int index = vit->info().idx;
 
+        Point current_point = vit->point();
         std::vector<Primitive_id> primitives;
-        tree.all_intersected_primitives(vit->point(), std::back_inserter(primitives));
+        tree.all_intersected_primitives(current_point, std::back_inserter(primitives));
 
         Polyhedron::Halfedge_around_facet_circulator fac;
 
+        // here needs to go an iterator at some point that iterates over all the sensor primitives of the primitive vector
         auto prim_id = primitives[0]->facet_begin();
         Point p1 = prim_id->vertex()->point();
-        int id1 = prim_id->vertex()->id();
+        int id1 = std::distance(points.begin(),std::find(points.begin(), points.end(), p1));
+        Point sensor_pos = infos[id1].sensor_pos;
+
+
+//        unsigned long id1 = prim_id->vertex()->id();
         prim_id++;
         Point p2 = prim_id->vertex()->point();
-        int id2 = prim_id->vertex()->id();
         prim_id++;
         Point p3 = prim_id->vertex()->point();
-        prim_id++;
-        Point p4 = prim_id->vertex()->point();
+        // now form a nef tetra with p1,p2,p3 and sensor position
+        // and intersect with the current cell tetrahedra
+
+//        prim_id++;
+//        Point p4 = prim_id->vertex()->point();
         // point p4 equals p1 again, which is correct.
         // problem, segfault at some point and id = -1
         // next step. get the correct ID, which is hopefully the same ID as the vertex_id
@@ -358,9 +389,7 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
         // cells and put the score on them
         // that sould be ALL?!!
 
-
         int a = 5;
-
 
 //        for(fac = primitives[0]->facet_begin(); fac != primitives[0]->facet_end(); fac++){
 //            Point p = fac->vertex()->point();
