@@ -352,6 +352,11 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
         Point p4 = prim_id->vertex()->point();
         // point p4 equals p1 again, which is correct.
         // problem, segfault at some point and id = -1
+        // next step. get the correct ID, which is hopefully the same ID as the vertex_id
+        // of the vertex_info vector from which I can get the sensor point to form a sensor cell
+        // intersect the sensor cell with the current 3DT cell and all it's sourrounding 3DT
+        // cells and put the score on them
+        // that sould be ALL?!!
 
 
         int a = 5;
