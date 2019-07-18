@@ -30,8 +30,8 @@ typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
 typedef CGAL::cpp11::array<float, 3>                                Sensor;
 
 struct vertex_info{
-    int idx;
-    double sigma;
+    int idx = 0;
+    double sigma = 0.0;
     Color color;
     Vector normal;
     Vector sensor_vec;
@@ -40,17 +40,11 @@ struct vertex_info{
 };
 typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
 
-
-
 struct cell_info{
     int idx = 0;
     float outside_score = 0.0;
     float inside_score = 0.0;
     int final_label = 0;
-//    int idx;
-//    float outside_score;
-//    float inside_score;
-//    int final_label;
 };
 typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, Kernel>        CB;         // cell base
 
@@ -94,11 +88,13 @@ typedef Kernel::Segment_3                                           Segment;
 #include <CGAL/tags.h>
 
 typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_with_id_3>      Polyhedron;
+//typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_3>      Polyhedron;
 
 // Simplification function
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
 // Stop-condition policy
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/LindstromTurk.h>
 namespace SMS = CGAL::Surface_mesh_simplification;
 
@@ -157,8 +153,8 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef K::Point_3 Point_Exact;
 typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
+//typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_3> Polyhedron_Exact;
 typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
-
 typedef Kernel::Plane_3 Plane;
 
 

@@ -16,6 +16,9 @@ SOURCES += \
     main.cpp \
     meshPLY.cpp
 
+HEADERS += \
+    cgal_typedefs.h
+
 QMAKE_CXXFLAGS += -std=c++11
 
 # surpress weird warnings
@@ -56,6 +59,3 @@ macx{
 
 
 
-
-HEADERS += \
-    cgal_typedefs.h

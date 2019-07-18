@@ -1,6 +1,5 @@
 #include <cgal_typedefs.h>
 
-#include "fileIO.cpp"
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"
 #include "rayTracing.cpp"
@@ -86,11 +85,11 @@ void surfaceReconstruction()
     auto start = std::chrono::high_resolution_clock::now();
 
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
 
-    std::string ifn1 = path1+"musee/AP/fused_fixedSensor_500k";     // there might be a problem with this file since it was exported as an ASCII from the CC
+    std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut";     // there might be a problem with this file since it was exported as an ASCII from the CC
     std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
 //    std::string ifn2 = path1+"musee/Est1.mesh_cut2";
 
@@ -104,25 +103,29 @@ void surfaceReconstruction()
 //     read ASCII PLY with normal
 //    std::vector<Point> a_points;
 //    std::vector<vertex_info> a_infos;
-//    readPLY(ifn1, a_points, a_infos);
+//    readASCIIPLY(ifn1, a_points, a_infos);
     std::vector<Point> t_points;
     std::vector<vertex_info> t_infos;
     std::vector<std::vector<int>> t_polys;
     readBinaryPLY(ifn2, t_points, t_infos, t_polys, 0);
 
-    auto a_points = t_points;
-    auto a_infos = t_infos;
+//    auto a_points = t_points;
+//    auto a_infos = t_infos;
 
 //    copyInfo(a_points, a_infos, t_points, t_infos);
 
 //    exportPoints(ofn, a_points, a_infos);
 
-    Delaunay Dt = makeDelaunayWithInfo(a_points, a_infos);
+//    Delaunay Dt = makeDelaunayWithInfo(a_points, a_infos);
+//    iterateOverTetras(Dt, a_points, a_infos, a_polys);
 
+    Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
     iterateOverTetras(Dt, t_points, t_infos, t_polys);
 
+    int nv = Dt.number_of_vertices();
+
     // calculate noise per point and save it in the vertex_info of the Dt
-    pcaKNN(Dt, a_points);
+    pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 

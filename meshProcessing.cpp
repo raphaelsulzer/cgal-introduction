@@ -73,6 +73,7 @@ void decimateSurfaceMesh(std::string input, std::string output)
     // optional
     float stop_ratio=0.5;
 
+
     SMS::LindstromTurk_params LT_params;
 //    if(i_arg < argc) LT_params.BoundaryWeight = atof(argv[i_arg++]);
 //    if(i_arg < argc) LT_params.VolumeWeight = atof(argv[i_arg++]);
