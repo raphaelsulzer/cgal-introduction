@@ -51,7 +51,7 @@ macx{
     LIBS += -L/usr/local/lib/ -lgmp \
             -L/usr/local/lib/ -lmpfr \
             -L/usr/local/lib/ -lCGAL \
-            -L/usr/local/gco-v3.0-master/build/ -lgco \
+            -L/usr/local/gco-v3.0-master/build/ -lgco
 }
 
 
