@@ -14,7 +14,8 @@ SOURCES += \
     colmapPLY.cpp \
     rPLY.c \
     main.cpp \
-    meshPLY.cpp
+    meshPLY.cpp \
+    tetIntersection.cpp
 
 HEADERS += \
     cgal_typedefs.h

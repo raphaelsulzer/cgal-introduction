@@ -323,6 +323,8 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
 
 
 void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_polys){
+    auto start = std::chrono::high_resolution_clock::now();
+
 
 //    Polyhedron sensor_mesh;
 //    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, sensor_polys);
@@ -405,6 +407,7 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
 
     // iterate over all sensor triangles/tetrahedrons
     for(int k = 0; k < sensor_polys.size(); k++){
+        std::cout << k << std::endl;
 
         // iterate over all 3 points of the sensor triangle
         if(sensor_infos[k].size()<3)
@@ -431,77 +434,135 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
                       result = intersection(tri, ray);
                     // check if there is an intersection between the current ray and current triangle
                     if(result){
+                        if(const Point* p = boost::get<Point>(&*result)){
 
-                        Point sp0 = sensor_infos[k][0]->point();
-                        Point sp1 = sensor_infos[k][1]->point();
-                        Point sp2 = sensor_infos[k][2]->point();
-                        Point sp3 = sensor_infos[k][0]->info().sensor_pos;
-
-                        Plane planes[8];
-                        planes[0] = Plane(sp0,sp2,sp1);
-                        planes[1] = Plane(sp0,sp1,sp3);
-                        planes[2] = Plane(sp1,sp2,sp3);
-                        planes[3] = Plane(sp0,sp3,sp2);
-
-                        Point tp0 = current_cell->vertex(0)->point();
-                        Point tp1 = current_cell->vertex(1)->point();
-                        Point tp2 = current_cell->vertex(2)->point();
-                        Point tp3 = current_cell->vertex(3)->point();
-
-                        planes[4] = Plane(tp0,tp2,tp1);
-                        planes[5] = Plane(tp0,tp1,tp3);
-                        planes[6] = Plane(tp1,tp2,tp3);
-                        planes[7] = Plane(tp0,tp3,tp2);
-
-                        Polyhedron P_full;
-                        try{
-                            CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P_full);
-                            double vol_full = CGAL::Polygon_mesh_processing::volume(P_full);
-                            std::cout << "is closed: "  << P_full.is_closed() << "    full volume: " << vol_full << std::endl;
-                        }
-                        catch(...){}
+                            // calc volume with halfspace intersections
+                            Point sp0 = sensor_infos[k][0]->point();
+                            Point sp1 = sensor_infos[k][1]->point();
+                            Point sp2 = sensor_infos[k][2]->point();
+                            Point sp3 = sensor_infos[k][0]->info().sensor_pos;
+                            Polyhedron sp;
+                            sp.make_tetrahedron(sp0,sp1,sp2,sp3);
+                            Point sp_centroid = CGAL::centroid(sp0,sp1,sp2,sp3);
+                            Plane planes[8];
+                            planes[0] = Plane(sp0,sp2,sp1);
+                            planes[1] = Plane(sp0,sp1,sp3);
+                            planes[2] = Plane(sp1,sp2,sp3);
+                            planes[3] = Plane(sp0,sp3,sp2);
+                            bool sn1 = planes[0].has_on_negative_side(sp_centroid);
+                            bool sn2 = planes[1].has_on_negative_side(sp_centroid);
+                            bool sn3 = planes[2].has_on_negative_side(sp_centroid);
+                            bool sn4 = planes[3].has_on_negative_side(sp_centroid);
+                            for(int i = 0; i<4; i++){
+                                if(!planes[i].has_on_negative_side(sp_centroid)){
+                                    planes[i]=planes[i].opposite();
+                                }
+                            }
 
 
+                            Point tp0 = current_cell->vertex(0)->point();
+                            Point tp1 = current_cell->vertex(1)->point();
+                            Point tp2 = current_cell->vertex(2)->point();
+                            Point tp3 = current_cell->vertex(3)->point();
+                            Polyhedron tp;
+                            tp.make_tetrahedron(tp0,tp1,tp2,tp3);
+                            Point tp_centroid = CGAL::centroid(tp0, tp1, tp2, tp3);
+                            planes[4] = Plane(tp0,tp2,tp1);
+                            planes[5] = Plane(tp0,tp1,tp3);
+                            planes[6] = Plane(tp1,tp2,tp3);
+                            planes[7] = Plane(tp0,tp3,tp2);
+                            bool dn1b = planes[4].has_on_negative_side(tp_centroid);
+                            bool dn2b = planes[5].has_on_negative_side(tp_centroid);
+                            bool dn3b = planes[6].has_on_negative_side(tp_centroid);
+                            bool dn4b = planes[7].has_on_negative_side(tp_centroid);
 
-//                        // calc volume
-//                        // make nef from current sensor polygon
-//                        Polyhedron sensor_poly;
-//                        sensor_poly.make_tetrahedron(sensor_infos[k][0]->point(),       // which should also be equal to points[sensor_polys[k][0]]
-//                                                 sensor_infos[k][1]->point(),
-//                                                 sensor_infos[k][2]->point(),
-//                                                // for now just take the sensor position of the first point, but can also take a barycenter later
-//                                                 sensor_infos[k][0]->info().sensor_pos);// which should also be equal to infos[sensor_polys[k][0].sensor_pos]
-//                        Polyhedron_Exact sensor_poly_exact;
-//                        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sensor_poly);
-//                        sensor_poly_exact.delegate(sensor_modifier);
-//                        bool closed = sensor_poly_exact.is_closed();
-//                        bool valid = sensor_poly_exact.is_valid();
-////                        exportOFF(sensor_poly_exact, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/poly_exact"+std::to_string(i));
-//                        Nef_polyhedron sensor_nef(sensor_poly_exact);
-//                        // make nef from current cell
-//                        Polyhedron dt_poly;
-//                        dt_poly.make_tetrahedron(current_cell->vertex(0)->point(),
-//                                                 current_cell->vertex(1)->point(),
-//                                                 current_cell->vertex(2)->point(),
-//                                                 current_cell->vertex(3)->point());
-//                        Polyhedron_Exact dt_poly_exact;
-//                        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> dt_modifier(dt_poly);
-//                        dt_poly_exact.delegate(dt_modifier);
-//                        Nef_polyhedron dt_nef(dt_poly_exact);
-//                        // intersection
-//                        Nef_polyhedron intersection_nef = dt_nef*sensor_nef;
-//                        Polyhedron_Exact intersection_tet_exact;
-//                        intersection_nef.convert_to_polyhedron(intersection_tet_exact);
-//                        Polyhedron intersection_tet;
-//                        CGAL::Polyhedron_copy_3<Polyhedron_Exact, Polyhedron::HalfedgeDS> tet_modifier(intersection_tet_exact);
-//                        intersection_tet.delegate(tet_modifier);
-//                        auto vol = CGAL::Polygon_mesh_processing::volume(intersection_tet);
-//                        std::cout << double(vol) << std::endl;
-                        //   take volume of intersection nef and save it in the cell
-                        //   mark as traversed (for the current sensor_tet - thus needs to be unset for next sensor_tet iteration step)
-                        //   go to neighbours of current cell and check intersection there
-                        //   go to next cell
-                        //   go to next sensor polygon/tet
+                            for(int i = 4; i<8; i++){
+                                if(!planes[i].has_on_negative_side(tp_centroid)){
+                                    planes[i]=planes[i].opposite();
+                                }
+                            }
+
+                            bool dn1 = planes[4].has_on_negative_side(tp_centroid);
+                            bool dn2 = planes[5].has_on_negative_side(tp_centroid);
+                            bool dn3 = planes[6].has_on_negative_side(tp_centroid);
+                            bool dn4 = planes[7].has_on_negative_side(tp_centroid);
+
+                            Polyhedron P_full;
+
+                            double vol_full;
+                            try{
+                                CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes),
+                                                                                  P_full);
+                                vol_full = CGAL::Polygon_mesh_processing::volume(P_full);
+                            }
+                            catch(...){
+//                                std::cout<<"sp is valid: " << sp.is_valid() << "    sp is closed: " << sp.is_closed() << std::endl;
+//                                std::cout<<"tp is valid: " << tp.is_valid() << "    tp is closed: " << tp.is_closed() << std::endl;
+//                                std::cout << "is closed: "  << P_full.is_closed() << "  is valid: " << P_full.is_valid() << std::endl;
+//                                exportOFF(P_full,"/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/fail_case");
+//                                exportOFF(sp,"/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/sp");
+//                                exportOFF(tp,"/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/tp");
+                                vol_full = 0.0;
+
+                            }
+
+
+//                            // calc volume with nef
+//                            // make nef from current sensor polygon
+//                            Polyhedron sensor_poly;
+//                            sensor_poly.make_tetrahedron(sensor_infos[k][0]->point(),       // which should also be equal to points[sensor_polys[k][0]]
+//                                                     sensor_infos[k][1]->point(),
+//                                                     sensor_infos[k][2]->point(),
+//                                                    // for now just take the sensor position of the first point, but can also take a barycenter later
+//                                                     sensor_infos[k][0]->info().sensor_pos);// which should also be equal to infos[sensor_polys[k][0].sensor_pos]
+//                            Polyhedron_Exact sensor_poly_exact;
+//                            CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sensor_poly);
+//                            sensor_poly_exact.delegate(sensor_modifier);
+//                            bool closed = sensor_poly_exact.is_closed();
+//                            bool valid = sensor_poly_exact.is_valid();
+//    //                        exportOFF(sensor_poly_exact, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/poly_exact"+std::to_string(i));
+//                            Nef_polyhedron sensor_nef(sensor_poly_exact);
+//                            // make nef from current cell
+//                            Polyhedron dt_poly;
+//                            dt_poly.make_tetrahedron(current_cell->vertex(0)->point(),
+//                                                     current_cell->vertex(1)->point(),
+//                                                     current_cell->vertex(2)->point(),
+//                                                     current_cell->vertex(3)->point());
+//                            Polyhedron_Exact dt_poly_exact;
+//                            CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> dt_modifier(dt_poly);
+//                            dt_poly_exact.delegate(dt_modifier);
+//                            Nef_polyhedron dt_nef(dt_poly_exact);
+//                            // intersection
+//                            Nef_polyhedron intersection_nef = dt_nef*sensor_nef;
+////                            Nef_polyhedron::Volume_const_handle volit;
+////                            volit->shells_begin();
+////                            Polyhedron_Exact intersection_tet_exact;
+////                            volit->shells_begin().convert_to_polyhedron(intersection_tet_exact);
+
+
+
+
+//                            //                        typedef typename Nef_polyhedron::SFace_const_handle SFace_const_handle;
+//                            //                        typedef typename Nef_polyhedron::Shell_entry_const_iterator Shell_entry_const_iterator;
+//                            //                        Shell_entry_const_iterator seci;
+//                            //                        intersection_nef.convert_inner_shell_to_polyhedron(SFace_const_handle(seci), intersection_tet_exact);
+
+//                            Polyhedron_Exact intersection_tet_exact;
+//                            if(intersection_nef.is_simple()){
+//                                intersection_nef.convert_to_polyhedron(intersection_tet_exact);
+//                                Polyhedron intersection_tet;
+//                                CGAL::Polyhedron_copy_3<Polyhedron_Exact, Polyhedron::HalfedgeDS> tet_modifier(intersection_tet_exact);
+//                                intersection_tet.delegate(tet_modifier);
+//                                auto vol = CGAL::Polygon_mesh_processing::volume(intersection_tet);
+////                                std::cout << double(vol) << std::endl;
+//                                //   take volume of intersection nef and save it in the cell
+//                                //   mark as traversed (for the current sensor_tet - thus needs to be unset for next sensor_tet iteration step)
+//                                //   go to neighbours of current cell and check intersection there
+//                                //   go to next cell
+//                                //   go to next sensor polygon/tet
+//                            }
+
+                            }
                         }
 
                     }
@@ -513,7 +574,9 @@ void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vect
 
     }
 
-
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "Tet intersection done in " << full_duration.count() << "s" << std::endl;
 
 }
 
