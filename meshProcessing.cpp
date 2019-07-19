@@ -68,6 +68,79 @@ std::vector<Point> sampleTriangulation(std::vector<Point>& all_points)
 ////////////////////////////////////////////////////////////
 /////////////////// preprocessing functions ////////////////
 ////////////////////////////////////////////////////////////
+///
+///
+
+void preprocessSensorMesh(){
+
+    //    Polyhedron sensor_mesh;
+    //    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, sensor_polys);
+    //    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, sensor_polys, sensor_mesh);
+    //    exportOFF(sensor_mesh, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/oriented_sensor_mesh");
+    ////    std::vector<Polyhedron::Facet> degenerate_faces;
+    ////    CGAL::Polygon_mesh_processing::remove_degenerate_faces(faces(sensor_mesh), sensor_mesh, std::back_inserter(degenerate_faces));
+    //    CGAL::Polygon_mesh_processing::remove_degenerate_faces(sensor_mesh);
+    //    exportOFF(sensor_mesh, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/cleaned_sensor_mesh");
+
+
+    //    std::vector<Point> new_points;
+    //    Polyhedron::Vertex_iterator svi;
+    //    int id = 0;
+    //    for(svi = sensor_mesh.vertices_begin(); svi != sensor_mesh.vertices_end(); svi++){
+    //        new_points.push_back(svi->point());
+    //        svi->id() = id++;
+    //    }
+    //    Polyhedron::Facet_iterator sfi;
+    //    id = 0;
+    //    for(sfi = sensor_mesh.facets_begin(); sfi != sensor_mesh.facets_end(); sfi++){
+    //        sfi->id() = id++;
+    //    }
+    //    Polyhedron::Edge_iterator sei;
+    //    id = 0;
+    //    for(sei = sensor_mesh.edges_begin(); sei != sensor_mesh.edges_end(); sei++){
+    //        sei->id() = id++;
+    //    }
+    //    std::vector<std::vector<int>> new_polys;
+    //    for(sfi = sensor_mesh.facets_begin(); sfi != sensor_mesh.facets_end(); sfi++){
+    //        Polyhedron::Halfedge_around_facet_circulator circ = sfi->facet_begin();
+    //        std::vector<int> ids;
+    //        do{ids.push_back(circ->vertex()->id());}
+    //        while ( ++circ != sfi->facet_begin());
+    //        new_polys.push_back(ids);
+    //    }
+
+
+    //    float stop_ratio=0.7;
+    //    SMS::LindstromTurk_params LT_params;
+    ////    if(i_arg < argc) LT_params.BoundaryWeight = atof(argv[i_arg++]);
+    ////    if(i_arg < argc) LT_params.VolumeWeight = atof(argv[i_arg++]);
+    ////    if(i_arg < argc) LT_params.ShapeWeight = atof(argv[i_arg++]);
+    //    LT_params.BoundaryWeight = 0.3;
+    //    LT_params.VolumeWeight = 0.1;
+    //    LT_params.ShapeWeight = 0.1;
+
+    //    // This is a stop predicate (defines when the algorithm terminates).
+    //    SMS::Count_ratio_stop_predicate<Polyhedron> stop(stop_ratio);
+
+    //    // This the actual call to the simplification algorithm.
+    //    // The surface mesh and stop conditions are mandatory arguments.
+    //    // The index maps are needed because the vertices and edges
+    //    // of this surface mesh lack an "id()" field.
+    //    int r = SMS::edge_collapse
+    //              (sensor_mesh
+    //              ,stop
+    //              ,CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index,sensor_mesh)) // for CGAL <4.6, remove ::parameters
+    //               .halfedge_index_map  (get(CGAL::halfedge_external_index,sensor_mesh))
+    //               .get_cost (SMS::Edge_length_cost<Polyhedron>())
+    //              );
+
+    //    std::cout << "\nFinished...\n" << r << " edges removed.\n"
+    //              << (sensor_mesh.size_of_halfedges()/2) << " final edges.\n";
+    //    exportOFF(sensor_mesh, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/decimated_sensor_mesh");
+
+}
+
+
 void decimateSurfaceMesh(std::string input, std::string output)
 {
     // optional
