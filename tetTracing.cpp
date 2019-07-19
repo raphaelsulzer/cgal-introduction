@@ -55,7 +55,7 @@ void traverseCells(const Delaunay& Dt,
         catch(...){
 //            std::cout<<"sp is valid: " << sp.is_valid() << "    sp is closed: " << sp.is_closed() << std::endl;
 //            std::cout<<"tp is valid: " << tp.is_valid() << "    tp is closed: " << tp.is_closed() << std::endl;
-            std::cout << "is closed: "  << P_full.is_closed() << "  is valid: " << P_full.is_valid() << std::endl;
+            std::cout << "is closed: "  << tp.is_closed() << "  is valid: " << tp.is_valid() << std::endl;
 //            exportOFF(P_full,"/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/fail_case");
 //            exportOFF(sp,"/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/sp");
 //            exportOFF(tp,"/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/tp");
@@ -78,9 +78,6 @@ void traverseCells(const Delaunay& Dt,
         // give infinite cell high value
         current_cell->info().outside_score+=10;
     }
-
-
-
 }
 
 
