@@ -1,4 +1,6 @@
 #include <cgal_typedefs.h>
+#include <fileio.h>
+
 #include "plyDefinition.cpp"
 #include "colmapPLY.cpp"
 

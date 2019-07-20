@@ -1,26 +1,69 @@
-//#include "cgal_typedefs.h"
-//#include "fileIO.cpp"
+#include <cgal_typedefs.h>
+#include <fileio.h>
 
 
-//void tetIntersectionFun(){
+void tetIntersectionFun(Polyhedron& a, Polyhedron& b){
 
-//    Point a1(1,1,0);
-//    Point a2(1,3,0);
-//    Point a3(3,2,0);
-//    Point a4(2,2,2);
+    Polyhedron::Facet_iterator sfi;
+    std::vector<Triangle> a_triangles;
+    for(sfi = a.facets_begin(); sfi != a.facets_end(); sfi++){
+        std::cout << "new face" << std::endl;
+        Polyhedron::Halfedge_around_facet_circulator circ = sfi->facet_begin();
+        std::vector<Point> triangle_points;
+        do{
+            std::cout << circ->vertex()->point() << std::endl;
+            triangle_points.push_back(circ->vertex()->point());
+        }
+        while (++circ != sfi->facet_begin());
+        Triangle tri(triangle_points[0], triangle_points[1], triangle_points[2]);
+        a_triangles.push_back(tri);
+    }
 
-//    Point b1(3,1,5);
-//    Point b2(3,3,5);
-//    Point b3(1,2,5);
-//    Point b4(2,2,1);
+    std::vector<Triangle> b_triangles;
+    for(sfi = b.facets_begin(); sfi != b.facets_end(); sfi++){
+        std::cout << "new face" << std::endl;
+        Polyhedron::Halfedge_around_facet_circulator circ = sfi->facet_begin();
+        std::vector<Point> triangle_points;
+        do{
+            std::cout << circ->vertex()->point() << std::endl;
+            triangle_points.push_back(circ->vertex()->point());
+        }
+        while (++circ != sfi->facet_begin());
+        Triangle tri(triangle_points[0], triangle_points[1], triangle_points[2]);
+        b_triangles.push_back(tri);
+    }
 
-//    Polyhedron a;
-//    a.make_tetrahedron(a1,a2,a3,a4);
+    // double loop over the triangles of each polyhedron
+    std::set<Point> intersection_points;
+    for(int i=0; i<3; i++){
+        for(int j=0; j<3; j++){
 
-//    Polyhedron b;
-//    a.make_tetrahedron(b1,b2,b3,b4);
+            CGAL::cpp11::result_of<Intersect(Triangle, Triangle)>::type
+              result = intersection(a_triangles[i], b_triangles[j]);
 
-//    exportOFF(a, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/a");
-//    exportOFF(b, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetras/b");
+            if (result){
+                if (const Segment* seg = boost::get<Segment>(&*result)){
+                    intersection_points.insert(seg->point(0));
+                    intersection_points.insert(seg->point(1));
+                }
+            }
+        }
+    }
 
-//}
+    double vol;
+    Polyhedron intersection_poly;
+    if(intersection_points.size() > 3){
+        CGAL::convex_hull_3(intersection_points.begin(), intersection_points.end(), intersection_poly);
+        vol = CGAL::Polygon_mesh_processing::volume(intersection_poly);
+
+    }
+    else{
+        vol = 0.0;
+    }
+    std::cout << vol << std::endl;
+
+//    exportOFF(a, "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/tetras/a");
+//    exportOFF(b, "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/tetras/b");
+//    exportOFF(c, "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/tetras/c");
+
+}

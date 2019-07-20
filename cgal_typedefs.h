@@ -77,6 +77,7 @@ typedef Kernel::Ray_3                                               Ray;
 typedef Kernel::Triangle_3                                          Triangle;
 typedef Kernel::Intersect_3                                         Intersect;
 typedef Kernel::Segment_3                                           Segment;
+typedef Kernel::Tetrahedron_3                                       Tetrahedron;
 
 ///////// Polyhedron mesh /////////
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -150,6 +151,7 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 #include <CGAL/Convex_hull_3/dual/halfspace_intersection_with_constructions_3.h>
 #include <CGAL/Nef_polyhedron_3.h>
 #include <CGAL/Polyhedron_copy_3.h>
+#include <CGAL/convex_hull_3.h>
 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;

@@ -1,4 +1,5 @@
-#include "cgal_typedefs.h"
+#include <cgal_typedefs.h>
+#include <fileIO.h>
 
 namespace tetTracing{
 
@@ -19,14 +20,22 @@ namespace tetTracing{
 // 2. get the correct sensor orientation from COLMAP or from seperate depth map from each image from MicMac
 // 3. intersect a sensor topology tetrahedron (formed by 3 pixels next to each other, or LiDAR points next to each other and their (almost common -> barycenter) ray source
 // use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
-void traverseCells(const Delaunay& Dt,
+int traverseCells(const Delaunay& Dt,
                    Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
-                   std::vector<Plane>& planes){
+                   std::vector<Plane>& planes, Tetrahedron st){
 
     // if current cell is not infinite then go on
     // processed state is already checked before calling this function, so no need to check again
     if(!Dt.is_infinite(current_cell))
     {
+
+        for(int ci = 0; ci < 4; ci++){
+            Triangle tri = Dt.triangle(current_cell, 0);
+            if(do_intersect(tri,st)){
+                break;
+            }
+            return 0;
+        }
         // Dt tet
         Point tp0 = current_cell->vertex(0)->point();
         Point tp1 = current_cell->vertex(1)->point();
@@ -70,7 +79,7 @@ void traverseCells(const Delaunay& Dt,
             Facet mirror_fac = Dt.mirror_facet(fac);
             Cell_handle newCell = mirror_fac.first;
             if(processed.find(newCell) == processed.end()){
-                traverseCells(Dt, newCell, processed, planes);
+                traverseCells(Dt, newCell, processed, planes, st);
             }
         }
     }
@@ -78,6 +87,7 @@ void traverseCells(const Delaunay& Dt,
         // give infinite cell high value
         current_cell->info().outside_score+=10;
     }
+    return 0;
 }
 
 
@@ -138,6 +148,7 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                             Point sp3 = sensor_infos[k][0]->info().sensor_pos;
                             Polyhedron sp;
                             sp.make_tetrahedron(sp0,sp1,sp2,sp3);
+                            Tetrahedron st(sp0,sp1,sp2,sp3);
                             Point sp_centroid = CGAL::centroid(sp0,sp1,sp2,sp3);
                             std::vector<Plane> planes(8);
                             planes[0] = Plane(sp0,sp2,sp1);
@@ -193,7 +204,7 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                                 Facet mirror_fac = Dt.mirror_facet(fac);
                                 Cell_handle newCell = mirror_fac.first;
                                 if(processed.find(newCell) == processed.end()){
-                                    traverseCells(Dt, newCell, processed, planes);
+                                    traverseCells(Dt, newCell, processed, planes, st);
                                 }
 
                             }

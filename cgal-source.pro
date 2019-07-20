@@ -19,7 +19,8 @@ SOURCES += \
     tetTracing.cpp
 
 HEADERS += \
-    cgal_typedefs.h
+    cgal_typedefs.h \
+    fileIO.h
 
 QMAKE_CXXFLAGS += -std=c++11
 

@@ -1,4 +1,5 @@
 #include <cgal_typedefs.h>
+#include <fileio.h>
 
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"
@@ -14,12 +15,12 @@ void surfaceReconstruction()
     auto start = std::chrono::high_resolution_clock::now();
 
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
 
     std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut";     // there might be a problem with this file since it was exported as an ASCII from the CC
-    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut3";
+    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut4";
 //    std::string ifn2 = path1+"musee/Est1.mesh_cut2";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
