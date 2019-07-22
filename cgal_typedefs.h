@@ -23,11 +23,11 @@
 #include <CGAL/IO/read_ply_points.h>
 #include <CGAL/Euclidean_distance.h>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel         Kernel;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel         EPICK;
 
 // vertext base for point + info (=vector, color, intensity)
-typedef Kernel::Vector_3                                            Vector;
-typedef Kernel::Point_3                                             Point;
+typedef EPICK::Vector_3                                            Vector;
+typedef EPICK::Point_3                                             Point;
 typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
 typedef CGAL::cpp11::array<float, 3>                                Sensor;
 
@@ -40,7 +40,7 @@ struct vertex_info{
     Point sensor_pos;
     std::vector<int> sensor_tet;
 };
-typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, Kernel>    VB;
+typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, EPICK>    VB;
 
 struct cell_info{
     int idx = 0;
@@ -48,11 +48,11 @@ struct cell_info{
     float inside_score = 0.0;
     int final_label = 0;
 };
-typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, Kernel>        CB;         // cell base
+typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, EPICK>        CB;         // cell base
 
 // Delaunay triangulation data structure
 typedef CGAL::Triangulation_data_structure_3<VB, CB>                Tds;        // triangulation data structure
-typedef CGAL::Delaunay_triangulation_3<Kernel, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
+typedef CGAL::Delaunay_triangulation_3<EPICK, Tds>                 Delaunay;   // delaunay triangulation based on triangulation data structure
 //typedef Delaunay::Point                                             Point;
 typedef Delaunay::Edge                                              Edge;
 typedef Delaunay::Facet                                             Facet;
@@ -73,11 +73,11 @@ typedef CGAL::cpp11::tuple<Point, Vector> PN;
 typedef CGAL::cpp11::tuple<Point, Sensor> PS;
 
 ///////// ray tracing /////////
-typedef Kernel::Ray_3                                               Ray;
-typedef Kernel::Triangle_3                                          Triangle;
-typedef Kernel::Intersect_3                                         Intersect;
-typedef Kernel::Segment_3                                           Segment;
-typedef Kernel::Tetrahedron_3                                       Tetrahedron;
+typedef EPICK::Ray_3                                               Ray;
+typedef EPICK::Triangle_3                                          Triangle;
+typedef EPICK::Intersect_3                                         Intersect;
+typedef EPICK::Segment_3                                           Segment;
+typedef EPICK::Tetrahedron_3                                       Tetrahedron;
 
 ///////// Polyhedron mesh /////////
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -90,8 +90,8 @@ typedef Kernel::Tetrahedron_3                                       Tetrahedron;
 #include <CGAL/Polygon_mesh_processing/repair.h>
 #include <CGAL/tags.h>
 
-typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_with_id_3>      Polyhedron;
-//typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_3>      Polyhedron;
+typedef CGAL::Polyhedron_3<EPICK, CGAL::Polyhedron_items_with_id_3>      Polyhedron;
+//typedef CGAL::Polyhedron_3<EPICK, CGAL::Polyhedron_items_3>      Polyhedron;
 
 // Simplification function
 #include <CGAL/Surface_mesh_simplification/edge_collapse.h>
@@ -119,7 +119,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 //#include <pcl/features/normal_3d.h>
 
 
-typedef CGAL::Search_traits_3<Kernel> TreeTraits;
+typedef CGAL::Search_traits_3<EPICK> TreeTraits;
 typedef CGAL::Search_traits_adapter<point_info,
   CGAL::Nth_of_tuple_property_map<0, point_info>,
   TreeTraits>                                               Traits;
@@ -138,7 +138,7 @@ typedef Incremental_neighbor_search::Tree Incremental_Tree;
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 
 typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
-typedef CGAL::AABB_traits<Kernel, Primitive> AABB_Traits;
+typedef CGAL::AABB_traits<EPICK, Primitive> AABB_Traits;
 typedef CGAL::AABB_tree<AABB_Traits> AABB_Tree;
 typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Segment>::Type > Segment_intersection;
 typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Point>::Type > Point_intersection;
@@ -153,13 +153,13 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 #include <CGAL/Polyhedron_copy_3.h>
 #include <CGAL/convex_hull_3.h>
 
+typedef EPICK::Plane_3 Plane;
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-typedef K::Point_3 Point_Exact;
-typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
+typedef CGAL::Exact_predicates_exact_constructions_kernel EPECK;
+typedef EPECK::Point_3 Point_Exact;
+typedef CGAL::Polyhedron_3<EPECK, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
 //typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_3> Polyhedron_Exact;
-typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
-typedef Kernel::Plane_3 Plane;
+typedef CGAL::Nef_polyhedron_3<EPECK> Nef_polyhedron;
 
 
 ////#include <CGAL/Nef_polyhedron_3.h>
@@ -169,9 +169,9 @@ typedef Kernel::Plane_3 Plane;
 
 
 //////typedef CGAL::Nef_polyhedron_3<CGAL::Extended_homogeneous<CGAL::Exact_integer>> Nef;
-////typedef CGAL::Nef_polyhedron_3<Kernel> Nef;
+////typedef CGAL::Nef_polyhedron_3<EPICK> Nef;
 //////typedef Nef::Plane_3  Nef_Plane;
-////typedef Kernel::Plane_3 Plane;
+////typedef EPICK::Plane_3 Plane;
 #endif // CGAL_TYPEDEFS_H
 
 

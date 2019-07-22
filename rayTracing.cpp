@@ -93,7 +93,7 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
               result = intersection(tri, ray);
 
             // check if there is an intersection between the current ray and current triangle
-            if (result){
+            if(result){
                 // check if ray triangle intersection is a point (probably in most cases)
                 // or a line segment (if ray lies inside the triangle)
                 // if result is a point
