@@ -81,16 +81,34 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
             int idx = (oppositeVertex+i)%4;
 
             Triangle tri = Dt.triangle(current_cell, idx);
-            double tri_area = tri.squared_area();
-            if(tri_area < 1e-100){
-                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
+//            double tri_area = tri.squared_area();
+//            if(tri_area < 1e-100){
+//                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
+////                return 0;
+//            }
+//            if(tri.is_degenerate() && !CGAL::is_valid(tri)){
+//                std::cout << "triangle is degenerate or not valid " << std::endl;
 //                return 0;
-            }
-            Facet fac = std::make_pair(current_cell, idx);
+//            }
+//            if(!do_intersect(tri, ray))
+//                return 0;
+
+            typedef CGAL::Cartesian_converter<EPICK,EPECK>                         IK_to_EK;
+            typedef CGAL::Cartesian_converter<EPECK,EPICK>                         EK_to_IK;
+            IK_to_EK to_exact;
+            EK_to_IK to_inexact;
 
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
             CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
-              result = intersection(tri, ray);
+              result;
+            try{
+                result = intersection(tri, ray);
+            }
+            catch(...){
+                std::cout << "ray-triangle intersection failed!" << std::endl;
+                return 0;
+            }
+
 
             // check if there is an intersection between the current ray and current triangle
             if(result){
@@ -106,21 +124,16 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
                     //std::cout << dist2 << std::endl;
                     // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                     score = cellScore(dist2, sigma, inside);
-
                 }
                 else{
                     const Segment* s = boost::get<Segment>(&*result);
                     std::cout << "segment 3 intersection behind the first cell:  " << *s << std::endl;
-
                     // get the three edges of the current triangle
                     // check how they intersect with the current ray
                     // since the ray passes straight through the triangle in this case
-
     //                Point end_point = s->target();
     //                int vertexIndexOfEdgeCrossedRay = all_vertices.find(end_point)->second;
-
     //                std::cout << vertexIndexOfEdgeCrossedRay << std::cout;
-
                     // for now just return in this case, until it is solved
                     return 0;
                 }
@@ -130,6 +143,7 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
                 current_cell->info().inside_score += score.second;
 
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
+                Facet fac = std::make_pair(current_cell, idx);
                 Facet mirror_fac = Dt.mirror_facet(fac);
                 // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
                 // and check if there is an intersection
@@ -196,20 +210,35 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
     // why only in one direction? because I'm only checking the OPPOSITE facade. It of course also intersects with the bordering facets
     // of all the neighbouring cells
     for(std::size_t i=0; i < inc_cells.size(); i++){
-
         Cell_handle current_cell = inc_cells[i];
-
 
         if(!Dt.is_infinite(current_cell))
         {
             int cellBasedVertexIndex = current_cell->index(vit);
             Triangle tri = Dt.triangle(current_cell, cellBasedVertexIndex);
-            Facet fac = std::make_pair(current_cell, cellBasedVertexIndex);
+//            if(tri_area < 1e-100){
+//                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
+////                return 0;
+//            }
+//            if(tri.is_degenerate() && !CGAL::is_valid(tri)){
+//                std::cout << "triangle is degenerate or not valid " << std::endl;
+//                continue;
+//            }
+//            if(!do_intersect(tri, ray))
+//                continue;
 
             // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
             // get the intersection of the ray and the triangle
             CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
-              result = intersection(tri, ray);
+              result;
+            try{
+                result = intersection(tri, ray);
+            }
+            catch(...){
+                std::cout << "ray-triangle intersection failed!" << std::endl;
+                continue;
+            }
+
 
 
             // check if there is an intersection between the current ray and current triangle
@@ -249,6 +278,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
                 // so start from there to put this into a function
                 if(!inside){
+                    Facet fac = std::make_pair(current_cell, cellBasedVertexIndex);
                     Facet mirror_fac = Dt.mirror_facet(fac);
                     Cell_handle newCell = mirror_fac.first;
                     int newIdx = mirror_fac.second;
@@ -291,7 +321,7 @@ void rayTracingFun(const Delaunay& Dt, bool one_cell){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-//        firstCell(Dt, vit, 0, one_cell);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 0, one_cell);    // one_cell currently not used in the correct way
         // collect inside votes
         firstCell(Dt, vit, 1, one_cell);    // one_cell currently not used in the correct way
     }

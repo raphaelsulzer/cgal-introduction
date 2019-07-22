@@ -15,7 +15,8 @@ SOURCES += \
     rPLY.c \
     main.cpp \
     meshPLY.cpp \
-    tetTracing.cpp
+    tetTracing.cpp \
+    newTetIntersection.cpp
 
 HEADERS += \
     cgal_typedefs.h \
