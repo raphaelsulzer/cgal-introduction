@@ -68,10 +68,73 @@ std::vector<Point> sampleTriangulation(std::vector<Point>& all_points)
 ////////////////////////////////////////////////////////////
 /////////////////// preprocessing functions ////////////////
 ////////////////////////////////////////////////////////////
-///
-///
 
-void preprocessSensorMesh(){
+void preprocessSensorMesh(std::vector<Point>& points,
+                          std::vector<vertex_info>& infos,
+                          std::vector<std::vector<int>>& polys){
+
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+
+        assert(points.size() == infos.size());
+        std::map<Point, vertex_info> pim;
+        for(int i = 0; i < points.size(); i++){
+            pim[points[i]] = infos[i];
+        }
+
+        Polyhedron sensor_mesh;
+        CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polys);
+        CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polys, sensor_mesh);
+//        exportOFF(sensor_mesh, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/oriented_sensor_mesh");
+    //    std::vector<Polyhedron::Facet> degenerate_faces;
+    //    CGAL::Polygon_mesh_processing::remove_degenerate_faces(faces(sensor_mesh), sensor_mesh, std::back_inserter(degenerate_faces));
+        CGAL::Polygon_mesh_processing::remove_degenerate_faces(sensor_mesh);
+//        exportOFF(sensor_mesh, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/cleaned_sensor_mesh");
+
+
+        std::vector<Point> new_points;
+        std::vector<vertex_info> new_infos;
+        Polyhedron::Vertex_iterator svi;
+        int id = 0;
+        for(svi = sensor_mesh.vertices_begin(); svi != sensor_mesh.vertices_end(); svi++){
+            new_points.push_back(svi->point());
+            vertex_info info = pim.find(svi->point())->second;
+            new_infos.push_back(info);
+            svi->id() = id++;
+        }
+        Polyhedron::Facet_iterator sfi;
+        id = 0;
+        for(sfi = sensor_mesh.facets_begin(); sfi != sensor_mesh.facets_end(); sfi++){
+            sfi->id() = id++;
+        }
+//        Polyhedron::Edge_iterator sei;
+//        id = 0;
+//        for(sei = sensor_mesh.edges_begin(); sei != sensor_mesh.edges_end(); sei++){
+//            sei->id() = id++;
+//        }
+        std::vector<std::vector<int>> new_polys;
+        for(sfi = sensor_mesh.facets_begin(); sfi != sensor_mesh.facets_end(); sfi++){
+            Polyhedron::Halfedge_around_facet_circulator circ = sfi->facet_begin();
+            std::vector<int> ids;
+            do{ids.push_back(circ->vertex()->id());}
+            while ( ++circ != sfi->facet_begin());
+            new_polys.push_back(ids);
+        }
+
+        points = new_points;
+        infos = new_infos;
+        polys = new_polys;
+
+
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+        std::cout << "Mesh preprocessing done in " << duration.count() << "s" << std::endl;
+
+}
+
+
+//void preprocessSensorMesh(){
 
     //    Polyhedron sensor_mesh;
     //    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, sensor_polys);
@@ -138,7 +201,16 @@ void preprocessSensorMesh(){
     //              << (sensor_mesh.size_of_halfedges()/2) << " final edges.\n";
     //    exportOFF(sensor_mesh, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/decimated_sensor_mesh");
 
-}
+//}
+
+
+
+
+
+
+
+
+
 
 
 void decimateSurfaceMesh(std::string input, std::string output)

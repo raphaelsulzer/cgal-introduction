@@ -24,6 +24,7 @@
 #include <CGAL/Euclidean_distance.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         EPICK;
+typedef CGAL::Exact_predicates_exact_constructions_kernel           EPECK;
 
 // vertext base for point + info (=vector, color, intensity)
 typedef EPICK::Vector_3                                            Vector;
@@ -78,6 +79,8 @@ typedef EPICK::Triangle_3                                          Triangle;
 typedef EPICK::Intersect_3                                         Intersect;
 typedef EPICK::Segment_3                                           Segment;
 typedef EPICK::Tetrahedron_3                                       Tetrahedron;
+typedef CGAL::Cartesian_converter<EPICK,EPECK>                     IK_to_EK;
+typedef CGAL::Cartesian_converter<EPECK,EPICK>                     EK_to_IK;
 
 ///////// Polyhedron mesh /////////
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -114,6 +117,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 
 // for matrix operations, use Eigen lib
 #include <Eigen/Dense>
+
 
 //#include <pcl/point_types.h>
 //#include <pcl/features/normal_3d.h>
@@ -155,7 +159,6 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 
 typedef EPICK::Plane_3 Plane;
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel EPECK;
 typedef EPECK::Point_3 Point_Exact;
 typedef CGAL::Polyhedron_3<EPECK, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
 //typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_3> Polyhedron_Exact;

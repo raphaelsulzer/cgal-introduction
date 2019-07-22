@@ -93,21 +93,22 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
 //            if(!do_intersect(tri, ray))
 //                return 0;
 
-            typedef CGAL::Cartesian_converter<EPICK,EPECK>                         IK_to_EK;
-            typedef CGAL::Cartesian_converter<EPECK,EPICK>                         EK_to_IK;
+            // Kernel conversion
             IK_to_EK to_exact;
             EK_to_IK to_inexact;
 
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
-            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
-              result;
-            try{
-                result = intersection(tri, ray);
-            }
-            catch(...){
-                std::cout << "ray-triangle intersection failed!" << std::endl;
-                return 0;
-            }
+//            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
+//              result;
+            CGAL::cpp11::result_of<EPECK::Intersect_3(EPECK::Triangle_3, EPECK::Ray_3)>::type result;
+            result = intersection(to_exact(tri), to_exact(ray));
+//            try{
+//                result = intersection(tri, ray);
+//            }
+//            catch(...){
+//                std::cout << "ray-triangle intersection failed!" << std::endl;
+//                return 0;
+//            }
 
 
             // check if there is an intersection between the current ray and current triangle
@@ -116,17 +117,18 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
                 // or a line segment (if ray lies inside the triangle)
                 // if result is a point
                 std::pair<float,float> score;
-                if (const Point* p = boost::get<Point>(&*result))
+                if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result))
                 {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
-                    float dist2 = CGAL::squared_distance(*p, source);
+                    Point pi = to_inexact(*p);
+                    float dist2 = CGAL::squared_distance(pi, source);
                     //std::cout << dist2 << std::endl;
                     // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                     score = cellScore(dist2, sigma, inside);
                 }
                 else{
-                    const Segment* s = boost::get<Segment>(&*result);
+                    const EPECK::Segment_3* s = boost::get<EPECK::Segment_3>(&*result);
                     std::cout << "segment 3 intersection behind the first cell:  " << *s << std::endl;
                     // get the three edges of the current triangle
                     // check how they intersect with the current ray
@@ -229,17 +231,22 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 
             // intersection from here: https://doc.cgal.org/latest/Kernel_23/group__intersection__linear__grp.html
             // get the intersection of the ray and the triangle
-            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
-              result;
-            try{
-                result = intersection(tri, ray);
-            }
-            catch(...){
-                std::cout << "ray-triangle intersection failed!" << std::endl;
-                continue;
-            }
+//            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
+//              result;
+//            try{
+//                result = intersection(tri, ray);
+//            }
+//            catch(...){
+//                std::cout << "ray-triangle intersection failed!" << std::endl;
+//                continue;
+//            }
 
-
+            // Kernel conversion
+            IK_to_EK to_exact;
+            EK_to_IK to_inexact;
+            // calc intersection
+            CGAL::cpp11::result_of<EPECK::Intersect_3(EPECK::Triangle_3, EPECK::Ray_3)>::type result;
+            result = intersection(to_exact(tri), to_exact(ray));
 
             // check if there is an intersection between the current ray and current triangle
             if(result){
@@ -248,19 +255,17 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // if result is a point
                 std::pair<float,float> score;
                 Point source = vit->point();
-                if(const Point* p = boost::get<Point>(&*result)){
-
-                //std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
-
+                if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result)){
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
-                    float dist2 = CGAL::squared_distance(*p, source);
+                    Point pi = to_inexact(*p);
+                    float dist2 = CGAL::squared_distance(pi, source);
                     // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                     score = cellScore(dist2, sigma, inside);
                 }
                 // else result is a line
                 else{
-                    const Segment* s = boost::get<Segment>(&*result);
+                    const EPECK::Segment_3* s = boost::get<EPECK::Segment_3>(&*result);
                     std::cout << "segment 3 intersection in first cell:  " << *s << std::endl;
                     // for now just return in this case, until it is solved
                     //continue;

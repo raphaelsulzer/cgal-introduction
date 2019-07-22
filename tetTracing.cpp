@@ -10,8 +10,8 @@ double tetIntersectionFun(Polyhedron& a, Polyhedron& b){
         return 0.0;
 
 
-    typedef CGAL::Cartesian_converter<EPICK,EPECK>                         IK_to_EK;
-    typedef CGAL::Cartesian_converter<EPECK,EPICK>                         EK_to_IK;
+//    typedef CGAL::Cartesian_converter<EPICK,EPECK>                         IK_to_EK;
+//    typedef CGAL::Cartesian_converter<EPECK,EPICK>                         EK_to_IK;
     IK_to_EK to_exact;
     EK_to_IK to_inexact;
 
