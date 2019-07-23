@@ -20,7 +20,7 @@ void surfaceReconstruction()
 
 
     std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut";     // there might be a problem with this file since it was exported as an ASCII from the CC
-    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cu2";
+    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn2;
@@ -59,7 +59,7 @@ void surfaceReconstruction()
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
     // calculate noise per point and save it in the vertex_info of the Dt
-    pcaKNN(Dt, t_points);
+//    pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 

@@ -7,47 +7,96 @@
 namespace rayTracing{
 
 
-// cross product of two vector array.
-Vector crossProduct(Vector a, Vector b){
-    Vector cp(a.y() * b.z() - a.z() * b.y(),
-                a.x() * b.z() - a.z() * b.x(),
-                a.x() * b.y() - a.y() * b.x());
-    return cp;
-}
-float dotProduct(Vector a, Vector b){
-    return  a.x()*b.x() +
-            a.y()*b.y() +
-            a.z()*b.z();
-}
+//// cross product of two vector array.
+//Vector crossProduct(Vector a, Vector b){
+//    Vector cp(a.y() * b.z() - a.z() * b.y(),
+//                a.x() * b.z() - a.z() * b.x(),
+//                a.x() * b.y() - a.y() * b.x());
+//    return cp;
+//}
+//float dotProduct(Vector a, Vector b){
+//    return  a.x()*b.x() +
+//            a.y()*b.y() +
+//            a.z()*b.z();
+//}
+
+//bool rayTriangleIntersection(Point& rayOrigin,
+//                           Vector& rayVector,
+//                           Triangle& inTriangle,
+//                           Point& outIntersectionPoint){
+
+//    const float EPSILON = 0.0000001;
+//    Point vertex0 = inTriangle.vertex(0);
+//    Point vertex1 = inTriangle.vertex(1);
+//    Point vertex2 = inTriangle.vertex(2);
+//    Vector edge1, edge2, h, s, q;
+//    float a,f,u,v;
+//    edge1 = Vector(vertex1.x() - vertex0.x(),
+//                   vertex1.y() - vertex0.y(),
+//                   vertex1.z() - vertex0.z());
+//    edge2 = Vector(vertex2.x() - vertex0.x(),
+//                   vertex2.y() - vertex0.y(),
+//                   vertex2.z() - vertex0.z());
+//    h = crossProduct(rayVector,edge2);
+//    a = dotProduct(edge1,h);
+//    if (a > -EPSILON && a < EPSILON)
+//        return false;    // This ray is parallel to this triangle.
+//    f = 1.0/a;
+//    s = rayOrigin - vertex0;
+//    u = f * dotProduct(s,h);
+//    if (u < 0.0 || u > 1.0)
+//        return false;
+//    q = crossProduct(s,edge1);
+//    v = f * dotProduct(rayVector,q);
+//    if (v < 0.0 || u + v > 1.0)
+//        return false;
+//    // At this stage we can compute t to find out where the intersection point is on the line.
+//    float t = f * dotProduct(edge2,q);
+//    if (t > EPSILON) // ray intersection
+//    {
+//        outIntersectionPoint = rayOrigin + rayVector * t;
+//        return true;
+//    }
+//    else // This means that there is a line intersection but not a ray intersection.
+//        return false;
+//}
 
 bool rayTriangleIntersection(Point& rayOrigin,
                            Vector& rayVector,
                            Triangle& inTriangle,
                            Point& outIntersectionPoint){
+    using namespace Eigen;
+    const double EPSILON = 0.0000001;
 
-    const float EPSILON = 0.0000001;
-    Point vertex0 = inTriangle.vertex(0);
-    Point vertex1 = inTriangle.vertex(1);
-    Point vertex2 = inTriangle.vertex(2);
-    Vector edge1, edge2, h, s, q;
-    float a,f,u,v;
-    edge1 = vertex1 - vertex0;
-    edge2 = vertex2 - vertex0;
-    h = crossProduct(rayVector,edge2);
-    a = dotProduct(edge1,h);
+    // init "Eigen" vectors
+    Vector3d rayO, rayV;
+    rayO << rayOrigin.x(), rayOrigin.y(), rayOrigin.z();
+    rayV << rayVector.x(), rayVector.y(), rayVector.z();
+
+    Vector3d vertex0, vertex1, vertex2;
+    vertex0 << inTriangle.vertex(0).x(), inTriangle.vertex(0).y(), inTriangle.vertex(0).z();
+    vertex1 << inTriangle.vertex(1).x(), inTriangle.vertex(1).y(), inTriangle.vertex(1).z();
+    vertex2 << inTriangle.vertex(2).x(), inTriangle.vertex(2).y(), inTriangle.vertex(2).z();
+
+    Vector3d h, s, q;
+    double a,f,u,v;
+    Vector3d edge1 = vertex1 - vertex0;
+    Vector3d edge2 = vertex2 - vertex0;
+    h = rayV.cross(edge2);
+    a = edge1.dot(h);
     if (a > -EPSILON && a < EPSILON)
         return false;    // This ray is parallel to this triangle.
     f = 1.0/a;
-    s = rayOrigin - vertex0;
-    u = f * dotProduct(s,h);
+    s = rayO - vertex0;
+    u = f * s.dot(h);
     if (u < 0.0 || u > 1.0)
         return false;
-    q = crossProduct(s,edge1);
-    v = f * dotProduct(rayVector,q);
+    q = s.cross(edge1);
+    v = f * rayV.dot(q);
     if (v < 0.0 || u + v > 1.0)
         return false;
     // At this stage we can compute t to find out where the intersection point is on the line.
-    float t = f * dotProduct(edge2,q);
+    double t = f * edge2.dot(q);
     if (t > EPSILON) // ray intersection
     {
         outIntersectionPoint = rayOrigin + rayVector * t;
@@ -56,6 +105,12 @@ bool rayTriangleIntersection(Point& rayOrigin,
     else // This means that there is a line intersection but not a ray intersection.
         return false;
 }
+
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
@@ -88,28 +143,6 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
     return sigmas;
 }
 
-//float cellScore(float dist2, double eig3, bool inside){
-      // implementation according to Efficient volumetric fusion paper
-
-//    float sigma;
-//    if(inside){
-//        //        sigma = 0.05;
-//        sigma = eig3;
-//        // truncate inside ray
-//        // in efficient volumetric fusion paper they also introduce outside limit of 3*sigma, simply for having "a shorter walk in the 3DT".
-////        if(dist2 > 8*sigma)
-////            dist2=0;
-//    }
-//    else {
-////        sigma = 0.25;
-//        // good with normals
-////        sigma = eig3*5;
-//        sigma = eig3;
-//    }
-
-//    float S = 1 - exp(-dist2/(2*sigma*sigma));
-//    return S;
-//}
 
 // TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!
 int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current_cell, int oppositeVertex, Point source, bool inside)
@@ -130,6 +163,7 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
             int idx = (oppositeVertex+i)%4;
 
             Triangle tri = Dt.triangle(current_cell, idx);
+            // triangle guards
 //            double tri_area = tri.squared_area();
 //            if(tri_area < 1e-100){
 //                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
@@ -142,9 +176,6 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
 //            if(!do_intersect(tri, ray))
 //                return 0;
 
-            // Kernel conversion
-            IK_to_EK to_exact;
-            EK_to_IK to_inexact;
 
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
 //            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
@@ -160,11 +191,10 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
 //            }
 
             Point intersectionPoint;
-            bool result = rayTriangleIntersection(ray.source(), ray.to_vector(), tri, intersectionPoint);
+            Point source = ray.source();
+            Vector rayV = ray.to_vector();
+            bool result = rayTriangleIntersection(source, rayV, tri, intersectionPoint);
             std::pair<float,float> score;
-
-
-
             // check if there is an intersection between the current ray and current triangle
             if(result){
                 float dist2 = CGAL::squared_distance(intersectionPoint, source);
@@ -220,17 +250,17 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
                 // what could be done is make this intersection point the new source of the ray
                 // simply say ray source = this point, and ray target = new point in the opposite direction of the previous point
                 // and than start from RayTracingFun again, because there it will just look for the opposite facet of the intersected vertex
-                for(int i=0; i<4; i++){
-                    Point pt = newCell->vertex(i)->point();
-                    CGAL::cpp11::result_of<Intersect(Point, Ray)>::type
-                      point_intersection = intersection(pt, ray);
+//                for(int i=0; i<4; i++){
+//                    Point pt = newCell->vertex(i)->point();
+//                    CGAL::cpp11::result_of<Intersect(Point, Ray)>::type
+//                      point_intersection = intersection(pt, ray);
 
-                    if(point_intersection){
-//                        const Point* p = boost::get<Point>(&*point_intersection);
-//                        std::cout << "intersection with a vertex of the cell: " << *p << std::endl;
-                        return 0;
-                    }
-                }
+//                    if(point_intersection){
+////                        const Point* p = boost::get<Point>(&*point_intersection);
+////                        std::cout << "intersection with a vertex of the cell: " << *p << std::endl;
+//                        return 0;
+//                    }
+//                }
                 traverseCells(Dt, sigma, ray, newCell, newIdx, source, inside);
             }
         }
@@ -262,7 +292,6 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
         ray = ray.opposite();
     }
 
-
     // vector of incident cells to the current vertex (from vertex iterator vit)
     std::vector<Cell_handle> inc_cells;
     Dt.incident_cells(vit, std::back_inserter(inc_cells));
@@ -277,6 +306,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
         {
             int cellBasedVertexIndex = current_cell->index(vit);
             Triangle tri = Dt.triangle(current_cell, cellBasedVertexIndex);
+            // triangle guards
 //            if(tri_area < 1e-100){
 //                std::cout << "triangle with " << tri_area << " skipped." << std::endl;
 ////                return 0;
@@ -300,48 +330,46 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 //                continue;
 //            }
 
+            // Kernel conversion
+//            IK_to_EK to_exact;
+//            EK_to_IK to_inexact;
+//            // calc intersection
+//            CGAL::cpp11::result_of<EPECK::Intersect_3(EPECK::Triangle_3, EPECK::Ray_3)>::type result;
+//            result = intersection(to_exact(tri), to_exact(ray));
+
             Point intersectionPoint;
-            bool result = rayTriangleIntersection(ray.source(), ray.to_vector(), tri, intersectionPoint);
+            Point source = vit->point();
+            Vector rayV = ray.to_vector();
+            bool result = rayTriangleIntersection(source, rayV, tri, intersectionPoint);
             std::pair<float,float> score;
+            // check if there is an intersection between the current ray and current triangle
             if(result){
                 float dist2 = CGAL::squared_distance(intersectionPoint, source);
                 //std::cout << dist2 << std::endl;
                 // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
                 score = cellScore(dist2, sigma, inside);
-            }
-
-            // Kernel conversion
-            IK_to_EK to_exact;
-            EK_to_IK to_inexact;
-            // calc intersection
-            CGAL::cpp11::result_of<EPECK::Intersect_3(EPECK::Triangle_3, EPECK::Ray_3)>::type result;
-            result = intersection(to_exact(tri), to_exact(ray));
-
-            // check if there is an intersection between the current ray and current triangle
-            if(result){
                 // check if ray triangle intersection is a point (probably in most cases) or a line segment (if ray lies inside the triangle).
                 // so far this is not used (and not needed) since I am not handling the unlikely case where the ray goes through a triangle
                 // if result is a point
-                std::pair<float,float> score;
-                Point source = vit->point();
+//                std::pair<float,float> score;
 
-                if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result)){
-                    // get the distance of this point to the current source:
-//                    double dist = sqrt(CGAL::squared_distance(*p, source));
-                    Point pi = to_inexact(*p);
-                    float dist2 = CGAL::squared_distance(pi, source);
-                    // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
-                    score = cellScore(dist2, sigma, inside);
-                }
-                // else result is a line
-                else{
-                    const EPECK::Segment_3* s = boost::get<EPECK::Segment_3>(&*result);
-                    std::cout << "segment 3 intersection in first cell:  " << *s << std::endl;
-                    // for now just return in this case, until it is solved
-                    //continue;
-                    // TOOD: simply calculate the distance to this edge, and then I can also get a score from cellScore()
-                    score = std::make_pair(0.0, 0.0);
-                }
+//                if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result)){
+//                    // get the distance of this point to the current source:
+////                    double dist = sqrt(CGAL::squared_distance(*p, source));
+//                    Point pi = to_inexact(*p);
+//                    float dist2 = CGAL::squared_distance(pi, source);
+//                    // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
+//                    score = cellScore(dist2, sigma, inside);
+//                }
+//                // else result is a line
+//                else{
+//                    const EPECK::Segment_3* s = boost::get<EPECK::Segment_3>(&*result);
+//                    std::cout << "segment 3 intersection in first cell:  " << *s << std::endl;
+//                    // for now just return in this case, until it is solved
+//                    //continue;
+//                    // TOOD: simply calculate the distance to this edge, and then I can also get a score from cellScore()
+//                    score = std::make_pair(0.0, 0.0);
+//                }
                 // now locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
                 current_cell->info().outside_score += score.first;

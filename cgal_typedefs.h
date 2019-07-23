@@ -117,6 +117,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 
 // for matrix operations, use Eigen lib
 #include <Eigen/Dense>
+#include<Eigen/Geometry>
 
 
 //#include <pcl/point_types.h>

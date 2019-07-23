@@ -320,9 +320,9 @@ void Import_PLY(const char * aFileName, Mesh_ply * aMesh)
   ply_set_read_cb(ply, "vertex", "nz", PLYNormalCallback, &state, 2);
   
   // set the POS callback
-  long captureCount = ply_set_read_cb(ply, "vertex", "x0", PLYPOSCallback, &state, 0);
-  ply_set_read_cb(ply, "vertex", "y0", PLYPOSCallback, &state, 1);
-  ply_set_read_cb(ply, "vertex", "z0", PLYPOSCallback, &state, 2);
+  long captureCount = ply_set_read_cb(ply, "vertex", "scalar_x0", PLYPOSCallback, &state, 0);
+  ply_set_read_cb(ply, "vertex", "scalar_y0", PLYPOSCallback, &state, 1);
+  ply_set_read_cb(ply, "vertex", "scalar_z0", PLYPOSCallback, &state, 2);
   
   // Set tex coord callback
   long vtexCoordCount = ply_set_read_cb(ply, "vertex", "s", PLYTexCoordCallback, &state, 0);
@@ -408,9 +408,9 @@ void Export_PLY_ASCII(const char * aFileName, Mesh_ply * aMesh)
   }
   if (aMesh->mvCapture.size() > 0)
   {
-    f << "property float x0" << endl;
-    f << "property float y0" << endl;
-    f << "property float z0" << endl;
+    f << "property float scalar_x0" << endl;
+    f << "property float scalar_y0" << endl;
+    f << "property float scalar_z0" << endl;
   }
   if (aMesh->mvColors.size() > 0)
   {
