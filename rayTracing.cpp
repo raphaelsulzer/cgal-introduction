@@ -7,6 +7,55 @@
 namespace rayTracing{
 
 
+// cross product of two vector array.
+Vector crossProduct(Vector a, Vector b){
+    Vector cp(a.y() * b.z() - a.z() * b.y(),
+                a.x() * b.z() - a.z() * b.x(),
+                a.x() * b.y() - a.y() * b.x());
+    return cp;
+}
+float dotProduct(Vector a, Vector b){
+    return  a.x()*b.x() +
+            a.y()*b.y() +
+            a.z()*b.z();
+}
+
+bool rayTriangleIntersection(Point& rayOrigin,
+                           Vector& rayVector,
+                           Triangle& inTriangle,
+                           Point& outIntersectionPoint){
+
+    const float EPSILON = 0.0000001;
+    Point vertex0 = inTriangle.vertex(0);
+    Point vertex1 = inTriangle.vertex(1);
+    Point vertex2 = inTriangle.vertex(2);
+    Vector edge1, edge2, h, s, q;
+    float a,f,u,v;
+    edge1 = vertex1 - vertex0;
+    edge2 = vertex2 - vertex0;
+    h = crossProduct(rayVector,edge2);
+    a = dotProduct(edge1,h);
+    if (a > -EPSILON && a < EPSILON)
+        return false;    // This ray is parallel to this triangle.
+    f = 1.0/a;
+    s = rayOrigin - vertex0;
+    u = f * dotProduct(s,h);
+    if (u < 0.0 || u > 1.0)
+        return false;
+    q = crossProduct(s,edge1);
+    v = f * dotProduct(rayVector,q);
+    if (v < 0.0 || u + v > 1.0)
+        return false;
+    // At this stage we can compute t to find out where the intersection point is on the line.
+    float t = f * dotProduct(edge2,q);
+    if (t > EPSILON) // ray intersection
+    {
+        outIntersectionPoint = rayOrigin + rayVector * t;
+        return true;
+    }
+    else // This means that there is a line intersection but not a ray intersection.
+        return false;
+}
 
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
@@ -100,8 +149,8 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
             // btw, here I don't have the problem of ray intersecting multiple cells, because I'm only checking in the current cell
 //            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
 //              result;
-            CGAL::cpp11::result_of<EPECK::Intersect_3(EPECK::Triangle_3, EPECK::Ray_3)>::type result;
-            result = intersection(to_exact(tri), to_exact(ray));
+//            CGAL::cpp11::result_of<EPECK::Intersect_3(EPECK::Triangle_3, EPECK::Ray_3)>::type result;
+//            result = intersection(to_exact(tri), to_exact(ray));
 //            try{
 //                result = intersection(tri, ray);
 //            }
@@ -110,35 +159,45 @@ int traverseCells(const Delaunay& Dt, double sigma, Ray ray, Cell_handle current
 //                return 0;
 //            }
 
+            Point intersectionPoint;
+            bool result = rayTriangleIntersection(ray.source(), ray.to_vector(), tri, intersectionPoint);
+            std::pair<float,float> score;
+
+
 
             // check if there is an intersection between the current ray and current triangle
             if(result){
-                // check if ray triangle intersection is a point (probably in most cases)
-                // or a line segment (if ray lies inside the triangle)
-                // if result is a point
-                std::pair<float,float> score;
-                if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result))
-                {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
-                    // get the distance of this point to the current source:
-//                    double dist = sqrt(CGAL::squared_distance(*p, source));
-                    Point pi = to_inexact(*p);
-                    float dist2 = CGAL::squared_distance(pi, source);
-                    //std::cout << dist2 << std::endl;
-                    // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
-                    score = cellScore(dist2, sigma, inside);
-                }
-                else{
-                    const EPECK::Segment_3* s = boost::get<EPECK::Segment_3>(&*result);
-                    std::cout << "segment 3 intersection behind the first cell:  " << *s << std::endl;
-                    // get the three edges of the current triangle
-                    // check how they intersect with the current ray
-                    // since the ray passes straight through the triangle in this case
-    //                Point end_point = s->target();
-    //                int vertexIndexOfEdgeCrossedRay = all_vertices.find(end_point)->second;
-    //                std::cout << vertexIndexOfEdgeCrossedRay << std::cout;
-                    // for now just return in this case, until it is solved
-                    return 0;
-                }
+                float dist2 = CGAL::squared_distance(intersectionPoint, source);
+                //std::cout << dist2 << std::endl;
+                // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
+                score = cellScore(dist2, sigma, inside);
+//            if(result){
+//                // check if ray triangle intersection is a point (probably in most cases)
+//                // or a line segment (if ray lies inside the triangle)
+//                // if result is a point
+//                std::pair<float,float> score;
+//                if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result))
+//                {//std::cout << "point of ray-triangle-intersection :  " << *p << std::endl;
+//                    // get the distance of this point to the current source:
+////                    double dist = sqrt(CGAL::squared_distance(*p, source));
+//                    Point pi = to_inexact(*p);
+//                    float dist2 = CGAL::squared_distance(pi, source);
+//                    //std::cout << dist2 << std::endl;
+//                    // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
+//                    score = cellScore(dist2, sigma, inside);
+//                }
+//                else{
+//                    const EPECK::Segment_3* s = boost::get<EPECK::Segment_3>(&*result);
+//                    std::cout << "segment 3 intersection behind the first cell:  " << *s << std::endl;
+//                    // get the three edges of the current triangle
+//                    // check how they intersect with the current ray
+//                    // since the ray passes straight through the triangle in this case
+//    //                Point end_point = s->target();
+//    //                int vertexIndexOfEdgeCrossedRay = all_vertices.find(end_point)->second;
+//    //                std::cout << vertexIndexOfEdgeCrossedRay << std::cout;
+//                    // for now just return in this case, until it is solved
+//                    return 0;
+//                }
                 // now locate the current cell in the global context of the triangulation,
                 // so I can mark that it is crossed by a ray
                 current_cell->info().outside_score += score.first;
@@ -241,6 +300,16 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
 //                continue;
 //            }
 
+            Point intersectionPoint;
+            bool result = rayTriangleIntersection(ray.source(), ray.to_vector(), tri, intersectionPoint);
+            std::pair<float,float> score;
+            if(result){
+                float dist2 = CGAL::squared_distance(intersectionPoint, source);
+                //std::cout << dist2 << std::endl;
+                // dist2 = squared distance from intersection to the point; sigma = noise of the point; inside = bool
+                score = cellScore(dist2, sigma, inside);
+            }
+
             // Kernel conversion
             IK_to_EK to_exact;
             EK_to_IK to_inexact;
@@ -255,6 +324,7 @@ void firstCell(const Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit, bool
                 // if result is a point
                 std::pair<float,float> score;
                 Point source = vit->point();
+
                 if(const EPECK::Point_3* p = boost::get<EPECK::Point_3>(&*result)){
                     // get the distance of this point to the current source:
 //                    double dist = sqrt(CGAL::squared_distance(*p, source));
