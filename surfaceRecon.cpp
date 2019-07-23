@@ -16,12 +16,12 @@ void surfaceReconstruction()
     auto start = std::chrono::high_resolution_clock::now();
 
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
 
-    std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut";     // there might be a problem with this file since it was exported as an ASCII from the CC
-    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
+    std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
+    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut3";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn2;
@@ -39,14 +39,6 @@ void surfaceReconstruction()
     std::vector<std::vector<int>> t_polys;
     readBinaryPLY(ifn2, t_points, t_infos, t_polys, 0);
 
-//    std::cout << "#points: " << t_points.size() << std::endl;
-//    std::cout << "#infos: " << t_infos.size() << std::endl;
-//    std::cout << "#polygons: " << t_polys.size() << std::endl;
-//    preprocessSensorMesh(t_points, t_infos, t_polys);
-//    std::cout << "#points: " << t_points.size() << std::endl;
-//    std::cout << "#infos: " << t_infos.size() << std::endl;
-//    std::cout << "#polygons: " << t_polys.size() << std::endl;
-
 //    auto a_points = t_points;
 //    auto a_infos = t_infos;
 
@@ -63,7 +55,6 @@ void surfaceReconstruction()
     pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
-
 
 
     // ray tracing for Dt for saving initial cell labels in cell info;

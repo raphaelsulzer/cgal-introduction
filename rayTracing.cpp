@@ -20,47 +20,6 @@ double dotProduct(std::vector<double> a, std::vector<double> b){
     return  a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
-//bool rayTriangleIntersection(Point& rayOrigin,
-//                           Vector& rayVector,
-//                           Triangle& inTriangle,
-//                           Point& outIntersectionPoint){
-
-//    const float EPSILON = 0.0000001;
-//    Point vertex0 = inTriangle.vertex(0);
-//    Point vertex1 = inTriangle.vertex(1);
-//    Point vertex2 = inTriangle.vertex(2);
-//    Vector edge1, edge2, h, s, q;
-//    float a,f,u,v;
-//    edge1 = Vector(vertex1.x() - vertex0.x(),
-//                   vertex1.y() - vertex0.y(),
-//                   vertex1.z() - vertex0.z());
-//    edge2 = Vector(vertex2.x() - vertex0.x(),
-//                   vertex2.y() - vertex0.y(),
-//                   vertex2.z() - vertex0.z());
-//    h = crossProduct(rayVector,edge2);
-//    a = dotProduct(edge1,h);
-//    if (a > -EPSILON && a < EPSILON)
-//        return false;    // This ray is parallel to this triangle.
-//    f = 1.0/a;
-//    s = rayOrigin - vertex0;
-//    u = f * dotProduct(s,h);
-//    if (u < 0.0 || u > 1.0)
-//        return false;
-//    q = crossProduct(s,edge1);
-//    v = f * dotProduct(rayVector,q);
-//    if (v < 0.0 || u + v > 1.0)
-//        return false;
-//    // At this stage we can compute t to find out where the intersection point is on the line.
-//    float t = f * dotProduct(edge2,q);
-//    if (t > EPSILON) // ray intersection
-//    {
-//        outIntersectionPoint = rayOrigin + rayVector * t;
-//        return true;
-//    }
-//    else // This means that there is a line intersection but not a ray intersection.
-//        return false;
-//}
-
 bool rayTriangleIntersection(Point& rayOrigin,
                            Vector& rayVector,
                            Triangle& inTriangle,
@@ -69,40 +28,30 @@ bool rayTriangleIntersection(Point& rayOrigin,
     const double EPSILON = 0.0000001;
 
     // init "Eigen" vectors
-//    Vector3d rayO, rayV;
     Vector3d rayO(rayOrigin.x(), rayOrigin.y(), rayOrigin.z());
     Vector3d rayV(rayVector.x(), rayVector.y(), rayVector.z());
 
-//    Vector3d vertex0, vertex1, vertex2;
-//    vertex0 << inTriangle.vertex(0).x(), inTriangle.vertex(0).y(), inTriangle.vertex(0).z();
-//    vertex1 << inTriangle.vertex(1).x(), inTriangle.vertex(1).y(), inTriangle.vertex(1).z();
-//    vertex2 << inTriangle.vertex(2).x(), inTriangle.vertex(2).y(), inTriangle.vertex(2).z();
     Vector3d vertex0(inTriangle.vertex(0).x(), inTriangle.vertex(0).y(), inTriangle.vertex(0).z());
     Vector3d vertex1(inTriangle.vertex(1).x(), inTriangle.vertex(1).y(), inTriangle.vertex(1).z());
     Vector3d vertex2(inTriangle.vertex(2).x(), inTriangle.vertex(2).y(), inTriangle.vertex(2).z());
 
 
     Vector3d edge1, edge2, h, s, q;
-    double a,f,u,v;
-//    edge1 = vertex1 - vertex0;
-//    edge2 = vertex2 - vertex0;
-    edge1(0) = vertex1(0) - vertex0(0);
-    edge1(1) = vertex1(1) - vertex0(1);
-    edge1(2) = vertex1(2) - vertex0(2);
-    edge2(0) = vertex2(0) - vertex0(0);
-    edge2(1) = vertex2(1) - vertex0(1);
-    edge2(2) = vertex2(2) - vertex0(2);
+    double a;
+    edge1 = vertex1 - vertex0;
+    edge2 = vertex2 - vertex0;
+
     h = rayV.cross(edge2);
     a = edge1.dot(h);
     if (a > -EPSILON && a < EPSILON)
         return false;    // This ray is parallel to this triangle.
-    f = 1.0/a;
+    double f = 1.0/a;
     s = rayO - vertex0;
-    u = f * s.dot(h);
+    double u = f * s.dot(h);
     if (u < 0.0 || u > 1.0)
         return false;
     q = s.cross(edge1);
-    v = f * rayV.dot(q);
+    double v = f * rayV.dot(q);
     if (v < 0.0 || u + v > 1.0)
         return false;
     // At this stage we can compute t to find out where the intersection point is on the line.
@@ -115,60 +64,6 @@ bool rayTriangleIntersection(Point& rayOrigin,
     else // This means that there is a line intersection but not a ray intersection.
         return false;
 }
-
-//bool rayTriangleIntersection(Point rayOrigin,
-//                           Vector rayVector,
-//                           Triangle inTriangle,
-//                           Point& outIntersectionPoint){
-//    const double EPSILON = 0.0001;
-
-//    std::vector<double> rayO{rayOrigin.x(), rayOrigin.y(), rayOrigin.z()};
-//    std::vector<double> rayV{rayVector.x(), rayVector.y(), rayVector.z()};
-
-//    std::vector<double> vertex0{inTriangle.vertex(0).x(), inTriangle.vertex(0).y(), inTriangle.vertex(0).z()};
-//    std::vector<double> vertex1{inTriangle.vertex(1).x(), inTriangle.vertex(1).y(), inTriangle.vertex(1).z()};
-//    std::vector<double> vertex2{inTriangle.vertex(2).x(), inTriangle.vertex(2).y(), inTriangle.vertex(2).z()};
-
-//    double a,f,u,v;
-
-//    std::vector<double> edge1{  vertex1[0] - vertex0[0],
-//                                vertex1[1] - vertex0[1],
-//                                vertex1[2] - vertex0[2]};
-
-//    std::vector<double> edge2{  vertex2[0] - vertex0[0],
-//                                vertex2[1] - vertex0[1],
-//                                vertex2[2] - vertex0[2]};
-
-//    std::vector<double> h = crossProduct(rayV,edge2);
-//    a = dotProduct(edge1,h);
-//    if (a > -EPSILON && a < EPSILON)
-//        return false;    // This ray is parallel to this triangle.
-//    f = 1.0/a;
-//    std::vector<double> s{  rayO[0] - vertex0[0],
-//                            rayO[1] - vertex0[1],
-//                            rayO[2] - vertex0[2]};
-//    u = f * dotProduct(s,h);
-//    if (u < 0.0 || u > 1.0)
-//        return false;
-//    std::vector<double> q = crossProduct(s, edge1);
-//    v = f * dotProduct(rayV, q);
-//    if (v < 0.0 || u + v > 1.0)
-//        return false;
-//    // At this stage we can compute t to find out where the intersection point is on the line.
-//    double t = f * dotProduct(edge2, q);
-//    if (t > EPSILON) // ray intersection
-//    {
-//        outIntersectionPoint = rayOrigin + rayVector * t;
-//        return true;
-//    }
-//    else // This means that there is a line intersection but not a ray intersection.
-//        return false;
-//}
-
-
-
-
-
 
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
@@ -205,7 +100,7 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 // TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!
 int traverseCells(Delaunay& Dt,
                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed_cells,
-                  Ray ray, Point source, double sigma, int oppositeVertex,
+                  Ray ray, double sigma, int oppositeVertex,
                   bool inside)
 {
     // input::
@@ -219,24 +114,23 @@ int traverseCells(Delaunay& Dt,
     // check if the current cell was not already processed
     // this will only happen if this function is called by itself (not from the firstCell function)
     // and if the intersection point is a point of the cell
-    if(processed_cells.find(current_cell) != processed_cells.end())
-        return 0;
+//    if(processed_cells.find(current_cell) != processed_cells.end())
+//        return 0;
     if(!Dt.is_infinite(current_cell)){
         // iterate over the faces of the current cell
         for(int i=1; i<4; i++){
             // I'm starting here at the oppositeVertex+1 of the facet, so it will not go back to the same cell it came from
-            int idx = (oppositeVertex+i)%4;
+            int cellBasedVertexIndex = (oppositeVertex+i)%4;
 
-            Facet fac = std::make_pair(current_cell, idx);
-            if(Dt.is_infinite(fac))
-                return 0;
+//            Facet fac = std::make_pair(current_cell, idx);
+//            if(Dt.is_infinite(fac))
+//                return 0;
 
-            Triangle tri = Dt.triangle(fac);
+            Triangle tri = Dt.triangle(current_cell, cellBasedVertexIndex);
             Point intersectionPoint;
             Point rayO = ray.source();
             Vector rayV = ray.to_vector();
             bool result = rayTriangleIntersection(rayO, rayV, tri, intersectionPoint);
-            std::pair<float,float> score;
             // check if there is an intersection between the current ray and current triangle
             if(result){
                 // mark the current cell as processed
@@ -244,42 +138,24 @@ int traverseCells(Delaunay& Dt,
                 // get the distance between the source of the ray and the intersection point with the current cell
                 float dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
-                score = cellScore(dist2, sigma, inside);
+                std::pair<float,float> score = cellScore(dist2, sigma, inside);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
                 current_cell->info().outside_score += score.first;
                 current_cell->info().inside_score += score.second;
 
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
-//                Facet fac = std::make_pair(current_cell, idx);
-                Facet mirror_fac = Dt.mirror_facet(fac);
+                Facet mirror_fac = Dt.mirror_facet(std::make_pair(current_cell, cellBasedVertexIndex));
                 // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
                 // and check if there is an intersection
                 // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
                 // so start from there to put this into a function
                 Cell_handle newCell = mirror_fac.first;
                 int newIdx = mirror_fac.second;
-
-                // for every vertex of the cell, check if there is an intersection, because it means that one cell has multiple triangles that are intersected by
-                // the ray (since a vertex is shared by three facets).
-                // That will generate an infinite loop, so it will always re-enter the same cell at some point
-                // that's why I am - for now - just returning from that cell if it happens
-                // what could be done is make this intersection point the new source of the ray
-                // simply say ray source = this point, and ray target = new point in the opposite direction of the previous point
-                // and than start from RayTracingFun again, because there it will just look for the opposite facet of the intersected vertex
-//                for(int i=0; i<4; i++){
-//                    Point pt = newCell->vertex(i)->point();
-//                    CGAL::cpp11::result_of<Intersect(Point, Ray)>::type
-//                      point_intersection = intersection(pt, ray);
-
-
-//                    if(point_intersection){
-////                        const Point* p = boost::get<Point>(&*point_intersection);
-////                        std::cout << "intersection with a vertex of the cell: " << *p << std::endl;
-//                        return 0;
-//                    }
-//                }
-                traverseCells(Dt, newCell, processed_cells, ray, source, sigma, newIdx, inside);
+                traverseCells(Dt, newCell, processed_cells, ray, sigma, newIdx, inside);
+                // if there was a facet found in the current cell break this loop
+                // this was a major issue before having this break there, because it can lead to endless loops
+                break;
             }
         }
     }
@@ -334,19 +210,17 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
             Vector rayV = ray.to_vector();
             // check if there is an intersection between the current ray and current triangle
             bool oresult = rayTriangleIntersection(source, rayV, tri, intersectionPoint);
-            std::pair<float,float> score;
 
-            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
-              result = intersection(tri, ray);
-
+//            CGAL::cpp11::result_of<Intersect(Triangle, Ray)>::type
+//              result = intersection(tri, ray);
 
             if(oresult){
-                intersection_count++;
 //                if(const Point* p = boost::get<Point>(&*result)){
+                    intersection_count++;
                     // get the distance between the source of the ray and the intersection point with the current cell
                     float dist2 = CGAL::squared_distance(intersectionPoint, source);
                     // calculate the score for the current cell based on the distance
-                    score = cellScore(dist2, sigma, inside);
+                    std::pair<float,float> score = cellScore(dist2, sigma, inside);
                     // now locate the current cell in the global context of the triangulation,
                     // so I can set the score
                     current_cell->info().outside_score += score.first;
@@ -365,7 +239,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                         Cell_handle newCell = mirror_fac.first;
                         int newIdx = mirror_fac.second;
                         // go to next cell
-                        traverseCells(Dt, newCell, processed_cells, ray, source, sigma, newIdx, inside);
+                        traverseCells(Dt, newCell, processed_cells, ray, sigma, newIdx, inside);
                     }
                 // if there was a match, break the loop around this vertex, so it can go to the next one
                 // this is only done for speed reasons, it shouldn't have any influence on the label
@@ -374,7 +248,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                     // but an edge.
                     // it does however make a difference if this is turn on or not. why??
                     break;
-                // here the if(boost point) ends...
+                // here the if(boost *point) ends...
 //                }
 
             }
