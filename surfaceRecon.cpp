@@ -4,6 +4,7 @@
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"
 #include "rayTracing.cpp"
+#include "rayTracing_copy.cpp"
 #include "tetTracing.cpp"
 #include "optimization.cpp"
 
@@ -20,7 +21,7 @@ void surfaceReconstruction()
 
 
     std::string ifn1 = path1+"musee/AP/fused_fixedSensor_cut";     // there might be a problem with this file since it was exported as an ASCII from the CC
-    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut";
+    std::string ifn2 = path1+"musee/TLS/Est1.mesh_cut2";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn2;
@@ -59,24 +60,25 @@ void surfaceReconstruction()
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
     // calculate noise per point and save it in the vertex_info of the Dt
-//    pcaKNN(Dt, t_points);
+    pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 
-    // 0 = camera, 1 = normal
-    bool ray_construction = 1;
+
 
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
-    rayTracing::rayTracingFun(Dt, 1);
+    rayTracing::rayTracingFun(Dt);
 //    tetTracing::firstCell(Dt, t_points, t_infos, t_polys);
 
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.01, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 1, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
+    // 0 = camera, 1 = normal
+    bool ray_construction = 1;
     exportPLY(Dt, ofn, ray_construction, 1, 0);
     exportPLY(Dt, ofn, ray_construction, 1, 1);
 

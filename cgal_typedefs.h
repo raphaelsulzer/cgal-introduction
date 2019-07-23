@@ -116,6 +116,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 #include <CGAL/estimate_scale.h>
 
 // for matrix operations, use Eigen lib
+#include <Eigen/Core>
 #include <Eigen/Dense>
 #include<Eigen/Geometry>
 

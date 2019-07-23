@@ -16,7 +16,8 @@ SOURCES += \
     main.cpp \
     meshPLY.cpp \
     tetTracing.cpp \
-    newTetIntersection.cpp
+    newTetIntersection.cpp \
+    rayTracing_copy.cpp
 
 HEADERS += \
     cgal_typedefs.h \

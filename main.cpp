@@ -8,6 +8,13 @@ int main(){
 
     surfaceReconstruction();
 
+//    using namespace Eigen;
+//    Vector3d v0, v1;
+//    v0 << 51267.609375, 91991.4375, 139.50198364257812;
+//    v1 << 51267.59765625, 91991.4375, 139.50042724609375;
+//    Vector3d edge1;
+//    edge1 = v1 - v0;
+
 //    Point a1(1,1,0);
 //    Point a2(1,3,0);
 //    Point a3(3,2,0);
