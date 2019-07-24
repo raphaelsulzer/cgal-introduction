@@ -21,7 +21,8 @@ void readBinaryPLY(std::string ifn,
                    std::vector<std::vector<int>>& sensor_triangle,
                    bool colmap);
 
-void readASCIIPLY();
+void readASCIIPLY(std::string ifn,
+                  std::vector<Point>& points, std::vector<vertex_info>& infos);
 
 
 /////////////////////////////////////////////////////////////////////

@@ -7,23 +7,28 @@
 namespace rayTracing{
 
 
-//// cross product of two vector array.
-std::vector<double> crossProduct(std::vector<double> a, std::vector<double> b){
-    std::vector<double> cp(3);
-    cp[0] = a[1] * b[2] - a[2] * b[1];
-    cp[1] = a[0] * b[2] - a[2] * b[0];
-    cp[2] = a[0] * b[1] - a[1] * b[0];
+////// cross product of two vector array.
+//std::vector<double> crossProduct(std::vector<double> a, std::vector<double> b){
+//    std::vector<double> cp(3);
+//    cp[0] = a[1] * b[2] - a[2] * b[1];
+//    cp[1] = a[0] * b[2] - a[2] * b[0];
+//    cp[2] = a[0] * b[1] - a[1] * b[0];
 
-    return cp;
-}
-double dotProduct(std::vector<double> a, std::vector<double> b){
-    return  a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-}
+//    return cp;
+//}
+//double dotProduct(std::vector<double> a, std::vector<double> b){
+//    return  a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+//}
 
+// TODO: maybe update ray triangle intersection with this:
+// https://stackoverflow.com/questions/44275153/is-m%C3%B6ller-trumbore-ray-intersection-the-fastest
 bool rayTriangleIntersection(Point& rayOrigin,
                            Vector& rayVector,
                            Triangle& inTriangle,
                            Point& outIntersectionPoint){
+
+    // implemented after: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+
     using namespace Eigen;
     const double EPSILON = 0.0000001;
 
@@ -99,7 +104,7 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 
 // TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!
 int traverseCells(Delaunay& Dt,
-                  Cell_handle& current_cell,
+                  Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
                   Ray ray, double sigma, int oppositeVertex,
                   bool inside)
 {
@@ -111,6 +116,10 @@ int traverseCells(Delaunay& Dt,
     // oppositeVertex       The opposite vertex of the facet where the current_cell was entered
     // inside               Bool that says if the current cell is before or after the point
 
+    if(processed.find(current_cell) != processed.end()){
+        return 0;
+    }
+
     if(!Dt.is_infinite(current_cell)){
         // iterate over the faces of the current cell
         for(int i=1; i<4; i++){
@@ -120,6 +129,8 @@ int traverseCells(Delaunay& Dt,
 //            Facet fac = std::make_pair(current_cell, idx);
 //            if(Dt.is_infinite(fac))
 //                return 0;
+
+//            std::cout << "current cell: " << &current_cell << std::endl;
 
             Triangle tri = Dt.triangle(current_cell, cellBasedVertexIndex);
             Point intersectionPoint;
@@ -136,6 +147,8 @@ int traverseCells(Delaunay& Dt,
                 // so I can set the score
                 current_cell->info().outside_score += score.first;
                 current_cell->info().inside_score += score.second;
+                // add to processed
+                processed.insert(current_cell);
 
                 // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                 Facet mirror_fac = Dt.mirror_facet(std::make_pair(current_cell, cellBasedVertexIndex));
@@ -145,7 +158,10 @@ int traverseCells(Delaunay& Dt,
                 // so start from there to put this into a function
                 Cell_handle newCell = mirror_fac.first;
                 int newIdx = mirror_fac.second;
-                traverseCells(Dt, newCell, ray, sigma, newIdx, inside);
+                traverseCells(Dt,
+                              newCell, processed,
+                              ray, sigma, newIdx,
+                              inside);
                 // if there was a facet found in the current cell that intersects, break this loop!!
                 // this was a major issue before having this break there, because it can lead to endless loops
                 break;
@@ -164,6 +180,9 @@ int traverseCells(Delaunay& Dt,
 void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                bool inside,
                int& intersection_count){
+
+    //init already processed set
+    std::unordered_set<Cell_handle> processed;
 
     // get sigma of the current vertex
     double sigma = vit->info().sigma;
@@ -214,6 +233,8 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                     // so I can set the score
                     current_cell->info().outside_score += score.first;
                     current_cell->info().inside_score += score.second;
+                    // add to processed set
+                    processed.insert(current_cell);
 
                     // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                     // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
@@ -226,7 +247,10 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                         Cell_handle newCell = mirror_fac.first;
                         int newIdx = mirror_fac.second;
                         // go to next cell
-                        traverseCells(Dt, newCell, ray, sigma, newIdx, inside);
+                        traverseCells(Dt,
+                                      newCell, processed,
+                                      ray, sigma, newIdx,
+                                      inside);
                     }
                 // if there was a match, break the loop around this vertex, so it can go to the next one
                 // this is only done for speed reasons, it shouldn't have any influence on the label
