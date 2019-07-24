@@ -99,7 +99,7 @@ std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
 
 // TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!
 int traverseCells(Delaunay& Dt,
-                  Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed_cells,
+                  Cell_handle& current_cell,
                   Ray ray, double sigma, int oppositeVertex,
                   bool inside)
 {
@@ -111,11 +111,6 @@ int traverseCells(Delaunay& Dt,
     // oppositeVertex       The opposite vertex of the facet where the current_cell was entered
     // inside               Bool that says if the current cell is before or after the point
 
-    // check if the current cell was not already processed
-    // this will only happen if this function is called by itself (not from the firstCell function)
-    // and if the intersection point is a point of the cell
-//    if(processed_cells.find(current_cell) != processed_cells.end())
-//        return 0;
     if(!Dt.is_infinite(current_cell)){
         // iterate over the faces of the current cell
         for(int i=1; i<4; i++){
@@ -133,8 +128,6 @@ int traverseCells(Delaunay& Dt,
             bool result = rayTriangleIntersection(rayO, rayV, tri, intersectionPoint);
             // check if there is an intersection between the current ray and current triangle
             if(result){
-                // mark the current cell as processed
-                processed_cells.insert(current_cell);
                 // get the distance between the source of the ray and the intersection point with the current cell
                 float dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
@@ -152,8 +145,8 @@ int traverseCells(Delaunay& Dt,
                 // so start from there to put this into a function
                 Cell_handle newCell = mirror_fac.first;
                 int newIdx = mirror_fac.second;
-                traverseCells(Dt, newCell, processed_cells, ray, sigma, newIdx, inside);
-                // if there was a facet found in the current cell break this loop
+                traverseCells(Dt, newCell, ray, sigma, newIdx, inside);
+                // if there was a facet found in the current cell that intersects, break this loop!!
                 // this was a major issue before having this break there, because it can lead to endless loops
                 break;
             }
@@ -172,12 +165,8 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                bool inside,
                int& intersection_count){
 
-
     // get sigma of the current vertex
     double sigma = vit->info().sigma;
-
-    // init a set with the already processed cells (for this ray!)
-    std::unordered_set<Cell_handle> processed_cells;
 
     // ray constructed from point origin to (end of) normal
     // introduces a ray r with source p and with a direction given by v.
@@ -193,7 +182,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
     // vector of incident cells to the current vertex (from vertex iterator vit)
     std::vector<Cell_handle> inc_cells;
     Dt.incident_cells(vit, std::back_inserter(inc_cells));
-    // for every cell of incident cells, check if facet(cell, vertex) intersects with vertex normal
+    // 1. for every cell of incident cells, check if facet(cell, vertex) intersects with vertex normal
     // so this is checking in all directions of a vertex, but we will only have an intersection in (maximum) one direction
     // why only in one direction? because I'm only checking the OPPOSITE facade. It of course also intersects with the bordering facets
     // of all the neighbouring cells
@@ -225,8 +214,6 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                     // so I can set the score
                     current_cell->info().outside_score += score.first;
                     current_cell->info().inside_score += score.second;
-                    // mark the current cell as processed
-                    processed_cells.insert(current_cell);
 
                     // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
                     // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
@@ -239,7 +226,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                         Cell_handle newCell = mirror_fac.first;
                         int newIdx = mirror_fac.second;
                         // go to next cell
-                        traverseCells(Dt, newCell, processed_cells, ray, sigma, newIdx, inside);
+                        traverseCells(Dt, newCell, ray, sigma, newIdx, inside);
                     }
                 // if there was a match, break the loop around this vertex, so it can go to the next one
                 // this is only done for speed reasons, it shouldn't have any influence on the label
