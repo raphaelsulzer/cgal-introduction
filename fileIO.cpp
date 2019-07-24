@@ -328,6 +328,51 @@ void readASCIIPLY(std::string ifn, std::vector<Point>& points, std::vector<verte
 }
 
 
+void concatenateData(std::vector<Point>& t_points, std::vector<vertex_info>& t_info,
+                     std::vector<Point>& a_points, std::vector<vertex_info>& a_info,
+                     bool copyInfo = 1)
+{
+    // a_points are TLS and t_points are AP here
+
+    // make to versions of this function, one with copy info, and one where I give a specific color per dataset
+    if(copyInfo){
+        Incremental_Tree tree(boost::make_zip_iterator(boost::make_tuple( a_points.begin(),a_info.begin() )),
+                  boost::make_zip_iterator(boost::make_tuple( a_points.end(), a_info.end() ) ));
+
+        for(int i = 0; i < t_points.size(); i++)
+        {
+            Incremental_neighbor_search search(tree, t_points[i]);
+            Incremental_neighbor_search::iterator it = search.begin();
+
+            // index of nearest neighbor in other cloud
+            int idx = boost::get<1>(it->first).idx;
+
+    //        t_info[i].normal = a_info[idx].normal;
+            t_info[i].color = a_info[idx].color;
+
+            a_points.push_back(t_points[i]);
+            a_info.push_back(t_info[i]);
+        }
+
+    }
+    else{
+        std::array<unsigned char, 3> red = {240,128,128};
+        std::array<unsigned char, 3> blue = {30,144,255};
+
+        for(int i = 0; i < a_info.size(); i++)
+        {
+            a_info[i].color = blue;
+        }
+        for(int i = 0; i < t_info.size(); i++)
+        {
+            t_info[i].color = red;
+            a_points.push_back(t_points[i]);
+            a_info.push_back(t_info[i]);
+        }
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////// OUTPUT //////////////////////////////
 /////////////////////////////////////////////////////////////////////
@@ -735,12 +780,33 @@ void exportPLY(const Delaunay& Dt,
         // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
         // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
         // so we exactely skip 2 - the opposite vertex.
+        // fix the orientation
+        std::vector<Vertex_handle> tri;
         for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
             // print the indicies of each cell to the file
-            // vertices is a map of all vertices of the triangulation to an index
-            v = c->vertex(j%4);
-            fo << v->info().idx << ' ';
+            tri.push_back(c->vertex(j%4));
+            // add up all the sensor positions
+            Point p = c->vertex(j%4)->point();
         }
+        Point avSensor = CGAL::centroid(tri[0]->point(), tri[1]->point(), tri[2]->point());
+        // check if sensor position is on the positive side of the triangle
+        // otherwise change order
+        Plane p(tri[0]->point(), tri[1]->point(), tri[2]->point());
+//        if(p.has_on_negative_side(tri[0]->info().sensor_pos)){
+        if(p.has_on_negative_side(avSensor)){
+            Vertex_handle temp = tri[1];
+            tri[1] = tri[2];
+            tri[2] = temp;
+        }
+        for(int j = 0; j < 3; j++){
+            // print the indicies of each cell to the file
+            fo << tri[j]->info().idx << ' ';
+        }
+//        for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
+//            // print the indicies of each cell to the file
+//            v = c->vertex(j%4);
+//            fo << v->info().idx << ' ';
+//        }
 
 
 //        // color the facets (if !prune_faces, meaning coloring is active)

@@ -4,29 +4,6 @@
 ////////////////////////////////////////////////////////////
 ////////////////////// Triangulation ///////////////////////
 ////////////////////////////////////////////////////////////
-void copyInfo(std::vector<Point>& a_points, std::vector<vertex_info>& a_info, std::vector<Point>& t_points, std::vector<vertex_info>& t_info)
-{
-//    std::size_t NN =  CGAL::estimate_global_k_neighbor_scale(a_points);
-
-    Incremental_Tree tree(boost::make_zip_iterator(boost::make_tuple( a_points.begin(),a_info.begin() )),
-              boost::make_zip_iterator(boost::make_tuple( a_points.end(), a_info.end() ) ));
-
-    for(int i = 0; i < t_points.size(); i++)
-    {
-        Incremental_neighbor_search search(tree, t_points[i]);
-        Incremental_neighbor_search::iterator it = search.begin();
-
-        // index of nearest neighbor in other cloud
-        int idx = boost::get<1>(it->first).idx;
-
-//        t_info[i].normal = a_info[idx].normal;
-        t_info[i].color = a_info[idx].color;
-
-        a_points.push_back(t_points[i]);
-        a_info.push_back(t_info[i]);
-    }
-}
-
 Delaunay makeDelaunayWithInfo(std::vector<Point>& points, std::vector<vertex_info>& info)
 {
     auto start = std::chrono::high_resolution_clock::now();

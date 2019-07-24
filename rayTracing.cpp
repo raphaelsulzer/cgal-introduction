@@ -140,6 +140,8 @@ int traverseCells(Delaunay& Dt,
             // check if there is an intersection between the current ray and current triangle
             if(result){
                 // get the distance between the source of the ray and the intersection point with the current cell
+                // TODO:: maybe just pass this dist to the next traversel, and if the next dist is not bigger than break,
+                // ...this could potentially be a much faster way than the processed-set
                 float dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
                 std::pair<float,float> score = cellScore(dist2, sigma, inside);
@@ -172,7 +174,6 @@ int traverseCells(Delaunay& Dt,
     else{
         current_cell->info().outside_score+=1;
         current_cell->info().inside_score+=0;
-
     }
     return 0;
 }
@@ -292,7 +293,7 @@ void rayTracingFun(Delaunay& Dt){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
+//        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
         // collect inside votes
         firstCell(Dt, vit, 1, intersection_count);    // one_cell currently not used in the correct way
     }

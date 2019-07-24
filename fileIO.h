@@ -24,6 +24,9 @@ void readBinaryPLY(std::string ifn,
 void readASCIIPLY(std::string ifn,
                   std::vector<Point>& points, std::vector<vertex_info>& infos);
 
+void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_info,
+                     std::vector<Point>& t_points, std::vector<vertex_info>& t_info,
+                     bool copyInfo);
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////// OUTPUT //////////////////////////////

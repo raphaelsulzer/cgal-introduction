@@ -29,8 +29,8 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel           EPECK;
 // vertext base for point + info (=vector, color, intensity)
 typedef EPICK::Vector_3                                            Vector;
 typedef EPICK::Point_3                                             Point;
-typedef CGAL::cpp11::array<unsigned char, 3>                        Color;
-typedef CGAL::cpp11::array<float, 3>                                Sensor;
+typedef CGAL::cpp11::array<unsigned char, 3>                       Color;
+typedef CGAL::cpp11::array<float, 3>                               Sensor;
 
 struct vertex_info{
     int idx = 0;
