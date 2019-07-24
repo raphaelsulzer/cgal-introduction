@@ -1,9 +1,9 @@
 #include <cgal_typedefs.h>
 #include <fileIO.h>
+#include <rayTracing.h>
 
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"
-#include "rayTracing.cpp"
 #include "tetTracing.cpp"
 #include "tetTracing_copy.cpp"
 #include "optimization.cpp"
@@ -16,8 +16,8 @@ void surfaceReconstruction()
     auto start = std::chrono::high_resolution_clock::now();
 
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
@@ -55,7 +55,7 @@ void surfaceReconstruction()
 
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.000001, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 0.0001, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)

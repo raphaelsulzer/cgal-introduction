@@ -1,5 +1,6 @@
 #include <cgal_typedefs.h>
 #include <fileIO.h>
+#include <rayTracing.h>
 
 
 namespace tetTracing{

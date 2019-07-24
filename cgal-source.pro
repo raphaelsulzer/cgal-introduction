@@ -21,7 +21,8 @@ SOURCES += \
 
 HEADERS += \
     cgal_typedefs.h \
-    fileIO.h
+    fileIO.h \
+    rayTracing.h
 
 QMAKE_CXXFLAGS += -std=c++11
 

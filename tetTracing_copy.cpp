@@ -1,6 +1,6 @@
 #include <cgal_typedefs.h>
 #include <fileIO.h>
-
+#include <rayTracing.cpp>
 
 namespace tetTracingCopy{
 
@@ -186,6 +186,7 @@ int traverseCells(const Delaunay& Dt,
 
 
 void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_polys){
+
     auto start = std::chrono::high_resolution_clock::now();
 
     // save Delaunay vertex handle in sensor_infos vector for each sensor poly
@@ -206,9 +207,10 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
         std::cout << k << std::endl;
         std::unordered_set<Cell_handle> processed;
 
-        // iterate over all 3 points of the sensor triangle
         if(sensor_infos[k].size()<3)
             continue;
+
+        // iterate over all 3 points of the sensor triangle
         for(int j = 0; j < 3; j++){
 
             // get the corresponding Dt vertex handle for the current point
@@ -233,76 +235,85 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                     // check if there is an intersection between the current ray and current triangle
 //                    if(result){
 //                        if(const Point* p = boost::get<Point>(&*result)){
-                    if(do_intersect(tri,ray)){
+                    Point intersectionPoint;
+                    Point source = vit->point();
+                    Vector rayV = ray.to_vector();
+//                    bool result = rayTracing::rayTriangleIntersection(source, rayV, tri, intersectionPoint);
 
-                            std::vector<Plane> planes(8);
+                    bool dointersect = CGAL::do_intersect(ray,tri);
+//                    std::cout << result << " " << dointersect << std::endl;
+
+                    if(dointersect){
+//                        std::cout << "hit" << std::endl;
+
+                        std::vector<Plane> planes(8);
 
 //                            // calc volume with halfspace intersections
 //                            // sensor tet
-                            Point sp0 = sensor_infos[k][0]->point();
-                            Point sp1 = sensor_infos[k][1]->point();
-                            Point sp2 = sensor_infos[k][2]->point();
-                            Point sp3 = sensor_infos[k][0]->info().sensor_pos;
-                            Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
+                        Point sp0 = sensor_infos[k][0]->point();
+                        Point sp1 = sensor_infos[k][1]->point();
+                        Point sp2 = sensor_infos[k][2]->point();
+                        Point sp3 = sensor_infos[k][j]->info().sensor_pos;
+                        Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
 //                            Polyhedron sp;
 //                            sp.make_tetrahedron(sp0,sp1,sp2,sp3);
 
 //                            // Dt tet
-                            Point tp0 = current_cell->vertex(0)->point();
-                            Point tp1 = current_cell->vertex(1)->point();
-                            Point tp2 = current_cell->vertex(2)->point();
-                            Point tp3 = current_cell->vertex(3)->point();
-                            Point tpc = CGAL::centroid(tp0,tp1,tp2,tp3);
+                        Point tp0 = current_cell->vertex(0)->point();
+                        Point tp1 = current_cell->vertex(1)->point();
+                        Point tp2 = current_cell->vertex(2)->point();
+                        Point tp3 = current_cell->vertex(3)->point();
+                        Point tpc = CGAL::centroid(tp0,tp1,tp2,tp3);
 //                            Polyhedron tp;
 //                            tp.make_tetrahedron(tp0,tp1,tp2,tp3);
 
-                            // calc volume with halfspace intersections
+                        // calc volume with halfspace intersections
 
-                            // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
-                            // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
-                            // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
-                            // and the cell centroid has to be on the NEGATIVE side of the plane
-                            // DT planes
-                            planes[0] = Plane(sp0,sp2,sp1);
-                            planes[1] = Plane(sp0,sp1,sp3);
-                            planes[2] = Plane(sp1,sp2,sp3);
-                            planes[3] = Plane(sp0,sp3,sp2);
-                            for(int i = 0; i<4; i++){
-                                if(!planes[i].has_on_negative_side(spc)){
-                                    planes[i]=planes[i].opposite();
-                                }
+                        // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
+                        // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
+                        // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
+                        // and the cell centroid has to be on the NEGATIVE side of the plane
+                        // DT planes
+                        planes[0] = Plane(sp0,sp2,sp1);
+                        planes[1] = Plane(sp0,sp1,sp3);
+                        planes[2] = Plane(sp1,sp2,sp3);
+                        planes[3] = Plane(sp0,sp3,sp2);
+                        for(int i = 0; i<4; i++){
+                            if(!planes[i].has_on_negative_side(spc)){
+                                planes[i]=planes[i].opposite();
                             }
+                        }
 
-                            // sensor planes
-                            planes[4] = Plane(tp0,tp2,tp1);
-                            planes[5] = Plane(tp0,tp1,tp3);
-                            planes[6] = Plane(tp1,tp2,tp3);
-                            planes[7] = Plane(tp0,tp3,tp2);
-                            for(int i = 4; i<8; i++){
-                                if(!planes[i].has_on_negative_side(tpc)){
-                                    planes[i]=planes[i].opposite();
-                                }
+                        // sensor planes
+                        planes[4] = Plane(tp0,tp2,tp1);
+                        planes[5] = Plane(tp0,tp1,tp3);
+                        planes[6] = Plane(tp1,tp2,tp3);
+                        planes[7] = Plane(tp0,tp3,tp2);
+                        for(int i = 4; i<8; i++){
+                            if(!planes[i].has_on_negative_side(tpc)){
+                                planes[i]=planes[i].opposite();
                             }
+                        }
 
 
-                            Polyhedron P_full;
-                            CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P_full);
-                            Polyhedron convex_hull;
-                            CGAL::convex_hull_3(P_full.points_begin(), P_full.points_end(), convex_hull);
+                        Polyhedron P_full;
+                        CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P_full);
+                        bool close = P_full.is_closed();
+                        Polyhedron convex_hull;
+                        CGAL::convex_hull_3(P_full.points_begin(), P_full.points_end(), convex_hull);
 
 
 
 //                            double vol_full = 0.0;
 //                            if(P_full.is_closed())
-                            double vol_full = CGAL::Polygon_mesh_processing::volume(convex_hull);
-
-                            std::cout << "is closed: "  << P_full.is_closed() << "    full volume: " << vol_full << std::endl;
+                        double vol_full = CGAL::Polygon_mesh_processing::volume(convex_hull);
 
 
-                            // intersection
+
+                        // intersection
 //                            double vol_full = tetIntersectionFun(sp, tp);
-                            current_cell->info().outside_score+=vol_full;
-                            processed.insert(current_cell);
+                        current_cell->info().outside_score+=vol_full;
+                        processed.insert(current_cell);
 
 //                            // get neighbouring cells
 //                            for(int ci = 0; ci < 4; ci++){
