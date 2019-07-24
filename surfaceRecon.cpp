@@ -5,6 +5,7 @@
 #include "pointSetProcessing.cpp"
 #include "rayTracing.cpp"
 #include "tetTracing.cpp"
+#include "tetTracing_copy.cpp"
 #include "optimization.cpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -19,11 +20,11 @@ void surfaceReconstruction()
 //    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut5";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
-    std::string ofn = ifn2;
+    std::string ofn = ifn1;
 //    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
 
     ifn1+=".ply";
@@ -50,11 +51,11 @@ void surfaceReconstruction()
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
     rayTracing::rayTracingFun(Dt);
-    tetTracing::firstCell(Dt, t_points, t_infos, t_polys);
+//    tetTracingCopy::firstCell(Dt, t_points, t_infos, t_polys);
 
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.1, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 0.000001, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)

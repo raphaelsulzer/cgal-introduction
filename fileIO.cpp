@@ -569,8 +569,12 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
         outside_scores.push_back(cit->info().outside_score);
     }
 
-    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
-    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
+//    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
+//    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
+    double inside_average = std::accumulate(inside_scores.begin(), inside_scores.end(), 0.0)/inside_scores.size();
+    double outside_average = std::accumulate(outside_scores.begin(), outside_scores.end(), 0.0)/outside_scores.size();
+    double inside_scale = 128/inside_average;
+    double outside_scale = 128/outside_average;
 //    double inside_scale = *std::max_element(Dt.finite_cells_begin()->info().inside_score, Dt.finite_cells_end()->info().inside_score);
 //    double outside_scale = *std::max_element(Dt.finite_cells_begin()->info().outside_score, Dt.finite_cells_end()->info().outside_score);
 
@@ -584,8 +588,12 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
         double inside_score = cit->info().inside_score;
         double outside_score = cit->info().outside_score;
+        int green = 0;
+        if(inside_score == 0.0 && outside_score == 0.0){
+            green = 128;
+        }
 
-        fo << centroid << " " << int(inside_score*inside_scale) << " 0 " << int(outside_score*outside_scale) << " 0 0 0" << std::endl;
+        fo << centroid << " " << int(inside_score*inside_scale) << " " << green << " " << int(outside_score*outside_scale) << " 0 0 0" << std::endl;
     }
 
 
