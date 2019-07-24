@@ -237,25 +237,70 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 
                             std::vector<Plane> planes(8);
 
-                            // calc volume with halfspace intersections
-                            // sensor tet
+//                            // calc volume with halfspace intersections
+//                            // sensor tet
                             Point sp0 = sensor_infos[k][0]->point();
                             Point sp1 = sensor_infos[k][1]->point();
                             Point sp2 = sensor_infos[k][2]->point();
                             Point sp3 = sensor_infos[k][0]->info().sensor_pos;
-                            Polyhedron sp;
-                            sp.make_tetrahedron(sp0,sp1,sp2,sp3);
+                            Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
+//                            Polyhedron sp;
+//                            sp.make_tetrahedron(sp0,sp1,sp2,sp3);
 
-                            // Dt tet
+//                            // Dt tet
                             Point tp0 = current_cell->vertex(0)->point();
                             Point tp1 = current_cell->vertex(1)->point();
                             Point tp2 = current_cell->vertex(2)->point();
                             Point tp3 = current_cell->vertex(3)->point();
-                            Polyhedron tp;
-                            tp.make_tetrahedron(tp0,tp1,tp2,tp3);
+                            Point tpc = CGAL::centroid(tp0,tp1,tp2,tp3);
+//                            Polyhedron tp;
+//                            tp.make_tetrahedron(tp0,tp1,tp2,tp3);
+
+                            // calc volume with halfspace intersections
+
+                            // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
+                            // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
+                            // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
+                            // and the cell centroid has to be on the NEGATIVE side of the plane
+                            // DT planes
+                            planes[0] = Plane(sp0,sp2,sp1);
+                            planes[1] = Plane(sp0,sp1,sp3);
+                            planes[2] = Plane(sp1,sp2,sp3);
+                            planes[3] = Plane(sp0,sp3,sp2);
+                            for(int i = 0; i<4; i++){
+                                if(!planes[i].has_on_negative_side(spc)){
+                                    planes[i]=planes[i].opposite();
+                                }
+                            }
+
+                            // sensor planes
+                            planes[4] = Plane(tp0,tp2,tp1);
+                            planes[5] = Plane(tp0,tp1,tp3);
+                            planes[6] = Plane(tp1,tp2,tp3);
+                            planes[7] = Plane(tp0,tp3,tp2);
+                            for(int i = 4; i<8; i++){
+                                if(!planes[i].has_on_negative_side(tpc)){
+                                    planes[i]=planes[i].opposite();
+                                }
+                            }
+
+
+                            Polyhedron P_full;
+                            CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P_full);
+                            Polyhedron convex_hull;
+                            CGAL::convex_hull_3(P_full.points_begin(), P_full.points_end(), convex_hull);
+
+
+
+//                            double vol_full = 0.0;
+//                            if(P_full.is_closed())
+                            double vol_full = CGAL::Polygon_mesh_processing::volume(convex_hull);
+
+                            std::cout << "is closed: "  << P_full.is_closed() << "    full volume: " << vol_full << std::endl;
+
 
                             // intersection
-                            double vol_full = tetIntersectionFun(sp, tp);
+//                            double vol_full = tetIntersectionFun(sp, tp);
                             current_cell->info().outside_score+=vol_full;
                             processed.insert(current_cell);
 
@@ -266,27 +311,6 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 //                                Cell_handle newCell = mirror_fac.first;
 //                                if(processed.find(newCell) == processed.end()){
 //                                    traverseCells(Dt, newCell, processed, planes, sp);
-//                                }
-//                            }
-
-//                            // calc volume with halfspace intersections
-//                            // sensor tet
-//                            Point sp0 = sensor_infos[k][0]->point();
-//                            Point sp1 = sensor_infos[k][1]->point();
-//                            Point sp2 = sensor_infos[k][2]->point();
-//                            Point sp3 = sensor_infos[k][0]->info().sensor_pos;
-//                            Polyhedron sp;
-//                            sp.make_tetrahedron(sp0,sp1,sp2,sp3);
-//                            Tetrahedron st(sp0,sp1,sp2,sp3);
-//                            Point sp_centroid = CGAL::centroid(sp0,sp1,sp2,sp3);
-//                            std::vector<Plane> planes(8);
-//                            planes[0] = Plane(sp0,sp2,sp1);
-//                            planes[1] = Plane(sp0,sp1,sp3);
-//                            planes[2] = Plane(sp1,sp2,sp3);
-//                            planes[3] = Plane(sp0,sp3,sp2);
-//                            for(int i = 0; i<4; i++){
-//                                if(!planes[i].has_on_negative_side(sp_centroid)){
-//                                    planes[i]=planes[i].opposite();
 //                                }
 //                            }
 
@@ -308,95 +332,6 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 }
 
 
-
-
-
-
-
-
-//void iterateOverTetras(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info> infos, std::vector<std::vector<int>>& polys){
-
-//    // make Nef polyhedron from the Delaunay tetra
-//    Delaunay::Finite_cells_iterator cit;
-//    int j = 0;
-//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-
-//        j++;
-//        Point p0 = cit->vertex(0)->point();
-//        Point p1 = cit->vertex(1)->point();
-//        Point p2 = cit->vertex(2)->point();
-//        Point p3 = cit->vertex(3)->point();
-
-//        // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise) when seen from the positive side of h.
-//        // from: https://doc.cgal.org/latest/Kernel_23/classCGAL_1_1Plane__3.html
-//        // and tetrahedron orientation can be found here: https://doc.cgal.org/latest/Triangulation_3/index.html
-//        // and the cell centroid has to be on the NEGATIVE side of the plane
-//        // DT planes
-//        Plane planes[8];
-//        planes[0] = Plane(p0,p2,p1);
-//        planes[1] = Plane(p0,p1,p3);
-//        planes[2] = Plane(p1,p2,p3);
-//        planes[3] = Plane(p0,p3,p2);
-
-//        // sensor planes
-//        for(int i = 0; i < polys.size(); i++){
-
-//            int i0 = polys[i][0]; int i1 = polys[i][1]; int i2 = polys[i][2];
-//            Point p0 = points[i0];
-//            Point p1 = points[i1];
-//            Point p2 = points[i2];
-//            Point p3 = infos[i0].sensor_pos;
-
-//            planes[4] = Plane(p0,p2,p1);
-//            planes[5] = Plane(p0,p1,p3);
-//            planes[6] = Plane(p1,p2,p3);
-//            planes[7] = Plane(p0,p3,p2);
-
-//            Polyhedron P_full;
-//            try{
-//                CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P_full);
-//                double vol_full = CGAL::Polygon_mesh_processing::volume(P_full);
-//                std::cout << "is closed: "  << P_full.is_closed() << "    full volume: " << vol_full << std::endl;
-//            }
-//            catch(...){}
-//        }
-//    }
-
-
-////    for(int i = 0; i < sensor_planes.size(); i++){
-
-////        Polyhedron P;
-////        CGAL::halfspace_intersection_with_constructions_3(sensor_planes.begin(), sensor_planes.end(), P);
-
-
-
-////    }
-////    for(int i = 0; i < dt_planes.size(); i++){
-
-////        Polyhedron P;
-////        CGAL::halfspace_intersection_with_constructions_3(dt_planes[i].begin(), dt_planes[i].end(), P);
-
-
-
-////    }
-
-
-
-
-
-////    Polyhedron_Exact target;
-//////    Nef_polyhedron target;
-////    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> modifier(P);
-////    target.delegate(modifier);
-
-////    Nef_polyhedron newNef(target);
-//}
-
-// COLMAP Delaunay meshing stems from
-// P. Labatut, J‐P. Pons, and R. Keriven. "Robust and efficient surface
-// reconstruction from range data". Computer graphics forum, 2009.
-//
-// and can be found in meshing.h in colmap/src/mvs
 
 }
 
