@@ -20,7 +20,7 @@ void surfaceReconstruction()
     std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut2";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
@@ -55,7 +55,7 @@ void surfaceReconstruction()
 
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.0001, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 0.001, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)

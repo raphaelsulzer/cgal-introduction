@@ -297,7 +297,10 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 
 
                         Polyhedron P_full;
-                        CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P_full);
+                        try{
+                            CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P_full);
+                        }
+                        catch(...){break;}
                         bool close = P_full.is_closed();
                         Polyhedron convex_hull;
                         CGAL::convex_hull_3(P_full.points_begin(), P_full.points_end(), convex_hull);
