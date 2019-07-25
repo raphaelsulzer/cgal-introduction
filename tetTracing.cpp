@@ -283,9 +283,9 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
         }
     }
 
+    int hit = 0;
     // iterate over all sensor triangles/tetrahedrons
     for(int k = 0; k < sensor_polys.size(); k++){
-        std::cout << k << std::endl;
         std::unordered_set<Cell_handle> processed;
 
         // iterate over all 3 points of the sensor triangle
@@ -316,6 +316,9 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 //                    if(result){
 //                        if(const Point* p = boost::get<Point>(&*result)){
                     if(do_intersect(tri,ray)){
+
+
+
 
                             std::vector<Plane> planes(8);
 

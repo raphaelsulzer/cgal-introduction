@@ -184,6 +184,21 @@ int traverseCells(const Delaunay& Dt,
     return 0;
 }
 
+void dualize(std::vector<Plane>& planes, std::vector<Point>& points){
+
+    assert(planes.size()==points.size());
+
+    for(int i = 0; i < planes.size(); i++){
+        double d = planes[i].d();
+        double coef = 1.0/-d;
+        points[i] = Point(planes[i].a()*coef, planes[i].b()*coef, planes[i].c()*coef);
+
+    }
+}
+
+
+
+
 
 void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<vertex_info>& infos, std::vector<std::vector<int>>& sensor_polys){
 
@@ -202,9 +217,10 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
         }
     }
 
+
     // iterate over all sensor triangles/tetrahedrons
+    int hit = 0;
     for(int k = 0; k < sensor_polys.size(); k++){
-        std::cout << k << std::endl;
         std::unordered_set<Cell_handle> processed;
 
         if(sensor_infos[k].size()<3)
@@ -244,7 +260,13 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 //                    std::cout << result << " " << dointersect << std::endl;
 
                     if(dointersect){
+
+                        double vol = 0;
+
+
 //                        std::cout << "hit" << std::endl;
+
+                        std::cout << "sensor facet: " << k << "     hit: " << hit++ << std::endl;
 
                         std::vector<Plane> planes(8);
 
@@ -257,6 +279,7 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                         Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
 //                            Polyhedron sp;
 //                            sp.make_tetrahedron(sp0,sp1,sp2,sp3);
+
 
 //                            // Dt tet
                         Point tp0 = current_cell->vertex(0)->point();
@@ -285,37 +308,62 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                         }
 
                         // sensor planes
-                        planes[4] = Plane(tp0,tp2,tp1);
-                        planes[5] = Plane(tp0,tp1,tp3);
-                        planes[6] = Plane(tp1,tp2,tp3);
-                        planes[7] = Plane(tp0,tp3,tp2);
-                        for(int i = 4; i<8; i++){
-                            if(!planes[i].has_on_negative_side(tpc)){
-                                planes[i]=planes[i].opposite();
+//                        planes[4] = Plane(tp0,tp2,tp1);
+//                        planes[5] = Plane(tp0,tp1,tp3);
+//                        planes[6] = Plane(tp1,tp2,tp3);
+//                        planes[7] = Plane(tp0,tp3,tp2);
+
+                        for(int i = 0; i<4; i++){
+                            Plane pl = Dt.triangle(current_cell,i).supporting_plane();
+                            if(!pl.has_on_negative_side(tpc)){
+                                planes[i+4]=pl.opposite();
                             }
+                            else{planes[i+4]=pl;}
                         }
+
+
+//                        std::vector<Point> dual_points(8);
+//                        dualize(planes, dual_points);
+
+//                        Polyhedron dual_convex_hull;
+//                        try{
+//                            CGAL::convex_hull_3(dual_points.begin(), dual_points.end(), dual_convex_hull);
+//                        }
+//                        catch(...){
+//                            std::cout << "error in convex hull construction" << std::endl;
+//                            break;
+//                        }
+
 
 
                         Polyhedron P_full;
-                        try{
-                            CGAL::halfspace_intersection_3(std::begin(planes), std::end(planes), P_full);
-                        }
-                        catch(...){break;}
-                        bool close = P_full.is_closed();
-                        Polyhedron convex_hull;
-                        CGAL::convex_hull_3(P_full.points_begin(), P_full.points_end(), convex_hull);
+
+//                        try{
+                            CGAL::halfspace_intersection_with_constructions_3(std::begin(planes), std::end(planes), P_full);
+//                            if(P_full.is_valid() && P_full.is_closed()){
+//                                CGAL::Polygon_mesh_processing::triangulate_faces(faces(P_full),P_full);
+//                                vol_full1=CGAL::Polygon_mesh_processing::volume(P_full);
+//                            }
+//                        }
+//                        catch(...){
+//                            std::cout << "error in convex hull construction" << std::endl;
+//                        }
 
 
+//                        Polyhedron::Face_iterator fit;
+//                        fit = P_full.facets_begin();
+//                        exportOFF(P_full,
+//                                  "/home/raphael/Dropbox/Studium/PhD/data/sampleData/before_triangulation");
 
-//                            double vol_full = 0.0;
-//                            if(P_full.is_closed())
-                        double vol_full = CGAL::Polygon_mesh_processing::volume(convex_hull);
+//                        exportOFF(P_full,
+//                                  "/home/raphael/Dropbox/Studium/PhD/data/sampleData/after_triangulation");
+
 
 
 
                         // intersection
 //                            double vol_full = tetIntersectionFun(sp, tp);
-                        current_cell->info().outside_score+=vol_full;
+                        current_cell->info().outside_score+=vol;
                         processed.insert(current_cell);
 
 //                            // get neighbouring cells

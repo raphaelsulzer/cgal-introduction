@@ -159,6 +159,7 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 #include <CGAL/Polyhedron_copy_3.h>
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Tetrahedron_3.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 
 typedef EPICK::Plane_3 Plane;
 
