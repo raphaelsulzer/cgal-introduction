@@ -146,8 +146,24 @@ void tetIntersectionTest(){
 
     double cvol = 0.0;
     tetIntersectionFun(dtet, planes, cvol);
-    int a=5;
 
+    Polyhedron_Exact sp_exact;
+    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sp);
+    sp_exact.delegate(sensor_modifier);
+    Nef_polyhedron snef(sp_exact);
+
+    Polyhedron_Exact dp_exact;
+    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(dp);
+    dp_exact.delegate(sensor_modifier);
+    Nef_polyhedron dnef(dp_exact);
+
+    Nef_polyhedron fullnef = dnef*snef;
+
+    Polyhedron_Exact intersection_tet_exact;
+    fullnef.convert_to_polyhedron(intersection_tet_exact);
+    double vol_full1 = CGAL::Polygon_mesh_processing::volume(intersection_tet_exact);
+
+    int a=5;
 
 
 //    int vlen = rand() % 8 + 4;
@@ -158,7 +174,6 @@ void tetIntersectionTest(){
 //        points[i] = p;
 
 //    }
-
 //    Polyhedron Poly;
 //    CGAL::convex_hull_3(points.begin(), points.end(),Poly);
 }
