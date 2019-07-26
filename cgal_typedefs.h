@@ -162,7 +162,7 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 
 typedef EPICK::Plane_3 Plane;
-
+typedef EPICK::Line_3 Line;
 typedef EPECK::Point_3 Point_Exact;
 typedef CGAL::Polyhedron_3<EPECK, CGAL::Polyhedron_items_with_id_3> Polyhedron_Exact;
 //typedef CGAL::Polyhedron_3<K, CGAL::Polyhedron_items_3> Polyhedron_Exact;
