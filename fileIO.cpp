@@ -475,7 +475,7 @@ void exportOFF(Polyhedron& out_mesh, std::string path)
     out << std::setprecision(15);
     out << out_mesh;
     out.close();
-    std::cout << "Exported to " << path << std::endl;
+//    std::cout << "Exported to " << path << std::endl;
 }
 void exportOFF(Polyhedron_Exact& out_mesh, std::string path)
 {
@@ -634,11 +634,6 @@ void exportCellCenter(std::fstream& fo, const Delaunay& Dt){
     }
 
 }
-
-
-
-
-
 
 void exportPLY(const Delaunay& Dt,
                 std::string path,
