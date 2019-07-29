@@ -24,6 +24,9 @@ int tetIntersectionFun(Tetrahedron& tet,
                            int global_neg=0, int global_pos=0){
 
 
+
+
+
     double epsilon = 0.00001;
 
 //    if(plane_count == 4){
@@ -84,29 +87,80 @@ int tetIntersectionFun(Tetrahedron& tet,
                                 newTetPoints.push_back(tet.vertex(close[c]));
                             newTetPoints.push_back(*intersection_point);
                             Tetrahedron newTet(newTetPoints[0], newTetPoints[1], newTetPoints[2], newTetPoints[3]);
-                            tetIntersectionFun(tet, all_planes, vol, ++plane_count);
+                            Polyhedron sp;
+                            sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
+                            exportOFF(sp,
+                                      "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_"
+                                      +std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p));
+                            tetIntersectionFun(newTet, all_planes, vol, ++plane_count);
                         }
                     }
-                    break;
                 }
-                break;
+            }
+        }
+        else{
+            for(int n = 0; n < ns; n++){
+                for(int p = 0; p < ps; p++){
+                    if(n<p){
+                        continue;
+                    }
+                    Point p1 = tet.vertex(neg[n]);
+                    Point p2 = tet.vertex(pos[p]);
+                    Line l(p1,p2);
+                    CGAL::cpp11::result_of<Intersect(Line, Plane)>::type
+                                  result = intersection(l, plane);
+                    if(result){
+                        if(const Point* intersection_point = boost::get<Point>(&*result)){
+                            // make a new tet with all the negative points
+                            // and replace the positive one with the new intersection point
+                            std::vector<Point> newTetPoints;
+                            // add positive points
+                            for(int nn = 0; nn < ns; nn++)
+                                newTetPoints.push_back(tet.vertex(neg[nn]));
+                            // add close points
+                            for(int c = 0; c < close.size(); c++)
+                                newTetPoints.push_back(tet.vertex(close[c]));
+                            newTetPoints.push_back(*intersection_point);
+                            Tetrahedron newTet(newTetPoints[0], newTetPoints[1], newTetPoints[2], newTetPoints[3]);
+                            Polyhedron sp;
+                            sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
+                            exportOFF(sp,
+                                      "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_"
+                                      +std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p));
+                            tetIntersectionFun(newTet, all_planes, vol, ++plane_count);
+                        }
+                    }
+                }
             }
         }
     }
-    vol = tet.volume();
+
+    if(ps == 0 && ns != 0){           // if positive side is empty, means no intersection with this plane
+        if(plane_count != 3){           // if it was the last plane, (current) tet is contained in all planes
+            tetIntersectionFun(tet, all_planes, vol, ++plane_count);
+    }}
+    else if(ns == 0 && ps != 0)            // if negative side is empty, means no intersection at all
+        return 0;
+
+    if(ps == 0 && ns == 0){
+        vol+=tet.volume();
+    }
+
+
     return 1;
-//    else if(ps == 0){           // if positive side is empty, means no intersection with this plane
-//        if(plane_count == 3){           // if it was the last plane, (current) tet is contained in all planes
-//            vol+=tet.volume();
-//            return 1;}
-//        else                            // else continue with next plane
-//            tetIntersectionFun(tet, all_planes, vol, ++plane_count);
-//    }
-//    else if(ns == 0)            // if negative side is empty, means no intersection at all
-//        return 0;
 
 }
 
+
+
+//Polyhedron randPoly(){
+
+
+
+
+
+
+//}
 
 
 
@@ -116,7 +170,7 @@ void tetIntersectionTest(){
 
 
     Point sp0(1,1,1);
-    Point sp1(1,3,1);
+    Point sp1(0,4,1);
     Point sp2(3,2,1);
     Point sp3(2,2,4);
     Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
@@ -135,10 +189,14 @@ void tetIntersectionTest(){
         }
     }
 
-    Point dp0(3,1,5);
-    Point dp1(3,3,5);
-    Point dp2(1,2,5);
-    Point dp3(2,2,2);
+//    Point dp0(3,1,5);
+//    Point dp1(3,3,5);
+//    Point dp2(1,2,5);
+//    Point dp3(2,2,2);
+    Point dp0(0,2,5);
+    Point dp1(0,4,5);
+    Point dp2(2,3,5);
+    Point dp3(2,2,0);
     Tetrahedron dtet(dp0,dp1,dp2,dp3);
     Polyhedron dp;
     dp.make_tetrahedron(dp0,dp1,dp2,dp3);
@@ -147,21 +205,28 @@ void tetIntersectionTest(){
     double cvol = 0.0;
     tetIntersectionFun(dtet, planes, cvol);
 
-    Polyhedron_Exact sp_exact;
     CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sp);
+    Polyhedron_Exact sp_exact;
     sp_exact.delegate(sensor_modifier);
     Nef_polyhedron snef(sp_exact);
 
+    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> dp_modifier(dp);
     Polyhedron_Exact dp_exact;
-    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(dp);
-    dp_exact.delegate(sensor_modifier);
+    dp_exact.delegate(dp_modifier);
     Nef_polyhedron dnef(dp_exact);
 
     Nef_polyhedron fullnef = dnef*snef;
 
     Polyhedron_Exact intersection_tet_exact;
     fullnef.convert_to_polyhedron(intersection_tet_exact);
-    double vol_full1 = CGAL::Polygon_mesh_processing::volume(intersection_tet_exact);
+
+    CGAL::Polyhedron_copy_3<Polyhedron_Exact, Polyhedron::HalfedgeDS> modifier_rev(intersection_tet_exact);
+    Polyhedron full_poly;
+    full_poly.delegate(modifier_rev);
+    exportOFF(full_poly, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/intersection");
+
+
+    double vol_full1 = CGAL::Polygon_mesh_processing::volume(full_poly);
 
     int a=5;
 
@@ -174,6 +239,6 @@ void tetIntersectionTest(){
 //        points[i] = p;
 
 //    }
-//    Polyhedron Poly;
+//    Polyhedron Poly;²
 //    CGAL::convex_hull_3(points.begin(), points.end(),Poly);
 }
