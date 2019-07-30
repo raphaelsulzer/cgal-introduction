@@ -2,13 +2,13 @@
 #include <fileIO.h>
 
 #include "surfaceRecon.cpp"
-#include "tetIntersection.cpp"
+//#include "tetIntersection.cpp"
 
 int main(){
 
-//    surfaceReconstruction();
+    surfaceReconstruction();
 
-    tetIntersectionTest();
+//    tetIntersectionTest();
 
 //    int hits = 84223;
 //    for(int i = 0; i < hits; i++){
