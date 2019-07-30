@@ -275,8 +275,8 @@ void tetIntersectionTest(){
 
 
     Point sp0(1,1,1);
-    Point sp1(0,4,1);
-//    Point sp1(1,3,1);
+//    Point sp1(0,4,1); // toy example 1
+    Point sp1(1,3,1);   // toy example 2
     Point sp2(3,2,1);
     Point sp3(2,2,4);
 

@@ -271,6 +271,7 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                         // intersection
                         double vol = 0;
                         tetIntersectionFun(current_tet, planes, vol);
+                        // TODO: investigate why there are sometimes NaNs!!
                         if(!isnan(vol))
                             current_cell->info().outside_score+=vol;
                         processed.insert(current_cell);
