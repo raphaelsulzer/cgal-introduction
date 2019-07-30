@@ -24,6 +24,9 @@ int tetIntersectionFun(Tetrahedron& tet,
                             std::string tet_name = ""){
 
 
+//    std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_";
+    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/tetras/tet";
+
     std::cout << plane_count << std::endl;
 
     if(plane_count == 4){
@@ -103,7 +106,6 @@ int tetIntersectionFun(Tetrahedron& tet,
 //                                Tetrahedron newTet(t1,t2,t3,t4);
                                 Polyhedron sp;
                                 sp.make_tetrahedron(t1,t2,t3,t4);
-                                std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_";
                                 std::string tet_name = std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p);
                                 exportOFF(sp, path+tet_name);
                                 tet = newTet;
@@ -141,7 +143,6 @@ int tetIntersectionFun(Tetrahedron& tet,
                             newTet = Tetrahedron(newTetPoints[0], newTetPoints[1], newTetPoints[2], newTetPoints[3]);
                             Polyhedron sp;
                             sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
-                            std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_";
                             std::string tet_name = std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p);
                             exportOFF(sp, path+tet_name);
                             tet = newTet;
@@ -179,7 +180,6 @@ int tetIntersectionFun(Tetrahedron& tet,
                             newTet = Tetrahedron(newTetPoints[0], newTetPoints[1], newTetPoints[2], newTetPoints[3]);
                             Polyhedron sp;
                             sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
-                            std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_";
                             std::string tet_name = std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p);
                             exportOFF(sp, path+tet_name);
                             tet = newTet;
@@ -214,72 +214,95 @@ int tetIntersectionFun(Tetrahedron& tet,
 
 void tetIntersectionTest(){
 
+    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/tetras/";
+
+    Point sp01(1.3,1.3,1.3);
+    Point sp02(0.3,3.3,1.3);
+    Point sp03(2.4,2,1.3);
 
 
-        Point sp0(1,1,1);
-        Point sp1(0,4,1);
+    Point sp0(1,1,1);
+    Point sp1(0,4,1);
     //    Point sp1(1,3,1);
-        Point sp2(3,2,1);
-        Point sp3(2,2,4);
-        Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
-        Tetrahedron stet(sp0,sp1,sp2,sp3);
-        Polyhedron sp;
-        sp.make_tetrahedron(sp0,sp1,sp2,sp3);
-        exportOFF(sp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/sp");
-        std::vector<Plane> planes(4);
-        planes[0] = Plane(sp0,sp2,sp1);
-        planes[1] = Plane(sp0,sp1,sp3);
-        planes[2] = Plane(sp1,sp2,sp3);
-        planes[3] = Plane(sp0,sp3,sp2);
-        for(int i = 0; i<4; i++){
-            if(!planes[i].has_on_negative_side(spc)){
-                planes[i]=planes[i].opposite();
-            }
-        }
+    Point sp2(3,2,1);
+    Point sp3(2,2,4);
 
-        Point dp0(3,1,5);
-        Point dp1(3,3,5);
-        Point dp2(1,2,5);
-        Point dp3(2,2,2);
+    Polyhedron six;
+    six.make_tetrahedron(sp0,sp1,sp2,sp01);
+    six.make_tetrahedron(sp01,sp02,sp03,sp1);
+    six.make_tetrahedron(sp02,sp03,sp0,sp2);
+
+    exportOFF(six, path+"six");
+
+    // neue perspektive auf algorithmus
+    // wenn eine ecke weggeschnitten wird (also 3:1)
+    // entsteht ein 6-eck aus dem 3 neue tetraheder geformt werden können/müssen
+        // this should be fairly straight forward to implement
+        // in the end you can assert that the volume of all 3 of them is the same as the original tet vol
+        // then go on to the next plane which cuts all 3 new tets seperately
+    // wenn zwei ecken weggeschnitten werden entsteht ein 7-eck aus dem ???? neue tetrahedra geformt werden müssen
+    // eventuell 4 neue?
+
+
+    Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
+    Tetrahedron stet(sp0,sp1,sp2,sp3);
+    Polyhedron sp;
+    sp.make_tetrahedron(sp0,sp1,sp2,sp3);
+    exportOFF(sp, path+"sp");
+    std::vector<Plane> planes(4);
+    planes[0] = Plane(sp0,sp2,sp1);
+    planes[1] = Plane(sp0,sp1,sp3);
+    planes[2] = Plane(sp1,sp2,sp3);
+    planes[3] = Plane(sp0,sp3,sp2);
+    for(int i = 0; i<4; i++){
+        if(!planes[i].has_on_negative_side(spc)){
+            planes[i]=planes[i].opposite();
+        }
+    }
+
+    Point dp0(3,1,5);
+    Point dp1(3,3,5);
+    Point dp2(1,2,5);
+    Point dp3(2,2,2);
     //    Point dp0(0,2,5);
     //    Point dp1(0,4,5);
     //    Point dp2(2,3,5);
     //    Point dp3(2,2,0);
-        Tetrahedron dtet(dp0,dp1,dp2,dp3);
-        Polyhedron dp;
-        dp.make_tetrahedron(dp0,dp1,dp2,dp3);
-        exportOFF(dp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/dp");
+    Tetrahedron dtet(dp0,dp1,dp2,dp3);
+    Polyhedron dp;
+    dp.make_tetrahedron(dp0,dp1,dp2,dp3);
+    exportOFF(dp, path+"dp");
 
-        double cvol = 0.0;
-        int pc = 0;
-        tetIntersectionFun(dtet, planes, cvol, pc);
+    double cvol = 0.0;
+    int pc = 0;
+    tetIntersectionFun(dtet, planes, cvol, pc);
 
-        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sp);
-        Polyhedron_Exact sp_exact;
-        sp_exact.delegate(sensor_modifier);
-        Nef_polyhedron snef(sp_exact);
+    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sp);
+    Polyhedron_Exact sp_exact;
+    sp_exact.delegate(sensor_modifier);
+    Nef_polyhedron snef(sp_exact);
 
-        CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> dp_modifier(dp);
-        Polyhedron_Exact dp_exact;
-        dp_exact.delegate(dp_modifier);
-        Nef_polyhedron dnef(dp_exact);
+    CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> dp_modifier(dp);
+    Polyhedron_Exact dp_exact;
+    dp_exact.delegate(dp_modifier);
+    Nef_polyhedron dnef(dp_exact);
 
-        Nef_polyhedron fullnef = dnef*snef;
+    Nef_polyhedron fullnef = dnef*snef;
 
-        Polyhedron_Exact intersection_tet_exact;
-        fullnef.convert_to_polyhedron(intersection_tet_exact);
+    Polyhedron_Exact intersection_tet_exact;
+    fullnef.convert_to_polyhedron(intersection_tet_exact);
 
-        CGAL::Polyhedron_copy_3<Polyhedron_Exact, Polyhedron::HalfedgeDS> modifier_rev(intersection_tet_exact);
-        Polyhedron full_poly;
-        full_poly.delegate(modifier_rev);
-        exportOFF(full_poly, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/intersection");
+    CGAL::Polyhedron_copy_3<Polyhedron_Exact, Polyhedron::HalfedgeDS> modifier_rev(intersection_tet_exact);
+    Polyhedron full_poly;
+    full_poly.delegate(modifier_rev);
+    exportOFF(full_poly, path+"intersection");
 
 
-        double vol_full1 = CGAL::Polygon_mesh_processing::volume(full_poly);
+    double vol_full1 = CGAL::Polygon_mesh_processing::volume(full_poly);
 
-        std::cout << "my vol: " << cvol << "    nef vol: " << vol_full1 << std::endl;
+    std::cout << "my vol: " << cvol << "    nef vol: " << vol_full1 << std::endl;
 
-        int a=5;
+    int a=5;
 
 
     //    int vlen = rand() % 8 + 4;
@@ -290,6 +313,6 @@ void tetIntersectionTest(){
     //        points[i] = p;
 
     //    }
-    //    Polyhedron Poly;²
+    //    Polyhedron Poly;
     //    CGAL::convex_hull_3(points.begin(), points.end(),Poly);
-    }
+}
