@@ -1,6 +1,6 @@
 #include <cgal_typedefs.h>
 #include <fileIO.h>
-
+#include <tetIntersection.h>
 
 
 
@@ -21,7 +21,8 @@ int tetIntersectionFun(Tetrahedron& tet,
                             std::vector<Plane>& all_planes,
                             double& vol,
                             int plane_count=0,
-                            std::string tet_name = ""){
+                            std::string tet_name = "",
+                            bool exp=true){
 
 
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_";
@@ -108,11 +109,12 @@ int tetIntersectionFun(Tetrahedron& tet,
                             newTetPoints.push_back(*intersection_point);
 //                            Tetrahedron newTet(newTetPoints[0], newTetPoints[1], newTetPoints[2], newTetPoints[3]);
                             newTet = Tetrahedron(newTetPoints[0], newTetPoints[1], newTetPoints[2], newTetPoints[3]);
-                            // ////export
+                            ////export
                             Polyhedron sp;
                             sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
                             std::string tet_name = std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p);
-                            ////exportOFF(sp, path+tet_name);
+                            if(exp)
+                                exportOFF(sp, path+tet_name);
                             splitTets.push_back(newTet);
 //                            tetIntersectionFun(newTet, all_planes, vol, plane_count+1, tet_name);
                         }
@@ -131,7 +133,8 @@ int tetIntersectionFun(Tetrahedron& tet,
             Polyhedron sp;
             sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
             std::string tet_name = std::to_string(plane_count)+"_pos";
-            ////exportOFF(sp, path+tet_name);
+            if(exp)
+                exportOFF(sp, path+tet_name);
             // this is now a SINGLE tet that is completely inside the negative side of one plane
             // note: the difference here to the next else (ns > ps) is that there it is not possible
             // to form a single tet from the remaining cut lying to the inside of the one plane
@@ -174,7 +177,8 @@ int tetIntersectionFun(Tetrahedron& tet,
                             Polyhedron sp;
                             sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
                             std::string tet_name = std::to_string(plane_count)+"_"+std::to_string(n)+std::to_string(p);
-                            //exportOFF(sp, path+tet_name);
+                            if(exp)
+                                exportOFF(sp, path+tet_name);
                             splitTets.push_back(newTet);
                             tetIntersectionFun(newTet, all_planes, vol, plane_count+1, tet_name);
                         }
@@ -212,21 +216,24 @@ int tetIntersectionFun(Tetrahedron& tet,
             Polyhedron sp;
             sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
             tetNames.push_back(std::to_string(plane_count)+"_big");
-            //exportOFF(sp, path+tetNames[0]);
+            if(exp)
+                exportOFF(sp, path+tetNames[0]);
             splitTets.push_back(newTet);
             // now the first small one
             newTet = Tetrahedron(intersectionPoints[0], intersectionPoints[1], intersectionPoints[2], tet.vertex(neg[1]));
             Polyhedron sp1;
-            sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
+            sp1.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
             tetNames.push_back(std::to_string(plane_count)+"_small1");
-            //exportOFF(sp, path+tetNames[1]);
+            if(exp)
+                exportOFF(sp1, path+tetNames[1]);
             splitTets.push_back(newTet);
             // now the second small one
-            newTet = Tetrahedron(intersectionPoints[0], intersectionPoints[2], intersectionPoints[3], tet.vertex(neg[1]));
+            newTet = Tetrahedron(intersectionPoints[1], intersectionPoints[2], intersectionPoints[3], tet.vertex(neg[1]));
             Polyhedron sp2;
-            sp.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
+            sp2.make_tetrahedron(newTet.vertex(0), newTet.vertex(1), newTet.vertex(2), newTet.vertex(3));
             tetNames.push_back(std::to_string(plane_count)+"_small2");
-            //exportOFF(sp, path+tetNames[2]);
+            if(exp)
+                exportOFF(sp2, path+tetNames[2]);
             splitTets.push_back(newTet);
             // now continue with looping over planes for all three tets
             for(int t = 0; t < splitTets.size(); t++){
@@ -268,8 +275,8 @@ void tetIntersectionTest(){
 
 
     Point sp0(1,1,1);
-//    Point sp1(0,4,1);
-    Point sp1(1,3,1);
+    Point sp1(0,4,1);
+//    Point sp1(1,3,1);
     Point sp2(3,2,1);
     Point sp3(2,2,4);
 

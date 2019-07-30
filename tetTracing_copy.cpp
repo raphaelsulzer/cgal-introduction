@@ -271,7 +271,8 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
                         // intersection
                         double vol = 0;
                         tetIntersectionFun(current_tet, planes, vol);
-                        current_cell->info().outside_score+=vol;
+                        if(!isnan(vol))
+                            current_cell->info().outside_score+=vol;
                         processed.insert(current_cell);
 
 //                            // get neighbouring cells

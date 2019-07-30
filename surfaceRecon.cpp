@@ -1,6 +1,7 @@
 #include <cgal_typedefs.h>
 #include <fileIO.h>
 #include <rayTracing.h>
+#include <tetIntersection.h>
 
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"

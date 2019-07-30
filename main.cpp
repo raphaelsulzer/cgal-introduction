@@ -1,14 +1,14 @@
 #include <cgal_typedefs.h>
 #include <fileIO.h>
+#include <tetIntersection.h>
 
 #include "surfaceRecon.cpp"
-//#include "tetIntersection.cpp"
 
 int main(){
 
-    surfaceReconstruction();
+//    surfaceReconstruction();
 
-//    tetIntersectionTest();
+    tetIntersectionTest();
 
 //    int hits = 84223;
 //    for(int i = 0; i < hits; i++){
