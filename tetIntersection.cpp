@@ -79,7 +79,7 @@ int tetIntersectionFun(Tetrahedron& tet,
         {
             std::vector<Tetrahedron> splitTets;
             // first make the 3 outside split tets, which are not really needed,
-            // but its intersection points are needed
+            // but its intersection points are needed, for afterwards making the single inside tet
             for(int n = 0; n < ns; n++){
                 for(int p = 0; p < ps; p++){
                     Point p1 = tet.vertex(neg[n]);
