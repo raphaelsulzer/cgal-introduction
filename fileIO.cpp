@@ -486,6 +486,17 @@ void exportOFF(Polyhedron_Exact& out_mesh, std::string path)
     out.close();
     std::cout << "Exported to " << path << std::endl;
 }
+void exportOFF(Tetrahedron& in_tet, std::string path)
+{
+    Polyhedron out_poly;
+    out_poly.make_tetrahedron(in_tet.vertex(0), in_tet.vertex(1), in_tet.vertex(2), in_tet.vertex(3));
+    path = path + ".off";
+    std::ofstream out(path);
+    out << std::setprecision(15);
+    out << out_poly;
+    out.close();
+//    std::cout << "Exported to " << path << std::endl;
+}
 
 void fixSensorCenter(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos){
 

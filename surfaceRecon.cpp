@@ -52,7 +52,7 @@ void surfaceReconstruction()
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
     rayTracing::rayTracingFun(Dt);
-    tetTracingCopy::firstCell(Dt, t_points, t_infos, t_polys);
+    tetTracingCopy::firstCell(Dt, t_polys);
 
 
     // Dt, area_weight, iteration

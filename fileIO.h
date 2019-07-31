@@ -37,6 +37,7 @@ void exportPoints();
 
 void exportOFF(Polyhedron& out_mesh, std::string path);
 void exportOFF(Polyhedron_Exact& out_mesh, std::string path);
+void exportOFF(Tetrahedron& in_tet, std::string path);
 
 void fixSensorCenter();
 
