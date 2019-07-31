@@ -172,7 +172,7 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 
 //                        std::cout << "hit" << std::endl;
 
-                        std::cout << "sensor facet: " << k << "     hit: " << hit++ << std::endl;
+//                        std::cout << "sensor facet: " << k << "     hit: " << hit++ << std::endl;
 
                         std::vector<Plane> planes(4);
 
@@ -270,10 +270,13 @@ void firstCell(const Delaunay& Dt, std::vector<Point>& points, std::vector<verte
 
                         // intersection
                         double vol = 0;
-                        tetIntersectionFun(current_tet, planes, vol);
+                        int vi = tetIntersectionFun(current_tet, planes, vol);
                         // TODO: investigate why there are sometimes NaNs!!
                         if(!isnan(vol))
                             current_cell->info().outside_score+=vol;
+                        else {
+                            std::cout << "NaN hit. Intersection? " << vi << std::endl;
+                        }
                         processed.insert(current_cell);
 
 //                            // get neighbouring cells

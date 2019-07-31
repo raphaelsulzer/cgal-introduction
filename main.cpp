@@ -6,9 +6,9 @@
 
 int main(){
 
-//    surfaceReconstruction();
+    surfaceReconstruction();
 
-    tetIntersectionTest();
+//    tetIntersectionTest();
 
 //    int hits = 84223;
 //    for(int i = 0; i < hits; i++){
