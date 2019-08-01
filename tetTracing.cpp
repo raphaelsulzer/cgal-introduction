@@ -35,34 +35,47 @@ void idxCells(Delaunay& Dt){
 // use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
 int traverseCells(Delaunay& Dt,
                   Cell_handle& first_cell,
-                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
-                   std::vector<Plane>& planes, Polyhedron& sp){
+                  Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
+                  std::vector<Plane>& planes,
+                  Ray& ray){
 
     // if current cell is not infinite then go on
     // processed state is already checked before calling this function, so no need to check again
     if(!Dt.is_infinite(current_cell))
     {
 
-        int fidx = first_cell->info().idx;
-        int cidx = current_cell->info().idx;
-        std::cout << "first cell: " << fidx << "    second cell: " << cidx << std::endl;
+//        int fidx = first_cell->info().idx;
+//        int cidx = current_cell->info().idx;
+//        std::cout << "first cell: " << fidx << "    second cell: " << cidx << std::endl;
+
+//        for(int t = 0; t < 4; t++){
+//            Triangle tri = Dt.triangle(current_cell, t);
+//            bool dointersect = CGAL::do_intersect(ray,tri);
+//            if(dointersect)
+
+//        }
+        bool dointersect = false;
+        int t=0;
+        while(!dointersect && t < 4)
+        {
+            Triangle tri = Dt.triangle(current_cell, t++);
+            dointersect = CGAL::do_intersect(ray,tri);
+        }
+        if(!dointersect){
+            processed.insert(current_cell);
+            return 0;
+        }
 
         Tetrahedron current_tet = Dt.tetrahedron(current_cell);
 
         double vol = 0.0;
-        int vi = 0;
-        vi = tetIntersectionFun(current_tet, planes, vol);
+        tetIntersectionFun(current_tet, planes, vol);
         if(!isnan(vol)){
-            if(vol != 0.0)
-                current_cell->info().outside_score+=vol;
-            else{
-                processed.insert(current_cell);
-                return 0;
-            }
+            current_cell->info().outside_score+=vol;
         }
         else{
-            std::cout << "NaN hit. Intersection? " << vi << std::endl;
-            exportOFF(sp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp");
+            std::cout << "NaN hit. Intersection? " << std::endl;
+//            exportOFF(sp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp");
             exportOFF(current_tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dp");
             processed.insert(current_cell);
             return 0;
@@ -75,7 +88,7 @@ int traverseCells(Delaunay& Dt,
             Facet mirror_fac = Dt.mirror_facet(fac);
             Cell_handle newCell = mirror_fac.first;
             if(processed.find(newCell) == processed.end()){
-                traverseCells(Dt, first_cell, newCell, processed, planes, sp);
+                traverseCells(Dt, first_cell, newCell, processed, planes, ray);
             }
         }
     }
@@ -185,15 +198,15 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
                             }
                             processed.insert(current_cell);
 
-//                            // traverse neighbouring cells
-//                            for(int ci = 0; ci < 4; ci++){
-//                                Facet fac = std::make_pair(current_cell, ci);
-//                                Facet mirror_fac = Dt.mirror_facet(fac);
-//                                Cell_handle newCell = mirror_fac.first;
-//                                if(processed.find(newCell) == processed.end()){
-//                                    traverseCells(Dt, current_cell, newCell, processed, planes, sp);
-//                                }
-//                            }
+                            //// traverse neighbouring cells
+                            for(int ci = 0; ci < 4; ci++){
+                                Facet fac = std::make_pair(current_cell, ci);
+                                Facet mirror_fac = Dt.mirror_facet(fac);
+                                Cell_handle newCell = mirror_fac.first;
+                                if(processed.find(newCell) == processed.end()){
+                                    traverseCells(Dt, current_cell, newCell, processed, planes, ray);
+                                }
+                            }
 //                        }//end of IF-already-processed
                     }
                 }
