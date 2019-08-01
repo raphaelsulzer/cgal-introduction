@@ -497,6 +497,55 @@ void exportOFF(Tetrahedron& in_tet, std::string path)
     out.close();
 //    std::cout << "Exported to " << path << std::endl;
 }
+void importOff(std::string path, Polyhedron& import_poly){
+
+    std:ifstream in(path);
+    in >> import_poly;
+
+}
+void importOff(std::string path, Tetrahedron& import_tet){
+
+    Polyhedron import_poly;
+    std:ifstream in(path);
+    in >> import_poly;
+    Polyhedron::Vertex_iterator vit;
+    vit = import_poly.vertices_begin();
+    import_tet = Tetrahedron(vit->point(), vit++->point(), vit++->point(), vit++->point());
+}
+void importOff(std::string path, std::vector<Point>& points){
+
+    Polyhedron import_poly;
+    std:ifstream in(path);
+    in >> import_poly;
+    Polyhedron::Vertex_iterator vit;
+    for(vit = import_poly.vertices_begin(); vit != import_poly.vertices_end(); vit++){
+        points.push_back(vit->point());
+    }
+}
+void importOff(std::string path, std::vector<Plane>& planes){
+
+    Polyhedron import_poly;
+    std:ifstream in(path);
+    in >> import_poly;
+    Polyhedron::Vertex_iterator vit;
+    std::vector<Point> points;
+    for(vit = import_poly.vertices_begin(); vit != import_poly.vertices_end(); vit++){
+        points.push_back(vit->point());
+    }
+    planes.push_back(Plane(points[0], points[2], points[1]));
+    planes.push_back(Plane(points[0], points[1], points[3]));
+    planes.push_back(Plane(points[1], points[2], points[3]));
+    planes.push_back(Plane(points[0], points[3], points[2]));
+
+    Point spc = CGAL::centroid(points[0], points[1], points[2], points[3]);
+    for(int i = 0; i<4; i++){
+        if(!planes[i].has_on_negative_side(spc)){
+            planes[i]=planes[i].opposite();
+            std::cout << i << " has wrong orientation!" << std::endl;
+        }
+    }
+}
+
 
 void fixSensorCenter(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos){
 

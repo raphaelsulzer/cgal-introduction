@@ -12,7 +12,6 @@ double pointPlaneDistance(Plane plane, Point point){
             std::sqrt(plane.a()*plane.a() + plane.b()*plane.b() + plane.c()*plane.c());
 
     return dist;
-
 }
 
 
@@ -24,6 +23,7 @@ int tetIntersectionFun(Tetrahedron& tet,
                             std::string tet_name = ""){
 
 
+    exportOFF(tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dtet");
     bool exp = false;
 //    bool exp = true;
 
@@ -252,9 +252,7 @@ int tetIntersectionFun(Tetrahedron& tet,
     else if(ps == 0 && ns != 0){           // if positive side is empty, means no intersection with this plane
         tetIntersectionFun(tet, all_planes, vol, plane_count+1, tet_name);
     }
-//    else if(ns == 0 && ps != 0)
-//        return 0;
-    // if ANY!! plane has negative side is empty (with the original tet!), means no intersection at all
+    // if ANY plane has negative side is empty (with the original tet!), means no intersection at all
     // of course it can be with cut tets; but then it will continue in another recursion loop
     // also works if one (ore more) points are close, and the rest empty
     else{
@@ -272,63 +270,72 @@ void tetIntersectionTest(){
 
 //    std::string path = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/tetras/";
     std::string path = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/tet_";
-
-
     system("exec rm -r /home/raphael/Dropbox/Studium/PhD/data/sampleData/tetTest/*");
 
+//// Toy examples
+////    Point sp01(1.3,1.3,1.3);
+////    Point sp02(0.3,3.3,1.3);
+////    Point sp03(2.4,2,1.3);
 
-//    Point sp01(1.3,1.3,1.3);
-//    Point sp02(0.3,3.3,1.3);
-//    Point sp03(2.4,2,1.3);
+//    Point sp0(1,1,1);
+//    Point sp1(0,4,1); // toy example 1
+////    Point sp1(1,3,1);   // toy example 2
+//    Point sp2(3,2,1);
+//    Point sp3(2,2,4);
 
+////    Polyhedron six;
+////    six.make_tetrahedron(sp0,sp1,sp2,sp01);
+////    six.make_tetrahedron(sp01,sp02,sp03,sp1);
+////    six.make_tetrahedron(sp02,sp03,sp0,sp2);
+////    exportOFF(six, path+"six");
 
-    Point sp0(1,1,1);
-    Point sp1(0,4,1); // toy example 1
-//    Point sp1(1,3,1);   // toy example 2
-    Point sp2(3,2,1);
-    Point sp3(2,2,4);
+//    Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
+//    Tetrahedron stet(sp0,sp1,sp2,sp3);
+//    Polyhedron sp;
+//    sp.make_tetrahedron(sp0,sp1,sp2,sp3);
+//    exportOFF(sp, path+"sp");
+//    std::vector<Plane> planes(4);
+//    planes[0] = Plane(sp0,sp2,sp1);
+//    planes[1] = Plane(sp0,sp1,sp3);
+//    planes[2] = Plane(sp1,sp2,sp3);
+//    planes[3] = Plane(sp0,sp3,sp2);
+//    for(int i = 0; i<4; i++){
+//        if(!planes[i].has_on_negative_side(spc)){
+//            planes[i]=planes[i].opposite();
+//        }
+//    }
 
-//    Polyhedron six;
-//    six.make_tetrahedron(sp0,sp1,sp2,sp01);
-//    six.make_tetrahedron(sp01,sp02,sp03,sp1);
-//    six.make_tetrahedron(sp02,sp03,sp0,sp2);
-//    exportOFF(six, path+"six");
+////    Point dp0(3,1,5);
+////    Point dp1(3,3,5);
+////    Point dp2(1,2,5);
+////    Point dp3(2,2,2);
+//    // example 3
+//    Point dp0(0,2,5);
+//    Point dp1(0,4,5);
+//    Point dp2(2,3,5);
+//    Point dp3(2,2,0);
+//    Tetrahedron dtet(dp0,dp1,dp2,dp3);
+//    Polyhedron dp;
+//    dp.make_tetrahedron(dp0,dp1,dp2,dp3);
+//    exportOFF(dp, path+"dp");
 
-    Point spc = CGAL::centroid(sp0,sp1,sp2,sp3);
-    Tetrahedron stet(sp0,sp1,sp2,sp3);
-    Polyhedron sp;
-    sp.make_tetrahedron(sp0,sp1,sp2,sp3);
-    exportOFF(sp, path+"sp");
-    std::vector<Plane> planes(4);
-    planes[0] = Plane(sp0,sp2,sp1);
-    planes[1] = Plane(sp0,sp1,sp3);
-    planes[2] = Plane(sp1,sp2,sp3);
-    planes[3] = Plane(sp0,sp3,sp2);
-    for(int i = 0; i<4; i++){
-        if(!planes[i].has_on_negative_side(spc)){
-            planes[i]=planes[i].opposite();
-        }
-    }
+    // examples from TLS
+    Tetrahedron dtet;
+    importOff("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dp1.off", dtet);
+    std::vector<Plane> planes;
+    importOff("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp1.off", planes);
 
-//    Point dp0(3,1,5);
-//    Point dp1(3,3,5);
-//    Point dp2(1,2,5);
-//    Point dp3(2,2,2);
-    // example 3
-    Point dp0(0,2,5);
-    Point dp1(0,4,5);
-    Point dp2(2,3,5);
-    Point dp3(2,2,0);
-    Tetrahedron dtet(dp0,dp1,dp2,dp3);
-    Polyhedron dp;
-    dp.make_tetrahedron(dp0,dp1,dp2,dp3);
-    exportOFF(dp, path+"dp");
-
+    // intersection with own function
     double cvol = 0.0;
     int pc = 0;
     int ib = tetIntersectionFun(dtet, planes, cvol, pc);
 
     // NEF intersection
+    Polyhedron dp;
+    importOff("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dp1.off", dp);
+    Polyhedron sp;
+    importOff("/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp1.off", sp);
+
     CGAL::Polyhedron_copy_3<Polyhedron, Polyhedron_Exact::HalfedgeDS> sensor_modifier(sp);
     Polyhedron_Exact sp_exact;
     sp_exact.delegate(sensor_modifier);
@@ -351,20 +358,7 @@ void tetIntersectionTest(){
 
     double vol_full1 = CGAL::Polygon_mesh_processing::volume(full_poly);
 
-    // compare
+    // comparision
     std::cout << "intersection: " << ib << " my vol: " << cvol << "    nef vol: " << vol_full1 << std::endl;
 
-    int a=5;
-
-
-    //    int vlen = rand() % 8 + 4;
-    //    std::vector<Point> points(vlen);
-    //    for(int i = 0; i < vlen; i++){
-
-    //        Point p(rand(), rand(), rand());
-    //        points[i] = p;
-
-    //    }
-    //    Polyhedron Poly;
-    //    CGAL::convex_hull_3(points.begin(), points.end(),Poly);
 }

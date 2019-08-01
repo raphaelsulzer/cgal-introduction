@@ -39,6 +39,12 @@ void exportOFF(Polyhedron& out_mesh, std::string path);
 void exportOFF(Polyhedron_Exact& out_mesh, std::string path);
 void exportOFF(Tetrahedron& in_tet, std::string path);
 
+void importOff(std::string path, Polyhedron& import_poly);
+void importOff(std::string path, Tetrahedron& import_tet);
+void importOff(std::string path, std::vector<Point>& points);
+void importOff(std::string path, std::vector<Plane>& planes);
+
+
 void fixSensorCenter();
 
 void exportCellCenter(std::string path,
