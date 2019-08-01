@@ -23,7 +23,7 @@ int tetIntersectionFun(Tetrahedron& tet,
                             std::string tet_name = ""){
 
 
-    exportOFF(tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dtet");
+//    exportOFF(tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dtet");
     bool exp = false;
 //    bool exp = true;
 

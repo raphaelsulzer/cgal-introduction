@@ -6,7 +6,6 @@
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"
 #include "tetTracing.cpp"
-#include "tetTracing_copy.cpp"
 #include "optimization.cpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +51,7 @@ void surfaceReconstruction()
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
     rayTracing::rayTracingFun(Dt);
-    tetTracingCopy::firstCell(Dt, t_polys);
+    tetTracing::firstCell(Dt, t_polys);
 
 
     // Dt, area_weight, iteration
