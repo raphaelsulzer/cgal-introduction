@@ -15,12 +15,10 @@ void surfaceReconstruction()
 {
     auto start = std::chrono::high_resolution_clock::now();
 
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
-
-
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut2";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
@@ -43,26 +41,26 @@ void surfaceReconstruction()
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
     // calculate noise per point and save it in the vertex_info of the Dt
-    pcaKNN(Dt, t_points);
+//    pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 
 
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
-    rayTracing::rayTracingFun(Dt);
+//    rayTracing::rayTracingFun(Dt);
     tetTracing::firstCell(Dt, t_polys);
 
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.01, -1);
+//    GeneralGraph_DArraySArraySpatVarying(Dt, 1, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
     // 0 = camera, 1 = normal
     bool ray_construction = 1;
-    exportPLY(Dt, ofn, ray_construction, 1, 0);
-    exportPLY(Dt, ofn, ray_construction, 1, 1);
+    exportPLY(Dt, ofn, ray_construction, 0, 0);
+    exportPLY(Dt, ofn, ray_construction, 0, 1);
 
     exportCellCenter(ofn, Dt);
 
@@ -86,7 +84,6 @@ void surfaceReconstruction()
     auto stop = std::chrono::high_resolution_clock::now();
     auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
     std::cout << "Surface reconstruction done in " << full_duration.count() << "s" << std::endl;
-
 
 }
 

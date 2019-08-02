@@ -2,8 +2,7 @@
 #define FILEIO_H
 
 #include <cgal_typedefs.h>
-//#include "plyDefinition.cpp"
-//#include "colmapPLY.cpp"
+
 
 
 //////////////////////////////////////////////////////////

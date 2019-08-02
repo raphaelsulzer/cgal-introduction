@@ -613,9 +613,9 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
     fo << "property uchar red" << std::endl;
     fo << "property uchar green" << std::endl;
     fo << "property uchar blue" << std::endl;
-    fo << "property float nx" << std::endl;
-    fo << "property float ny" << std::endl;
-    fo << "property float nz" << std::endl;
+//    fo << "property float inside_score" << std::endl;
+    fo << "property float outside_score" << std::endl;
+//    fo << "property float nz" << std::endl;
     fo << "end_header" << std::endl;
     fo << std::setprecision(8);
 
@@ -648,18 +648,22 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
         double inside_score = cit->info().inside_score;
         double outside_score = cit->info().outside_score;
-        int green = 0;
+        int red = 0;
         if(inside_score == 0.0 && outside_score == 0.0){
-            green = 128;
+            red = 128;
         }
-        int red  = int(std::min(inside_score*inside_scale,255.0));
+//        int red  = int(std::min(inside_score*inside_scale,255.0));
+//        int red  = 0;
+        int green = 0;
         int blue = int(std::min(outside_score*outside_scale,255.0));
 
-        fo << centroid << " " << red << " " << green << " " << blue << " 0 0 0" << std::endl;
+//        fo << centroid << " " << red << " " << green << " " << blue << " " << inside_score << " " << outside_score << std::endl;
+        fo << centroid << " " << 0 << " " << 0 << " " << blue << " " << outside_score << std::endl;
     }
 
 
     fo.close();
+    std::cout << "Exported to " << path << std::endl;
 
 }
 
@@ -711,14 +715,43 @@ void exportPLY(const Delaunay& Dt,
 
     // calculate how many faces to print
     Delaunay::Finite_facets_iterator fft;
-    int deletedFaceCount = 0;
-    for(fft = Dt.finite_facets_begin(); fft != Dt.finite_facets_end(); fft++){
-        Cell_handle c = fft->first;
-        int clabel = c->info().final_label;
-        Cell_handle m = Dt.mirror_facet(*fft).first;
-        int mlabel = m->info().final_label;
-        if(clabel == mlabel){deletedFaceCount++;}
+    int deletedFaceCount = 0;    
+    if(!optimized)
+    {
+        for(fft = Dt.finite_facets_begin(); fft != Dt.finite_facets_end(); fft++){
+            Cell_handle c = fft->first;
+            int clabel;
+            float c1 = c->info().outside_score;
+            float c2 = c->info().inside_score;
+            if(c1 > c2)
+                clabel = 1;
+            else {
+                clabel = 0;
+            }
+            Cell_handle m = Dt.mirror_facet(*fft).first;
+            int mlabel;
+            float m1 = m->info().outside_score;
+            float m2 = m->info().inside_score;
+            if(m1 > m2)
+                mlabel = 1;
+            else {
+                mlabel = 0;
+            }
+            if(clabel==1 && Dt.is_infinite(m))
+                mlabel = 1;
+            if(clabel == mlabel){deletedFaceCount++;}
+        }
     }
+    else{
+        for(fft = Dt.finite_facets_begin(); fft != Dt.finite_facets_end(); fft++){
+            Cell_handle c = fft->first;
+            int clabel = c->info().final_label;
+            Cell_handle m = Dt.mirror_facet(*fft).first;
+            int mlabel = m->info().final_label;
+            if(clabel == mlabel){deletedFaceCount++;}
+        }
+    }
+
     int sub = nf - deletedFaceCount;
 
     // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
@@ -807,16 +840,13 @@ void exportPLY(const Delaunay& Dt,
 
         //////// check which faces to prune:
 
-//        // with GC labelling:
-        int clabel = c->info().final_label;
-        Cell_handle m = Dt.mirror_facet(*fft).first;
-        int mlabel = m->info().final_label;
 
 
+        int clabel;
+        int mlabel;
         if(!optimized){
             float c1 = c->info().outside_score;
             float c2 = c->info().inside_score;
-            int clabel;
             if(c1 > c2)
                 clabel = 1;
             else {
@@ -825,19 +855,33 @@ void exportPLY(const Delaunay& Dt,
             Cell_handle m = Dt.mirror_facet(*fft).first;
             float m1 = m->info().outside_score;
             float m2 = m->info().inside_score;
-            int mlabel;
             if(m1 > m2)
                 mlabel = 1;
             else {
                 mlabel = 0;
             }
+            if(clabel==1 && Dt.is_infinite(m))
+                mlabel = 1;
+            else if(clabel==0 && Dt.is_infinite(m))
+                mlabel = 0;
+
+        }
+        else{
+    //        // with GC labelling:
+            clabel = c->info().final_label;
+            Cell_handle m = Dt.mirror_facet(*fft).first;
+            mlabel = m->info().final_label;
         }
 
 
         // check if two neighbouring cells have the same label, and if so (and the prunce_faces export function is active) continue to next face
         if(clabel == mlabel && prune_or_color){
+//            std::cout << clabel << " == " << mlabel << std::endl;
             continue;
         }
+//        else{
+//            std::cout << clabel << " != " << mlabel << std::endl;
+//        }
 
         // if label of neighbouring cells is not the same...
         // start printed facet line with a 3

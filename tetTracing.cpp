@@ -23,7 +23,16 @@ void idxCells(Delaunay& Dt){
         fci->info().idx = i++;
     }
 }
-
+//void idxCells(Delaunay& Dt){
+//    Delaunay::All_cells_iterator fci;
+//    int i=0;
+//    for(fci=Dt.all_cells_begin();fci!=Dt.all_cells_end();fci++){
+//        if(!Dt.is_infinite(fci))
+//            fci->info().idx = i++;
+//        else
+//            fci->info().outside_score = 0.0;
+//    }
+//}
 
 
 
@@ -71,7 +80,8 @@ int traverseCells(Delaunay& Dt,
         double vol = 0.0;
         tetIntersectionFun(current_tet, planes, vol);
         if(!isnan(vol)){
-            current_cell->info().outside_score+=vol;
+            double score = vol/abs(current_tet.volume());
+            current_cell->info().outside_score+=score;
         }
         else{
             std::cout << "NaN hit. Intersection? " << std::endl;
@@ -94,7 +104,7 @@ int traverseCells(Delaunay& Dt,
     }
     else{
         // give infinite cell high value
-        current_cell->info().outside_score+=10;
+//        current_cell->info().outside_score+=10;
         processed.insert(current_cell);
     }
     return 1;
@@ -102,7 +112,7 @@ int traverseCells(Delaunay& Dt,
 
 
 void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
-
+    std::cout << "Start marking crossed tets..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
 
     // save Delaunay vertex handle in sensor_infos vector for each sensor poly
@@ -123,7 +133,7 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
     int hit = 0;
     for(int k = 0; k < sensor_polys.size(); k++){
         std::unordered_set<Cell_handle> processed;
-        std::cout << "sensor poly " << k << std::endl;
+//        std::cout << "sensor poly " << k << std::endl;
 
         if(sensor_infos[k].size()<3)
             continue;
@@ -175,6 +185,7 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
                                 if(!planes[i].has_on_negative_side(spc)){
                                     planes[i]=planes[i].opposite();
                                 }
+
                             }
 
                             Tetrahedron current_tet = Dt.tetrahedron(current_cell);
@@ -185,7 +196,10 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
 
                             // TODO: investigate why there are sometimes NaNs!!
                             if(!isnan(vol)){
-                                current_cell->info().outside_score+=vol;
+                                double score = vol/abs(current_tet.volume());
+                                current_cell->info().outside_score+=score;
+//                                std::cout << "inside score: " << current_cell->info().inside_score <<
+//                                             "  outside score " << current_cell->info().outside_score << std::endl;
 //                                exportOFF(sp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp");
 //                                exportOFF(current_tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dp");
                             }
@@ -204,6 +218,13 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
                             // so change to probability somehow?
                             // furthermore also try with theory that all can be carved out with outside score
                             // and triangle behind it is inside
+
+                            // update:
+                            // working well with carving out outside triangles. However, is it possible that
+                            // I am still missing outside triangles, due to some weird circumstances.
+                            // could try something like TODO:
+                            // if(close && vol==0)
+                            //      still check neighbouring cells
 
                             //// traverse neighbouring cells
                             for(int ci = 0; ci < 4; ci++){
