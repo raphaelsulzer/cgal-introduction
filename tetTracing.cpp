@@ -62,7 +62,7 @@ int traverseCells(Delaunay& Dt,
             dointersect = CGAL::do_intersect(ray,tri);
         }
         if(!dointersect){
-            processed.insert(current_cell);
+//            processed.insert(current_cell);
             return 0;
         }
 
@@ -138,8 +138,8 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
             // vector of incident cells to the current vertex
             std::vector<Cell_handle> inc_cells;
             Dt.incident_cells(current_vertex, std::back_inserter(inc_cells));
-            for(std::size_t i=0; i < inc_cells.size(); i++){
-                Cell_handle current_cell = inc_cells[i];
+            for(std::size_t c=0; c < inc_cells.size(); c++){
+                Cell_handle current_cell = inc_cells[c];
 //                int fcidx = current_cell->info().idx;
 //                std::cout << "first cell: " << fcidx << std::endl;
                 // if current cell is not infinite and is not already processed (for this sensor poly) then go on
@@ -191,12 +191,19 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
                             }
                             else{
                                 std::cout << "NaN hit. Intersection? " << std::endl;
-                                exportOFF(sp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp");
-                                exportOFF(current_tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dp");
+//                                exportOFF(sp, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/sp");
+//                                exportOFF(current_tet, "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/TLS/failureCases/dp");
                                 processed.insert(current_cell);
                                 continue;
                             }
                             processed.insert(current_cell);
+
+                            // everything works quite well, but one problem is also that sensor mesh has wholes!!
+                            // thats why I have the errors in the door example
+                            // in fact, bad cells have inside and outside scores
+                            // so change to probability somehow?
+                            // furthermore also try with theory that all can be carved out with outside score
+                            // and triangle behind it is inside
 
                             //// traverse neighbouring cells
                             for(int ci = 0; ci < 4; ci++){

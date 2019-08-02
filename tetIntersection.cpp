@@ -206,6 +206,8 @@ int tetIntersectionFun(Tetrahedron& tet,
                     }
                 }
             }
+            for(int c = 0; c < close.size(); c++)
+                intersectionPoints.push_back(tet.vertex(close[c]));
             // now that all intersection points are calculated, for the 3 inside tets
             std::vector<Tetrahedron> splitTets;
             std::vector<std::string> tetNames;
