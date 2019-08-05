@@ -19,7 +19,7 @@ void surfaceReconstruction()
     std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut3";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut2";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
@@ -56,14 +56,12 @@ void surfaceReconstruction()
 
 
     // Dt, area_weight, iteration
-//    GeneralGraph_DArraySArraySpatVarying(Dt, 1, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 25, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
-    // 0 = camera, 1 = normal
-    bool ray_construction = 1;
-    exportPLY(Dt, ofn, ray_construction, 0, 0);
-    exportPLY(Dt, ofn, ray_construction, 0, 1);
+    exportPLY(Dt, ofn, 0, 1);
+    exportPLY(Dt, ofn, 1, 1);
 
     exportCellCenter(ofn, Dt);
 
@@ -90,7 +88,13 @@ void surfaceReconstruction()
 
 }
 
-
+// comments:
+// unlabelled tets, i.e. that are missed by the ray are not such a big problem, as they can be fixed by the
+// optimization.
+// bigger problem are wrongly labelled tetrahedrons, i.e. mostly wrong inside labeles.
+// optimization can also get rid of them, but at the cost of producing wholes, by pruning away valid surface triangles.
+// the wholes are then filled in the back from the unlabelled tets in the back.
+// problem now is that with a tetrahedron tracing I can get rid of the
 
 
 

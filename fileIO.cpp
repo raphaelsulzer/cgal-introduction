@@ -613,7 +613,7 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
     fo << "property uchar red" << std::endl;
     fo << "property uchar green" << std::endl;
     fo << "property uchar blue" << std::endl;
-//    fo << "property float inside_score" << std::endl;
+    fo << "property float inside_score" << std::endl;
     fo << "property float outside_score" << std::endl;
 //    fo << "property float nz" << std::endl;
     fo << "end_header" << std::endl;
@@ -648,17 +648,17 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
         double inside_score = cit->info().inside_score;
         double outside_score = cit->info().outside_score;
-        int red = 0;
-        if(inside_score == 0.0 && outside_score == 0.0){
-            red = 128;
-        }
-//        int red  = int(std::min(inside_score*inside_scale,255.0));
-//        int red  = 0;
         int green = 0;
+        if(inside_score == 0.0 && outside_score == 0.0){
+            green = 128;
+        }
+        int red  = int(std::min(inside_score*inside_scale,255.0));
+//        int red  = 0;
+//        int green = 0;
         int blue = int(std::min(outside_score*outside_scale,255.0));
 
-//        fo << centroid << " " << red << " " << green << " " << blue << " " << inside_score << " " << outside_score << std::endl;
-        fo << centroid << " " << 0 << " " << 0 << " " << blue << " " << outside_score << std::endl;
+        fo << centroid << " " << red << " " << green << " " << blue << " " << inside_score << " " << outside_score << std::endl;
+//        fo << centroid << " " << 0 << " " << 0 << " " << blue << " " << outside_score << std::endl;
     }
 
 
@@ -667,43 +667,9 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
 }
 
-
-void exportCellCenter(std::fstream& fo, const Delaunay& Dt){
-
-
-    Delaunay::Finite_cells_iterator cit;
-
-    std::vector<double> inside_scores;
-    std::vector<double> outside_scores;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        inside_scores.push_back(cit->info().inside_score);
-        outside_scores.push_back(cit->info().outside_score);
-    }
-
-    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
-    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
-//    double inside_scale = *std::max_element(Dt.finite_cells_begin()->info().inside_score, Dt.finite_cells_end()->info().inside_score);
-//    double outside_scale = *std::max_element(Dt.finite_cells_begin()->info().outside_score, Dt.finite_cells_end()->info().outside_score);
-
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        Point p1 = cit->vertex(0)->point();
-        Point p2 = cit->vertex(1)->point();
-        Point p3 = cit->vertex(2)->point();
-        Point p4 = cit->vertex(3)->point();
-
-        Point centroid = CGAL::centroid(p1,p2,p3,p4);
-
-        double inside_score = cit->info().inside_score;
-        double outside_score = cit->info().outside_score;
-
-        fo << centroid << " " << int(inside_score*inside_scale) << " 0 " << int(outside_score*outside_scale) << " 0 0 0" << std::endl;
-    }
-
-}
-
 void exportPLY(const Delaunay& Dt,
                 std::string path,
-                bool normals, bool optimized, bool prune_or_color)
+                bool optimized, bool prune_or_color)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -776,13 +742,13 @@ void exportPLY(const Delaunay& Dt,
     fo << "property uchar red" << std::endl;
     fo << "property uchar green" << std::endl;
     fo << "property uchar blue" << std::endl;
-    if(normals){
+//    if(normals){
         fo << "property float nx" << std::endl;
         fo << "property float ny" << std::endl;
         fo << "property float nz" << std::endl;
-    }
-    else
-        fo << "property int camera_index" << std::endl;
+//    }
+//    else
+//        fo << "property int camera_index" << std::endl;
     if(prune_or_color)
         fo << "element face " << sub << std::endl;
     else
@@ -893,25 +859,24 @@ void exportPLY(const Delaunay& Dt,
 //        }
 
         // if label of neighbouring cells is not the same...
-        // start printed facet line with a 3
-        fo << 3 << ' ';
         // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
         // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
         // so we exactely skip 2 - the opposite vertex.
+        // start printed facet line with a 3
+        fo << 3 << ' ';
         // fix the orientation
         std::vector<Vertex_handle> tri;
-        for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
-            // print the indicies of each cell to the file
+        for(int j = vidx + 1; j <= vidx + 3; j++){
             tri.push_back(c->vertex(j%4));
-            // add up all the sensor positions
-            Point p = c->vertex(j%4)->point();
+//            Point p = c->vertex(j%4)->point();
         }
+        // add up all the sensor positions
         Point avSensor = CGAL::centroid(tri[0]->point(), tri[1]->point(), tri[2]->point());
         // check if sensor position is on the positive side of the triangle
         // otherwise change order
         Plane p(tri[0]->point(), tri[1]->point(), tri[2]->point());
-//        if(p.has_on_negative_side(tri[0]->info().sensor_pos)){
-        if(p.has_on_negative_side(avSensor)){
+        if(p.has_on_negative_side(tri[0]->info().sensor_pos)){
+//        if(p.has_on_positive_side(avSensor)){
             Vertex_handle temp = tri[1];
             tri[1] = tri[2];
             tri[2] = temp;

@@ -51,7 +51,7 @@ void exportCellCenter(std::string path,
 
 void exportPLY(const Delaunay& Dt,
                std::string path,
-               bool normals, bool optimized, bool prune_or_color);
+               bool optimized, bool prune_or_color);
 
 
 

@@ -149,7 +149,7 @@ int traverseCells(Delaunay& Dt,
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
                 current_cell->info().outside_score += score.first;
-                current_cell->info().inside_score += score.second;
+//                current_cell->info().inside_score += score.second;
                 // add to processed
                 processed.insert(current_cell);
 
@@ -233,8 +233,10 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                     std::pair<float,float> score = cellScore(dist2, sigma, inside);
                     // now locate the current cell in the global context of the triangulation,
                     // so I can set the score
-                    current_cell->info().outside_score += score.first;
-                    current_cell->info().inside_score += score.second;
+                    if(inside)
+                        current_cell->info().inside_score += score.second;
+                    else
+                        current_cell->info().outside_score += score.first;
                     // add to processed set
                     processed.insert(current_cell);
 
@@ -294,7 +296,7 @@ void rayTracingFun(Delaunay& Dt){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-//        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
         // collect inside votes
         firstCell(Dt, vit, 1, intersection_count);    // one_cell currently not used in the correct way
     }
