@@ -143,12 +143,14 @@ typedef Incremental_neighbor_search::Tree Incremental_Tree;
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 
-typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
+//typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
+typedef std::vector<Triangle>::iterator Iterator;
+typedef CGAL::AABB_triangle_primitive<EPICK, Iterator> Primitive;
 typedef CGAL::AABB_traits<EPICK, Primitive> AABB_Traits;
 typedef CGAL::AABB_tree<AABB_Traits> AABB_Tree;
-typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Segment>::Type > Segment_intersection;
-typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Point>::Type > Point_intersection;
-typedef AABB_Tree::Primitive_id Primitive_id;
+//typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Segment>::Type > Segment_intersection;
+//typedef boost::optional< AABB_Tree::Intersection_and_primitive_id<Point>::Type > Point_intersection;
+//typedef AABB_Tree::Primitive_id Primitive_id;
 
 
 //// Tetrahedron intersection
@@ -160,6 +162,7 @@ typedef AABB_Tree::Primitive_id Primitive_id;
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Tetrahedron_3.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include <CGAL/Bbox_3.h>
 
 typedef EPICK::Plane_3 Plane;
 typedef EPICK::Line_3 Line;

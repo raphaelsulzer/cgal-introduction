@@ -16,7 +16,8 @@ SOURCES += \
     main.cpp \
     meshPLY.cpp \
     tetIntersection.cpp \
-    tetTracing.cpp
+    tetTracing.cpp \
+    tetTracingBB.cpp
 
 HEADERS += \
     cgal_typedefs.h \

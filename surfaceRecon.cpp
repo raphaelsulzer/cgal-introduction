@@ -5,7 +5,8 @@
 
 #include "meshProcessing.cpp"
 #include "pointSetProcessing.cpp"
-#include "tetTracing.cpp"
+//#include "tetTracing.cpp"
+#include "tetTracingBB.cpp"
 #include "optimization.cpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,7 @@ void surfaceReconstruction()
     std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut3";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
@@ -48,8 +49,10 @@ void surfaceReconstruction()
 
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
-//    rayTracing::rayTracingFun(Dt);
-    tetTracing::firstCell(Dt, t_polys);
+//    bool full=true;
+    rayTracing::rayTracingFun(Dt);
+//    tetTracing::firstCell(Dt, t_polys);
+//    tetTracingBB::treeIntersection(Dt, t_polys);
 
 
     // Dt, area_weight, iteration

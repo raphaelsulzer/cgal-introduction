@@ -737,8 +737,6 @@ void exportPLY(const Delaunay& Dt,
             else {
                 mlabel = 0;
             }
-            if(clabel==1 && Dt.is_infinite(m))
-                mlabel = 1;
             if(clabel == mlabel){deletedFaceCount++;}
         }
     }
@@ -838,6 +836,9 @@ void exportPLY(const Delaunay& Dt,
         c = fft->first;         // cell
         vidx = fft->second;     // vertex index
 
+//        if(Dt.is_infinite(c))
+//            std::cout << "infinite cell from finite facet" << std::endl;
+
         //////// check which faces to prune:
 
 
@@ -860,10 +861,18 @@ void exportPLY(const Delaunay& Dt,
             else {
                 mlabel = 0;
             }
-            if(clabel==1 && Dt.is_infinite(m))
-                mlabel = 1;
-            else if(clabel==0 && Dt.is_infinite(m))
-                mlabel = 0;
+//            // infinite stuff
+//            if(Dt.is_infinite(m)){
+//                mlabel == clabel;
+//            }
+//            else if(Dt.is_infinite(c)){
+//                clabel == mlabel;
+//            }
+
+//            if(clabel==1 && Dt.is_infinite(m))
+//                mlabel = 1;
+//            else if(clabel==0 && Dt.is_infinite(m))
+//                mlabel = 0;
 
         }
         else{
