@@ -630,12 +630,17 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
 //    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
 //    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
-    double inside_average = std::accumulate(inside_scores.begin(), inside_scores.end(), 0.0)/inside_scores.size();
-    double outside_average = std::accumulate(outside_scores.begin(), outside_scores.end(), 0.0)/outside_scores.size();
-    double inside_scale = 128/inside_average;
-    double outside_scale = 128/outside_average;
+//    double inside_average = std::accumulate(inside_scores.begin(), inside_scores.end(), 0.0)/inside_scores.size();
+//    double outside_average = std::accumulate(outside_scores.begin(), outside_scores.end(), 0.0)/outside_scores.size();
+//    double inside_scale = 128/inside_average;
+//    double outside_scale = 128/outside_average;
 //    double inside_scale = *std::max_element(Dt.finite_cells_begin()->info().inside_score, Dt.finite_cells_end()->info().inside_score);
 //    double outside_scale = *std::max_element(Dt.finite_cells_begin()->info().outside_score, Dt.finite_cells_end()->info().outside_score);
+
+    double inside_min = *std::min_element(inside_scores.begin(), inside_scores.end());
+    double outside_min = *std::min_element(outside_scores.begin(), outside_scores.end());
+    double inside_max = *std::max_element(inside_scores.begin(), inside_scores.end());
+    double outside_max = *std::max_element(outside_scores.begin(), outside_scores.end());
 
     for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
         Point p1 = cit->vertex(0)->point();
@@ -651,10 +656,10 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
         if(inside_score == 0.0 && outside_score == 0.0){
             green = 128;
         }
-        int red  = int(std::min(inside_score*inside_scale,255.0));
+        int red  = int(255*(inside_score-inside_min)/(inside_max-inside_min));
 //        int red  = 0;
 //        int green = 0;
-        int blue = int(std::min(outside_score*outside_scale,255.0));
+        int blue = int(255*(outside_score-outside_min)/(outside_max-outside_min));;
 
         fo << centroid << " " << red << " " << green << " " << blue << " " << inside_score << " " << outside_score << std::endl;
 //        fo << centroid << " " << 0 << " " << 0 << " " << blue << " " << outside_score << std::endl;

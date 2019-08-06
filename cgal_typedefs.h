@@ -45,8 +45,8 @@ typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, EPICK>    VB;
 
 struct cell_info{
     int idx = 0;
-    float outside_score = 0.0;
-    float inside_score = 0.0;
+    double outside_score = 0.0;
+    double inside_score = 0.0;
     int final_label = 0;
 };
 typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, EPICK>        CB;         // cell base

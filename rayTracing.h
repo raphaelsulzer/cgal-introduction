@@ -32,7 +32,7 @@ bool rayTriangleIntersection(Point& rayOrigin,
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-std::pair<float, float> cellScore(float dist2, double eig3, bool inside);
+std::pair<double, double> cellScore(double dist2, double eig3, bool inside);
 
 
 // TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!

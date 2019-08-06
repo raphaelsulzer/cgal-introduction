@@ -74,33 +74,33 @@ bool rayTriangleIntersection(Point& rayOrigin,
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-std::pair<float, float> cellScore(float dist2, double eig3, bool inside){
+//std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
 
-    float score_inside;
-    float score_outside;
-    // noise
-    float sigma_d = eig3;
-    // scene thickness // good for fontaine dataset is 0.1
-    float sigma_o = 1.0;
-    // scale of the outside area?? // good for fontaine dataset is 1.0
-    float sigma_e = 1.0;
-    // not to be confused with the following, which means if I am walking inside/outside
-    if(inside){
-        //        sigma = 0.05;
-        score_inside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_o),2));
-        score_outside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
-    }
-    else {
-        score_outside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_e),2));
-        score_inside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
-    }
-//    if(score_inside != score_inside || score_outside != score_outside)
-//        std::cout << score_outside << "  " << score_inside << std::endl;
+//    double score_inside;
+//    double score_outside;
+//    // noise
+//    double sigma_d = eig3;
+//    // scene thickness // good for fontaine dataset is 0.1
+//    double sigma_o = 1.0;
+//    // scale of the outside area?? // good for fontaine dataset is 1.0
+//    double sigma_e = 1.0;
+//    // not to be confused with the following, which means if I am walking inside/outside
+//    if(inside){
+//        //        sigma = 0.05;
+//        score_inside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_o),2));
+//        score_outside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
+//    }
+//    else {
+//        score_outside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_e),2));
+//        score_inside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
+//    }
+////    if(score_inside != score_inside || score_outside != score_outside)
+////        std::cout << score_outside << "  " << score_inside << std::endl;
 
-    // first element is the outside score, second the inside score
-    std::pair<float,float> sigmas(score_outside, score_inside);
-    return sigmas;
-}
+//    // first element is the outside score, second the inside score
+//    std::pair<double,double> sigmas(score_outside, score_inside);
+//    return sigmas;
+//}
 
 
 // TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!
@@ -143,9 +143,9 @@ int traverseCells(Delaunay& Dt,
                 // get the distance between the source of the ray and the intersection point with the current cell
                 // TODO:: maybe just pass this dist to the next traversel, and if the next dist is not bigger than break,
                 // ...this could potentially be a much faster way than the processed-set
-                float dist2 = CGAL::squared_distance(intersectionPoint, rayO);
+                double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
-                std::pair<float,float> score = cellScore(dist2, sigma, inside);
+                std::pair<double, double> score = cellScore(dist2, sigma, inside);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
                 current_cell->info().outside_score += score.first;
@@ -228,13 +228,15 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
 //                if(const Point* p = boost::get<Point>(&*result)){
                     intersection_count++;
                     // get the distance between the source of the ray and the intersection point with the current cell
-                    float dist2 = CGAL::squared_distance(intersectionPoint, source);
+                    double dist2 = CGAL::squared_distance(intersectionPoint, source);
                     // calculate the score for the current cell based on the distance
-                    std::pair<float,float> score = cellScore(dist2, sigma, inside);
+                    std::pair<double, double> score = cellScore(dist2, sigma, inside);
                     // now locate the current cell in the global context of the triangulation,
                     // so I can set the score
-                    if(inside)
+                    if(inside){
+                        std::cout << score.second << std::endl;
                         current_cell->info().inside_score += score.second;
+                    }
                     else
                         current_cell->info().outside_score += score.first;
                     // add to processed set

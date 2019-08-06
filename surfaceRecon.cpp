@@ -27,25 +27,25 @@ void standardizeScores(Delaunay& Dt){
 
 
 
-    std::vector<float> diff1(inside_scores.size());
+    std::vector<double> diff1(inside_scores.size());
     std::transform(inside_scores.begin(),
                    inside_scores.end(),
-                   diff1.begin(), [inside_mean](float x) { return x - inside_mean; });
-    float sq_sum1 = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
-    float inside_stdev = std::sqrt(sq_sum1 / inside_scores.size());
+                   diff1.begin(), [inside_mean](double x) { return x - inside_mean; });
+    double sq_sum1 = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
+    double inside_stdev = std::sqrt(sq_sum1 / inside_scores.size());
 
-    std::vector<float> diff2(outside_scores.size());
+    std::vector<double> diff2(outside_scores.size());
     std::transform(outside_scores.begin(),
                    outside_scores.end(),
-                   diff2.begin(), [outside_mean](float x) { return x - outside_mean; });
-    float sq_sum2 = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
-    float outside_stdev = std::sqrt(sq_sum2 / outside_scores.size());
+                   diff2.begin(), [outside_mean](double x) { return x - outside_mean; });
+    double sq_sum2 = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
+    double outside_stdev = std::sqrt(sq_sum2 / outside_scores.size());
 
     for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev + 2;
-        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev + 2;
-//        cit->info().inside_score;
-//        cit->info().outside_score;
+//        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev + 2;
+//        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev + 2;
+        cit->info().inside_score;
+        cit->info().outside_score;
     }
 
 }
