@@ -42,10 +42,10 @@ void standardizeScores(Delaunay& Dt){
     double outside_stdev = std::sqrt(sq_sum2 / outside_scores.size());
 
     for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-//        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev + 2;
-//        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev + 2;
-        cit->info().inside_score;
-        cit->info().outside_score;
+        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev;
+        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev;
+//        cit->info().inside_score;
+//        cit->info().outside_score;
     }
 
 }
@@ -74,6 +74,39 @@ void normalizeScores(Delaunay& Dt){
 //        cit->info().outside_score;
     }
 
+}
+
+void log(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+
+        double inside_score = cit->info().inside_score;
+        double outside_score = cit->info().outside_score;
+        cit->info().inside_score = log(inside_score) + log(1 - outside_score);
+        cit->info().outside_score = log(1-inside_score) + log(outside_score);
+        std::cout << "inside score before: " << inside_score <<
+                     "  inside score after: " << cit->info().inside_score << std::endl;
+        std::cout << "outside score before: " << outside_score <<
+                     "  outside score after: " << cit->info().outside_score << std::endl;
+    }
+
+}
+
+void softmax(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+
+        double inside_score = cit->info().inside_score;
+        double outside_score = cit->info().outside_score;
+        cit->info().inside_score = log(exp(inside_score) / (exp(inside_score) + exp(outside_score)));
+        cit->info().outside_score = log(1 - (exp(inside_score) / (exp(inside_score) + exp(outside_score))));
+        std::cout << "inside score before: " << inside_score <<
+                     "  inside score after: " << cit->info().inside_score << std::endl;
+        std::cout << "outside score before: " << outside_score <<
+                     "  outside score after: " << cit->info().outside_score << std::endl;
+    }
 }
 
 
@@ -121,14 +154,38 @@ void surfaceReconstruction()
     // parameters: is one_cell traversel only.
 //    bool full=true;
     rayTracing::rayTracingFun(Dt);
+//    // check inside score
+//    Delaunay::Finite_cells_iterator cit;
+//    std::vector<double> inside_scores;
+//    std::vector<double> outside_scores;
+//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+//        std::cout << "outside score: " << cit->info().outside_score <<
+//                     "  inside score: " << cit->info().inside_score << std::endl;
+//    }
+
+//    // check outside score
+//    Delaunay::Finite_cells_iterator cit;
     tetTracing::firstCell(Dt, t_polys);
+//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+//        std::cout << "inside score: " << cit->info().inside_score <<
+//                     "  outside score: " << cit->info().outside_score << std::endl;
+//    }
 //    tetTracingBB::treeIntersection(Dt, t_polys);
 
     standardizeScores(Dt);
+    log(Dt);
 //    normalizeScores(Dt);
+//    softmax(Dt);
+
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 150, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 0.1, -1);
+
+
+//    Delaunay::Finite_cells_iterator cit;
+//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+//        std::cout << cit->info().final_label << std::endl;
+//    }
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
