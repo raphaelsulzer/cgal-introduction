@@ -78,7 +78,7 @@ int traverseCells(Delaunay& Dt,
         Tetrahedron current_tet = Dt.tetrahedron(current_cell);
 
         double vol = 0.0;
-//        tetIntersectionFun(current_tet, planes, vol);
+        tetIntersectionFun(current_tet, planes, vol);
         if(!isnan(vol)){
             double score = vol/abs(current_tet.volume());
             current_cell->info().outside_score+=score;

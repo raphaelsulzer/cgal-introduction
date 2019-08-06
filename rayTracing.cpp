@@ -296,7 +296,7 @@ void rayTracingFun(Delaunay& Dt){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
+//        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
         // collect inside votes
         firstCell(Dt, vit, 1, intersection_count);    // one_cell currently not used in the correct way
     }

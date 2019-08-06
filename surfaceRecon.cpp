@@ -9,6 +9,76 @@
 //#include "tetTracingBB.cpp"
 #include "optimization.cpp"
 
+
+void standardizeScores(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    std::vector<double> inside_scores;
+    std::vector<double> outside_scores;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        inside_scores.push_back(cit->info().inside_score);
+        outside_scores.push_back(cit->info().outside_score);
+    }
+
+//    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
+//    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
+    double inside_mean = std::accumulate(inside_scores.begin(), inside_scores.end(), 0.0)/inside_scores.size();
+    double outside_mean = std::accumulate(outside_scores.begin(), outside_scores.end(), 0.0)/outside_scores.size();
+
+
+
+    std::vector<float> diff1(inside_scores.size());
+    std::transform(inside_scores.begin(),
+                   inside_scores.end(),
+                   diff1.begin(), [inside_mean](float x) { return x - inside_mean; });
+    float sq_sum1 = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
+    float inside_stdev = std::sqrt(sq_sum1 / inside_scores.size());
+
+    std::vector<float> diff2(outside_scores.size());
+    std::transform(outside_scores.begin(),
+                   outside_scores.end(),
+                   diff2.begin(), [outside_mean](float x) { return x - outside_mean; });
+    float sq_sum2 = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
+    float outside_stdev = std::sqrt(sq_sum2 / outside_scores.size());
+
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev + 2;
+        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev + 2;
+//        cit->info().inside_score;
+//        cit->info().outside_score;
+    }
+
+}
+
+void normalizeScores(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    std::vector<double> inside_scores;
+    std::vector<double> outside_scores;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        inside_scores.push_back(cit->info().inside_score);
+        outside_scores.push_back(cit->info().outside_score);
+    }
+
+    double inside_min = *std::min_element(inside_scores.begin(), inside_scores.end());
+    double outside_min = *std::min_element(outside_scores.begin(), outside_scores.end());
+    double inside_max = *std::max_element(inside_scores.begin(), inside_scores.end());
+    double outside_max = *std::max_element(outside_scores.begin(), outside_scores.end());
+
+
+
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        cit->info().inside_score = (cit->info().inside_score - inside_min) / (inside_max - inside_min);
+        cit->info().outside_score = (cit->info().outside_score - outside_min) / (outside_max - outside_min);
+//        cit->info().inside_score;
+//        cit->info().outside_score;
+    }
+
+}
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// MAIN ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -16,10 +86,10 @@ void surfaceReconstruction()
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut3";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
@@ -50,13 +120,15 @@ void surfaceReconstruction()
     // ray tracing for Dt for saving initial cell labels in cell info;
     // parameters: is one_cell traversel only.
 //    bool full=true;
-//    rayTracing::rayTracingFun(Dt);
+    rayTracing::rayTracingFun(Dt);
     tetTracing::firstCell(Dt, t_polys);
 //    tetTracingBB::treeIntersection(Dt, t_polys);
 
+    standardizeScores(Dt);
+//    normalizeScores(Dt);
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 25, -1);
+    GeneralGraph_DArraySArraySpatVarying(Dt, 150, -1);
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
     // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)

@@ -621,7 +621,6 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
 
     Delaunay::Finite_cells_iterator cit;
-
     std::vector<double> inside_scores;
     std::vector<double> outside_scores;
     for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
