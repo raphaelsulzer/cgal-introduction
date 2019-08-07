@@ -12,13 +12,11 @@
 Delaunay triangulationFromFile();
 
 void readBinaryPLY(std::string ifn,
-                   std::vector<Point>& points, std::vector<vertex_info>& infos,
-                   bool colmap);
+                   std::vector<Point>& points, std::vector<vertex_info>& infos, bool colmap);
 
 void readBinaryPLY(std::string ifn,
                    std::vector<Point>& points, std::vector<vertex_info>& infos,
-                   std::vector<std::vector<int>>& sensor_triangle,
-                   bool colmap);
+                   std::vector<std::vector<int>>& sensor_triangle);
 
 void readASCIIPLY(std::string ifn,
                   std::vector<Point>& points, std::vector<vertex_info>& infos);
@@ -32,7 +30,7 @@ void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_i
 /////////////////////////////////////////////////////////////////////
 void exportEdges();
 
-void exportPoints();
+void exportPoints(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos);
 
 void exportOFF(Polyhedron& out_mesh, std::string path);
 void exportOFF(Polyhedron_Exact& out_mesh, std::string path);

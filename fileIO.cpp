@@ -105,6 +105,62 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
 }
 
 
+void readColmapPLY(std::string path){
+
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::string ifn=path+".ply";
+
+    ////// get the sensor infos
+    // this reads the visibility info file, which has indicies for each point that correspond to the "index" of the camera
+    std::string sensor_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused.ply.vis";
+    std::vector<std::vector<int>> vis_info;
+    loadVisibilityFile(sensor_file.c_str(), vis_info);
+    // this reads the actual position of the camera corresponding to its index
+    std::map<int, Point> sensor_map;
+    std::string image_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/sfm_result/images.bin";
+    loadImageFile(image_file.c_str(), sensor_map);
+
+    ///// read Binary PLY, and connect to the sensor infos
+    Mesh_ply aMesh;
+    Import_PLY(ifn.c_str(), &aMesh);
+    std::vector<Point> points;
+    std::vector<vertex_info> infos;
+    for(int i = 0; i < aMesh.mVertices.size(); i++){
+        // save point
+        Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
+        points.push_back(pt);
+        // sensor
+        vertex_info vec_inf;
+        // get the first of the cameras of this point
+        // TODO: in the future I could make sensor pos a vector of points, and not only save one camera per point, but all of them
+        Point sensor_location = sensor_map.find(vis_info[i][0])->second;
+        // sensor posiion/point
+        vec_inf.sensor_pos = sensor_location;
+        // sensor vector
+        Vector vec = sensor_location - pt;
+        vec_inf.sensor_vec = vec;
+        // color
+        unsigned char r,g,b;
+        if(aMesh.mvColors.size() > 0){
+            r = aMesh.mvColors[i].x * 256;
+            g = aMesh.mvColors[i].y * 256;
+            b = aMesh.mvColors[i].z * 256;
+        }
+        std::array<unsigned char, 3> col = {r,g,b};
+        vec_inf.color = col;
+        // index
+        vec_inf.idx = i;
+        // save vertex info
+        infos.push_back(vec_inf);
+    }
+
+    // export the PLY with points and sensor position
+    std::string ofn = path+"_output.ply";
+    exportPoints(ofn, points, infos);
+}
+
 
 void readBinaryPLY(std::string ifn,
                    std::vector<Point>& points, std::vector<vertex_info>& infos,
@@ -179,85 +235,43 @@ void readBinaryPLY(std::string ifn,
 }
 
 
-void readColmapPLY()
-
-
-
-
 
 
 
 void readBinaryPLY(std::string ifn,
                    std::vector<Point>& points, std::vector<vertex_info>& infos,
-                   std::vector<std::vector<int>>& sensor_triangle,
-                   bool colmap)
-{
+                   std::vector<std::vector<int>>& sensor_triangle){
+
     auto start = std::chrono::high_resolution_clock::now();
 
     // read Binary PLY with sensor
     Mesh_ply aMesh;
     Import_PLY(ifn.c_str(), &aMesh);
 
-    if(colmap){
-
-        std::string sensor_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused.ply.vis";
-        std::vector<std::vector<int>> vis_info;
-        loadVisibilityFile(sensor_file.c_str(), vis_info);
-
-        std::map<int, Point> sensor_map;
-        std::string image_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/sfm_result/images.bin";
-        loadImageFile(image_file.c_str(), sensor_map);
-
-        for(int i = 0; i < aMesh.mVertices.size(); i++){
-            // save point
-            Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
-            points.push_back(pt);
-            // sensor
-            // get the first of the cameras of this point
-            Point sensor_location = sensor_map.find(vis_info[i][0])->second;
-    //        Vector vec(sensor_location.x() - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
-            Vector vec = sensor_location - pt;
-            vertex_info vec_inf;
-            vec_inf.sensor_vec = vec;
-            // color
-            unsigned char r,g,b;
-            if(aMesh.mvColors.size() > 0){
-                r = aMesh.mvColors[i].x * 256;
-                g = aMesh.mvColors[i].y * 256;
-                b = aMesh.mvColors[i].z * 256;
-            }
-            std::array<unsigned char, 3> col = {r,g,b};
-            vec_inf.color = col;
-            // index
-            vec_inf.idx = i;
-            // save vertex info
-            infos.push_back(vec_inf);
-        }
-    }
-    else{
-        for(int i = 0; i < aMesh.mVertices.size(); i++){
-            // save points
-            Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
-            points.push_back(pt);
-            // sensor
+    for(int i = 0; i < aMesh.mVertices.size(); i++){
+        // save points
+        Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
+        points.push_back(pt);
+        // sensor
 //            Vector vec(aMesh.mNormals[i].x - pt.x(), aMesh.mNormals[i].y - pt.y(), aMesh.mNormals[i].z - pt.z());
-            Vector vec(aMesh.mvCapture[i].x - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
-            vertex_info vec_inf;
-            vec_inf.sensor_vec = vec;
-            vec_inf.sensor_pos = Point(aMesh.mvCapture[i].x, aMesh.mvCapture[i].y, aMesh.mvCapture[i].z);
-            // color
-            unsigned char r,g,b;
-            if(aMesh.mvColors.size() > 0){
-                r = aMesh.mvColors[i].x * 256;
-                g = aMesh.mvColors[i].y * 256;
-                b = aMesh.mvColors[i].z * 256;
-            }
-            std::array<unsigned char, 3> col = {r,g,b};
-            vec_inf.color = col;
-            // save vertex info
-            infos.push_back(vec_inf);
+        Vector vec(aMesh.mvCapture[i].x - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
+        vertex_info vec_inf;
+        vec_inf.sensor_vec = vec;
+        vec_inf.sensor_pos = Point(aMesh.mvCapture[i].x, aMesh.mvCapture[i].y, aMesh.mvCapture[i].z);
+        // color
+        unsigned char r,g,b;
+        if(aMesh.mvColors.size() > 0){
+            r = aMesh.mvColors[i].x * 256;
+            g = aMesh.mvColors[i].y * 256;
+            b = aMesh.mvColors[i].z * 256;
         }
+        std::array<unsigned char, 3> col = {r,g,b};
+        vec_inf.color = col;
+        // save vertex info
+        infos.push_back(vec_inf);
     }
+
+    // save incident sensor triangles in each 3DT vertex
     for(int i = 0; i < aMesh.mIndices.size()/3; i++){
         std::vector<int> poly(3);
         int id0 = aMesh.mIndices[(i*3)+0];
@@ -435,7 +449,6 @@ void exportPoints(std::string path, std::vector<Point>& points, std::vector<vert
 
     auto start = std::chrono::high_resolution_clock::now();
 
-
     path+="_fixedSensor.ply";
 
     // get number of vertices and triangles of the triangulation
@@ -450,21 +463,21 @@ void exportPoints(std::string path, std::vector<Point>& points, std::vector<vert
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
-    fo << "property float nx" << std::endl;
-    fo << "property float ny" << std::endl;
-    fo << "property float nz" << std::endl;
+    fo << "property float x_0" << std::endl;
+    fo << "property float y_0" << std::endl;
+    fo << "property float z_0" << std::endl;
     fo << "property uchar red" << std::endl;
     fo << "property uchar green" << std::endl;
     fo << "property uchar blue" << std::endl;
     fo << "end_header" << std::endl;
-    fo << std::setprecision(8);
+    fo << std::setprecision(13);
 
 
     Delaunay::Finite_vertices_iterator vft;
     for(int i = 0; i < points.size(); i++){
         // print data to file
         fo << points[i] << " "                           // coordinates
-           << infos[i].sensor_vec << " "
+           << infos[i].sensor_pos << " "
            << int(infos[i].color[0]) << " " << int(infos[i].color[1]) << " " << int(infos[i].color[2]) << std::endl;                     // normal
     }
 

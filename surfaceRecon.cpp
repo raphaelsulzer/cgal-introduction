@@ -18,19 +18,20 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// MAIN ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-void surfaceReconstruction(double regularization_weight=1)
+void surfaceReconstruction(std::string file_number, double regularization_weight)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
     std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut2";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
+    std::cout << ifn1 << std::endl;
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
-//    std::string ofn = ifn1;
-    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
+    std::string ofn = ifn1;
+//    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
 
     ifn1+=".ply";
     ifn2+=".ply";
@@ -39,13 +40,13 @@ void surfaceReconstruction(double regularization_weight=1)
     std::vector<Point> t_points;
     std::vector<vertex_info> t_infos;
     std::vector<std::vector<int>> t_polys;
-    readBinaryPLY(ifn1, t_points, t_infos, t_polys, 0);
-    std::vector<Point> a_points;
-    std::vector<vertex_info> a_infos;
-    readASCIIPLY(ifn2, a_points, a_infos);
-    concatenateData(a_points, a_infos, t_points, t_infos, 0);
-    t_points = a_points;
-    t_infos = a_infos;
+    readBinaryPLY(ifn1, t_points, t_infos, t_polys);
+//    std::vector<Point> a_points;
+//    std::vector<vertex_info> a_infos;
+//    readASCIIPLY(ifn2, a_points, a_infos);
+//    concatenateData(a_points, a_infos, t_points, t_infos, 0);
+//    t_points = a_points;
+//    t_infos = a_infos;
 
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
@@ -69,7 +70,8 @@ void surfaceReconstruction(double regularization_weight=1)
 
 
     // Dt, area_weight, iteration
-    GeneralGraph_DArraySArraySpatVarying(Dt, 0.1, -1);
+    std::cout << "regularization weight: " << regularization_weight << std::endl;
+    GeneralGraph_DArraySArraySpatVarying(Dt, regularization_weight, -1);
 
 
 //    Delaunay::Finite_cells_iterator cit;

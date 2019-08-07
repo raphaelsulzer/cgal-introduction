@@ -4,10 +4,21 @@
 
 #include "surfaceRecon.cpp"
 
-int main(){
+int main(int argc, char const *argv[]){
 
-    //std::string path="", double regularization_weight=1
-    surfaceReconstruction(0.1);
+    std::string file_number;
+    double regularization_weight;
+    if(argc<3){
+        file_number = "4";
+        regularization_weight = 0.1;
+    }
+    else{
+        file_number = argv[1];
+        regularization_weight = atof(argv[2]);
+    }
+    std::cout << "Surface reconstruction of file number: " << file_number << " with regularization weight " << regularization_weight << std::endl;
+    surfaceReconstruction(file_number, regularization_weight);
+
 
 //    tetIntersectionTest();
 
