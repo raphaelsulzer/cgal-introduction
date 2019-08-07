@@ -23,7 +23,8 @@ HEADERS += \
     cgal_typedefs.h \
     fileIO.h \
     rayTracing.h \
-    tetIntersection.h
+    tetIntersection.h \
+    surfaceRecon.h
 
 QMAKE_CXXFLAGS += -std=c++11
 

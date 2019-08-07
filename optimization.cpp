@@ -9,6 +9,113 @@
 
 
 ////////////////////////////////////////////////////////////
+////////////////////// Feature scaling /////////////////////
+////////////////////////////////////////////////////////////
+void standardizeScores(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    std::vector<double> inside_scores;
+    std::vector<double> outside_scores;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        inside_scores.push_back(cit->info().inside_score);
+        outside_scores.push_back(cit->info().outside_score);
+    }
+
+//    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
+//    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
+    double inside_mean = std::accumulate(inside_scores.begin(), inside_scores.end(), 0.0)/inside_scores.size();
+    double outside_mean = std::accumulate(outside_scores.begin(), outside_scores.end(), 0.0)/outside_scores.size();
+
+
+
+    std::vector<double> diff1(inside_scores.size());
+    std::transform(inside_scores.begin(),
+                   inside_scores.end(),
+                   diff1.begin(), [inside_mean](double x) { return x - inside_mean; });
+    double sq_sum1 = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
+    double inside_stdev = std::sqrt(sq_sum1 / inside_scores.size());
+
+    std::vector<double> diff2(outside_scores.size());
+    std::transform(outside_scores.begin(),
+                   outside_scores.end(),
+                   diff2.begin(), [outside_mean](double x) { return x - outside_mean; });
+    double sq_sum2 = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
+    double outside_stdev = std::sqrt(sq_sum2 / outside_scores.size());
+
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev;
+        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev;
+//        cit->info().inside_score;
+//        cit->info().outside_score;
+    }
+
+}
+
+void normalizeScores(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    std::vector<double> inside_scores;
+    std::vector<double> outside_scores;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        inside_scores.push_back(cit->info().inside_score);
+        outside_scores.push_back(cit->info().outside_score);
+    }
+
+    double inside_min = *std::min_element(inside_scores.begin(), inside_scores.end());
+    double outside_min = *std::min_element(outside_scores.begin(), outside_scores.end());
+    double inside_max = *std::max_element(inside_scores.begin(), inside_scores.end());
+    double outside_max = *std::max_element(outside_scores.begin(), outside_scores.end());
+
+
+
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+        cit->info().inside_score = (cit->info().inside_score - inside_min) / (inside_max - inside_min);
+        cit->info().outside_score = (cit->info().outside_score - outside_min) / (outside_max - outside_min);
+//        cit->info().inside_score;
+//        cit->info().outside_score;
+    }
+
+}
+
+void log(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+
+        double inside_score = cit->info().inside_score;
+        double outside_score = cit->info().outside_score;
+        cit->info().inside_score = log(inside_score+0.00000001) + log(1 - outside_score);
+        cit->info().outside_score = log(1-inside_score) + log(outside_score+0.00000001);
+        std::cout << "inside score before: " << inside_score <<
+                     "  inside score after: " << cit->info().inside_score << std::endl;
+        std::cout << "outside score before: " << outside_score <<
+                     "  outside score after: " << cit->info().outside_score << std::endl;
+    }
+
+}
+
+void softmax(Delaunay& Dt){
+
+    Delaunay::Finite_cells_iterator cit;
+    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
+
+        double inside_score = cit->info().inside_score;
+        double outside_score = cit->info().outside_score;
+        cit->info().inside_score = log(exp(inside_score) / (exp(inside_score) + exp(outside_score)));
+        cit->info().outside_score = log(1 - (exp(inside_score) / (exp(inside_score) + exp(outside_score))));
+        std::cout << "inside score before: " << inside_score <<
+                     "  inside score after: " << cit->info().inside_score << std::endl;
+        std::cout << "outside score before: " << outside_score <<
+                     "  outside score after: " << cit->info().outside_score << std::endl;
+    }
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////
 //////////////////////// Optimization //////////////////////
 ////////////////////////////////////////////////////////////
 //// in this version, set data and smoothness terms using arrays

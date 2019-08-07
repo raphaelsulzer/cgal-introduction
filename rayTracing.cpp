@@ -91,7 +91,7 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
         score_inside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_o),2));
         score_outside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
     }
-    else {
+    else{
         score_outside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_e),2));
         score_inside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
     }
@@ -147,10 +147,11 @@ int traverseCells(Delaunay& Dt,
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
                 std::pair<double, double> score = cellScore(dist2, sigma, inside);
+                double vol = Dt.tetrahedron(current_cell).volume();
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
-                current_cell->info().outside_score += score.first;
-//                current_cell->info().inside_score += score.second;
+                current_cell->info().outside_score += (score.first*vol);
+                current_cell->info().inside_score += (score.second*vol);
                 // add to processed
                 processed.insert(current_cell);
 
@@ -234,13 +235,11 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                     std::pair<double, double> score = cellScore(dist2, sigma, inside);
                     // now locate the current cell in the global context of the triangulation,
                     // so I can set the score
-                    if(inside){
+//                    if(inside){
 //                        std::cout << score.second << std::endl;
-                        current_cell->info().inside_score += score.second;
-//                        current_cell->info().inside_score += sqrt(dist2);
-                    }
-                    else
-                        current_cell->info().outside_score += score.first;
+                    double vol = Dt.tetrahedron(current_cell).volume();
+                    current_cell->info().inside_score += (score.second*vol);
+                    current_cell->info().outside_score += (score.first*vol);
                     // add to processed set
                     processed.insert(current_cell);
 
@@ -300,7 +299,7 @@ void rayTracingFun(Delaunay& Dt){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-//        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
         // collect inside votes
         firstCell(Dt, vit, 1, intersection_count);    // one_cell currently not used in the correct way
     }

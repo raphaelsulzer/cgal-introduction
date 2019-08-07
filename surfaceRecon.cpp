@@ -1,113 +1,16 @@
-#include <cgal_typedefs.h>
-#include <fileIO.h>
-#include <rayTracing.h>
-#include <tetIntersection.h>
+//#include <cgal_typedefs.h>
+//#include <fileIO.h>
+//#include <rayTracing.h>
+//#include <tetIntersection.h>
 
-#include "meshProcessing.cpp"
-#include "pointSetProcessing.cpp"
-#include "tetTracing.cpp"
-//#include "tetTracingBB.cpp"
-#include "optimization.cpp"
+//#include "meshProcessing.cpp"
+//#include "pointSetProcessing.cpp"
+//#include "tetTracing.cpp"
+////#include "tetTracingBB.cpp"
+//#include "optimization.cpp"
 
+#include <surfaceRecon.h>
 
-void standardizeScores(Delaunay& Dt){
-
-    Delaunay::Finite_cells_iterator cit;
-    std::vector<double> inside_scores;
-    std::vector<double> outside_scores;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        inside_scores.push_back(cit->info().inside_score);
-        outside_scores.push_back(cit->info().outside_score);
-    }
-
-//    double inside_scale = 255/(*std::max_element(inside_scores.begin(), inside_scores.end()));
-//    double outside_scale = 255/(*std::max_element(outside_scores.begin(), outside_scores.end()));
-    double inside_mean = std::accumulate(inside_scores.begin(), inside_scores.end(), 0.0)/inside_scores.size();
-    double outside_mean = std::accumulate(outside_scores.begin(), outside_scores.end(), 0.0)/outside_scores.size();
-
-
-
-    std::vector<double> diff1(inside_scores.size());
-    std::transform(inside_scores.begin(),
-                   inside_scores.end(),
-                   diff1.begin(), [inside_mean](double x) { return x - inside_mean; });
-    double sq_sum1 = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
-    double inside_stdev = std::sqrt(sq_sum1 / inside_scores.size());
-
-    std::vector<double> diff2(outside_scores.size());
-    std::transform(outside_scores.begin(),
-                   outside_scores.end(),
-                   diff2.begin(), [outside_mean](double x) { return x - outside_mean; });
-    double sq_sum2 = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
-    double outside_stdev = std::sqrt(sq_sum2 / outside_scores.size());
-
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        cit->info().inside_score = (cit->info().inside_score - inside_mean) / inside_stdev;
-        cit->info().outside_score = (cit->info().outside_score - outside_mean) / outside_stdev;
-//        cit->info().inside_score;
-//        cit->info().outside_score;
-    }
-
-}
-
-void normalizeScores(Delaunay& Dt){
-
-    Delaunay::Finite_cells_iterator cit;
-    std::vector<double> inside_scores;
-    std::vector<double> outside_scores;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        inside_scores.push_back(cit->info().inside_score);
-        outside_scores.push_back(cit->info().outside_score);
-    }
-
-    double inside_min = *std::min_element(inside_scores.begin(), inside_scores.end());
-    double outside_min = *std::min_element(outside_scores.begin(), outside_scores.end());
-    double inside_max = *std::max_element(inside_scores.begin(), inside_scores.end());
-    double outside_max = *std::max_element(outside_scores.begin(), outside_scores.end());
-
-
-
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-        cit->info().inside_score = (cit->info().inside_score - inside_min) / (inside_max - inside_min);
-        cit->info().outside_score = (cit->info().outside_score - outside_min) / (outside_max - outside_min);
-//        cit->info().inside_score;
-//        cit->info().outside_score;
-    }
-
-}
-
-void log(Delaunay& Dt){
-
-    Delaunay::Finite_cells_iterator cit;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-
-        double inside_score = cit->info().inside_score;
-        double outside_score = cit->info().outside_score;
-        cit->info().inside_score = log(inside_score) + log(1 - outside_score);
-        cit->info().outside_score = log(1-inside_score) + log(outside_score);
-        std::cout << "inside score before: " << inside_score <<
-                     "  inside score after: " << cit->info().inside_score << std::endl;
-        std::cout << "outside score before: " << outside_score <<
-                     "  outside score after: " << cit->info().outside_score << std::endl;
-    }
-
-}
-
-void softmax(Delaunay& Dt){
-
-    Delaunay::Finite_cells_iterator cit;
-    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-
-        double inside_score = cit->info().inside_score;
-        double outside_score = cit->info().outside_score;
-        cit->info().inside_score = log(exp(inside_score) / (exp(inside_score) + exp(outside_score)));
-        cit->info().outside_score = log(1 - (exp(inside_score) / (exp(inside_score) + exp(outside_score))));
-        std::cout << "inside score before: " << inside_score <<
-                     "  inside score after: " << cit->info().inside_score << std::endl;
-        std::cout << "outside score before: " << outside_score <<
-                     "  outside score after: " << cit->info().outside_score << std::endl;
-    }
-}
 
 
 
@@ -115,19 +18,19 @@ void softmax(Delaunay& Dt){
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// MAIN ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-void surfaceReconstruction()
+void surfaceReconstruction(double regularization_weight=1)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
     std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
 //    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
-    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut4";
+    std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut2";
     std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
-    std::string ofn = ifn1;
-//    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
+//    std::string ofn = ifn1;
+    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
 
     ifn1+=".ply";
     ifn2+=".ply";
@@ -137,44 +40,31 @@ void surfaceReconstruction()
     std::vector<vertex_info> t_infos;
     std::vector<std::vector<int>> t_polys;
     readBinaryPLY(ifn1, t_points, t_infos, t_polys, 0);
-//    std::vector<Point> a_points;
-//    std::vector<vertex_info> a_infos;
-//    readASCIIPLY(ifn2, a_points, a_infos);
-//    concatenateData(a_points, a_infos, t_points, t_infos, 0);
+    std::vector<Point> a_points;
+    std::vector<vertex_info> a_infos;
+    readASCIIPLY(ifn2, a_points, a_infos);
+    concatenateData(a_points, a_infos, t_points, t_infos, 0);
+    t_points = a_points;
+    t_infos = a_infos;
 
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
     // calculate noise per point and save it in the vertex_info of the Dt
-//    pcaKNN(Dt, t_points);
+    pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 
 
-    // ray tracing for Dt for saving initial cell labels in cell info;
-    // parameters: is one_cell traversel only.
-//    bool full=true;
     rayTracing::rayTracingFun(Dt);
-//    // check inside score
-//    Delaunay::Finite_cells_iterator cit;
-//    std::vector<double> inside_scores;
-//    std::vector<double> outside_scores;
-//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-//        std::cout << "outside score: " << cit->info().outside_score <<
-//                     "  inside score: " << cit->info().inside_score << std::endl;
-//    }
 
-//    // check outside score
-//    Delaunay::Finite_cells_iterator cit;
-    tetTracing::firstCell(Dt, t_polys);
-//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-//        std::cout << "inside score: " << cit->info().inside_score <<
-//                     "  outside score: " << cit->info().outside_score << std::endl;
-//    }
+//    int outside_weight = 2.2;
+//    tetTracing::firstCell(Dt, t_polys, outside_weight);
 //    tetTracingBB::treeIntersection(Dt, t_polys);
 
-    standardizeScores(Dt);
-    log(Dt);
+    /////// feature normalization
+//    standardizeScores(Dt);
 //    normalizeScores(Dt);
+//    log(Dt);
 //    softmax(Dt);
 
 

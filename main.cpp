@@ -6,7 +6,8 @@
 
 int main(){
 
-    surfaceReconstruction();
+    //std::string path="", double regularization_weight=1
+    surfaceReconstruction(0.1);
 
 //    tetIntersectionTest();
 

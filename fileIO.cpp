@@ -179,6 +179,14 @@ void readBinaryPLY(std::string ifn,
 }
 
 
+void readColmapPLY()
+
+
+
+
+
+
+
 void readBinaryPLY(std::string ifn,
                    std::vector<Point>& points, std::vector<vertex_info>& infos,
                    std::vector<std::vector<int>>& sensor_triangle,
@@ -328,13 +336,13 @@ void readASCIIPLY(std::string ifn, std::vector<Point>& points, std::vector<verte
 }
 
 
-void concatenateData(std::vector<Point>& t_points, std::vector<vertex_info>& t_info,
-                     std::vector<Point>& a_points, std::vector<vertex_info>& a_info,
+void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_info,
+                     std::vector<Point>& t_points, std::vector<vertex_info>& t_info,
                      bool copyInfo = 1)
 {
-    // a_points are TLS and t_points are AP here
+    ///////////// a_points are TLS and t_points are AP here /////////////////
 
-    // make to versions of this function, one with copy info, and one where I give a specific color per dataset
+    // two versions of this function, one with copy info, and one where I give a specific color per dataset
     if(copyInfo){
         Incremental_Tree tree(boost::make_zip_iterator(boost::make_tuple( a_points.begin(),a_info.begin() )),
                   boost::make_zip_iterator(boost::make_tuple( a_points.end(), a_info.end() ) ));
@@ -361,11 +369,11 @@ void concatenateData(std::vector<Point>& t_points, std::vector<vertex_info>& t_i
 
         for(int i = 0; i < a_info.size(); i++)
         {
-            a_info[i].color = blue;
+            a_info[i].color = red;
         }
         for(int i = 0; i < t_info.size(); i++)
         {
-            t_info[i].color = red;
+            t_info[i].color = blue;
             a_points.push_back(t_points[i]);
             a_info.push_back(t_info[i]);
         }
@@ -653,13 +661,13 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
         double inside_score = cit->info().inside_score;
         double outside_score = cit->info().outside_score;
         int green = 0;
-        if(inside_score == 0.0 && outside_score == 0.0){
+        int red  = int(255*(inside_score-inside_min)/(inside_max-inside_min));
+        int blue = int(255*(outside_score-outside_min)/(outside_max-outside_min));
+        if(inside_score == outside_score){
+            blue = 0;
+            red = 0;
             green = 128;
         }
-        int red  = int(255*(inside_score-inside_min)/(inside_max-inside_min));
-//        int red  = 0;
-//        int green = 0;
-        int blue = int(255*(outside_score-outside_min)/(outside_max-outside_min));;
 
         fo << centroid << " " << red << " " << green << " " << blue << " " << inside_score << " " << outside_score << std::endl;
 //        fo << centroid << " " << 0 << " " << 0 << " " << blue << " " << outside_score << std::endl;

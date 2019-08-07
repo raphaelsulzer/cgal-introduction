@@ -46,7 +46,9 @@ int traverseCells(Delaunay& Dt,
                   Cell_handle& first_cell,
                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
                   std::vector<Plane>& planes,
-                  Triangle& sensor_tri){
+                  Triangle& sensor_tri,
+                  double noise,
+                  int outside_weight){
 
     // if current cell is not infinite then go on
     // processed state is already checked before calling this function, so no need to check again
@@ -80,7 +82,8 @@ int traverseCells(Delaunay& Dt,
         double vol = 0.0;
         tetIntersectionFun(current_tet, planes, vol);
         if(!isnan(vol)){
-            double score = vol/abs(current_tet.volume());
+            double score = vol*outside_weight/abs(current_tet.volume());
+//            double score = vol*outside_weight;
             current_cell->info().outside_score+=score;
         }
         else{
@@ -98,7 +101,7 @@ int traverseCells(Delaunay& Dt,
             Facet mirror_fac = Dt.mirror_facet(fac);
             Cell_handle newCell = mirror_fac.first;
             if(processed.find(newCell) == processed.end()){
-                traverseCells(Dt, first_cell, newCell, processed, planes, sensor_tri);
+                traverseCells(Dt, first_cell, newCell, processed, planes, sensor_tri, noise, outside_weight);
             }
         }
     }
@@ -111,7 +114,7 @@ int traverseCells(Delaunay& Dt,
 }
 
 
-void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
+void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int outside_weight){
     std::cout << "Start marking crossed tets..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -194,6 +197,11 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
                                 }
 
                                 Tetrahedron current_tet = Dt.tetrahedron(current_cell);
+                                // get the noise dependant weight of the current cell
+                                double noise = current_cell->vertex(0)->info().sigma +
+                                                current_cell->vertex(1)->info().sigma +
+                                                current_cell->vertex(2)->info().sigma +
+                                                current_cell->vertex(3)->info().sigma;
 
                                 // intersection
                                 double vol = 0;
@@ -201,7 +209,8 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
 
                                 // TODO: investigate why there are sometimes NaNs!!
                                 if(!isnan(vol)){
-                                    double score = vol/abs(current_tet.volume());
+                                    double score = vol*outside_weight*noise/abs(current_tet.volume());
+//                                    double score = vol*outside_weight;
                                     current_cell->info().outside_score+=score;
     //                                std::cout << "inside score: " << current_cell->info().inside_score <<
     //                                             "  outside score " << current_cell->info().outside_score << std::endl;
@@ -237,7 +246,7 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys){
                                     Facet mirror_fac = Dt.mirror_facet(fac);
                                     Cell_handle newCell = mirror_fac.first;
                                     if(processed.find(newCell) == processed.end()){
-                                        traverseCells(Dt, current_cell, newCell, processed, planes, tri);
+                                        traverseCells(Dt, current_cell, newCell, processed, planes, tri, noise, outside_weight);
                                     }
                                 }
     //                        }//end of IF-already-processed
