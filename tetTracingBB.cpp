@@ -35,13 +35,6 @@
 ////}
 
 
-
-//// TODO:
-//// 1. do the full ray tracing to the outside, but not to the inside
-//// simply replace the one_cell if-statement with one_cell && inside
-//// 2. get the correct sensor orientation from COLMAP or from seperate depth map from each image from MicMac
-//// 3. intersect a sensor topology tetrahedron (formed by 3 pixels next to each other, or LiDAR points next to each other and their (almost common -> barycenter) ray source
-//// use this for outside vote of the Delaunay tetrahedra, and keep the ray for inside votes for now
 //int traverseCells(Delaunay& Dt,
 //                  Cell_handle& first_cell,
 //                  Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,

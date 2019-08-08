@@ -19,6 +19,8 @@ int main(int argc, char const *argv[]){
     std::cout << "Surface reconstruction of file number: " << file_number << " with regularization weight " << regularization_weight << std::endl;
     surfaceReconstruction(file_number, regularization_weight);
 
+//    readColmapPLY();
+
 
 //    tetIntersectionTest();
 

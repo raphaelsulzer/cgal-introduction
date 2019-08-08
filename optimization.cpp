@@ -103,10 +103,10 @@ void softmax(Delaunay& Dt){
         double outside_score = cit->info().outside_score;
         cit->info().inside_score = log(exp(inside_score) / (exp(inside_score) + exp(outside_score)));
         cit->info().outside_score = log(1 - (exp(inside_score) / (exp(inside_score) + exp(outside_score))));
-        std::cout << "inside score before: " << inside_score <<
-                     "  inside score after: " << cit->info().inside_score << std::endl;
-        std::cout << "outside score before: " << outside_score <<
-                     "  outside score after: " << cit->info().outside_score << std::endl;
+//        std::cout << "inside score before: " << inside_score <<
+//                     "  inside score after: " << cit->info().inside_score << std::endl;
+//        std::cout << "outside score before: " << outside_score <<
+//                     "  outside score after: " << cit->info().outside_score << std::endl;
     }
 }
 

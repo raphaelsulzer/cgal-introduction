@@ -11,10 +11,12 @@
 // generate a Delaunay triangulation from a PLY file
 Delaunay triangulationFromFile();
 
-void readBinaryPLY(std::string ifn,
-                   std::vector<Point>& points, std::vector<vertex_info>& infos, bool colmap);
+void readColmapPLY();
 
-void readBinaryPLY(std::string ifn,
+void readAP(std::string ifn,
+                   std::vector<Point>& points, std::vector<vertex_info>& infos);
+
+void readTLS(std::string ifn,
                    std::vector<Point>& points, std::vector<vertex_info>& infos,
                    std::vector<std::vector<int>>& sensor_triangle);
 
@@ -47,7 +49,7 @@ void fixSensorCenter();
 void exportCellCenter(std::string path,
                       const Delaunay& Dt);
 
-void exportPLY(const Delaunay& Dt,
+void exportSurfacePLY(const Delaunay& Dt,
                std::string path,
                bool optimized, bool prune_or_color);
 

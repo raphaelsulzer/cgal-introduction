@@ -105,21 +105,23 @@ Delaunay triangulationFromFile(std::string ifn, std::vector<PN> ply_lines)
 }
 
 
-void readColmapPLY(std::string path){
+void readColmapPLY(){
 
 
     auto start = std::chrono::high_resolution_clock::now();
+
+    std::string path = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/reconstruction/dense_matching/fused";
 
     std::string ifn=path+".ply";
 
     ////// get the sensor infos
     // this reads the visibility info file, which has indicies for each point that correspond to the "index" of the camera
-    std::string sensor_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused.ply.vis";
+    std::string sensor_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/reconstruction/dense_matching/fused.ply.vis";
     std::vector<std::vector<int>> vis_info;
     loadVisibilityFile(sensor_file.c_str(), vis_info);
     // this reads the actual position of the camera corresponding to its index
     std::map<int, Point> sensor_map;
-    std::string image_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/sfm_result/images.bin";
+    std::string image_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/reconstruction/sfm_result/images.bin";
     loadImageFile(image_file.c_str(), sensor_map);
 
     ///// read Binary PLY, and connect to the sensor infos
@@ -156,15 +158,18 @@ void readColmapPLY(std::string path){
         infos.push_back(vec_inf);
     }
 
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "File " << ifn << " read in " << duration.count() << "s" << std::endl;
+
     // export the PLY with points and sensor position
-    std::string ofn = path+"_output.ply";
-    exportPoints(ofn, points, infos);
+    exportPoints(path, points, infos);
+
 }
 
 
-void readBinaryPLY(std::string ifn,
-                   std::vector<Point>& points, std::vector<vertex_info>& infos,
-                   bool colmap)
+void readAP(std::string ifn,
+                   std::vector<Point>& points, std::vector<vertex_info>& infos)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -172,62 +177,44 @@ void readBinaryPLY(std::string ifn,
     Mesh_ply aMesh;
     Import_PLY(ifn.c_str(), &aMesh);
 
-    if(colmap){
-
-        std::string sensor_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused.ply.vis";
-        std::vector<std::vector<int>> vis_info;
-        loadVisibilityFile(sensor_file.c_str(), vis_info);
-
-        std::map<int, Point> sensor_map;
-        std::string image_file = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/sfm_result/images.bin";
-        loadImageFile(image_file.c_str(), sensor_map);
-
-        for(int i = 0; i < aMesh.mVertices.size(); i++){
-            // save point
-            Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
-            points.push_back(pt);
-            // sensor
-            // get the first of the cameras of this point
-            Point sensor_location = sensor_map.find(vis_info[i][0])->second;
-    //        Vector vec(sensor_location.x() - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
-            Vector vec = sensor_location - pt;
-            vertex_info vec_inf;
-            vec_inf.sensor_vec = vec;
-            // color
-            unsigned char r,g,b;
-            if(aMesh.mvColors.size() > 0){
-                r = aMesh.mvColors[i].x * 256;
-                g = aMesh.mvColors[i].y * 256;
-                b = aMesh.mvColors[i].z * 256;
-            }
-            std::array<unsigned char, 3> col = {r,g,b};
-            vec_inf.color = col;
-            // save vertex info
-            infos.push_back(vec_inf);
+    for(int i = 0; i < aMesh.mVertices.size(); i++){
+        // save points
+        Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
+        points.push_back(pt);
+        // sensor
+        vertex_info vec_info;
+        Point sensor_position(aMesh.mvCapture[i].x, aMesh.mvCapture[i].y, aMesh.mvCapture[i].z);
+        // apply Transformation from cloud compare registration to TLS to the sensor location
+        Eigen::Vector4d slh(sensor_position.x(), sensor_position.y(), sensor_position.z(), 1.0);
+        Eigen::Matrix4d RT;
+        // this rotation+translation matrix is coming from Cloud Compare where I registered the
+        // AP to the TLS point cloud.
+        // now this also needs to be applied to the sensor position.
+        // last column has the global translation shift added, that Cloud Compare applies when opening the file,
+        // but of course not adds to the translation matrix
+        RT << -114.147835, -6.538993, 0.458483, -13.759159+51200,
+              -6.528348, 114.125534, 2.332502, 117.205711+91900,
+              -0.591047, 2.302480, -114.311195, 849.723450,
+              0.000000, 0.000000, 0.000000, 1.000000;
+        Eigen::Vector4d RTslh = RT*slh;
+        vec_info.sensor_pos = Point(RTslh[0] / RTslh[3],
+                                    RTslh[1] / RTslh[3],
+                                    RTslh[2] / RTslh[3]);
+        Vector vec(vec_info.sensor_pos.x() - pt.x(), vec_info.sensor_pos.y() - pt.y(), vec_info.sensor_pos.z() - pt.z());
+        vec_info.sensor_vec = vec;
+        // color
+        unsigned char r,g,b;
+        if(aMesh.mvColors.size() > 0){
+            r = aMesh.mvColors[i].x * 256;
+            g = aMesh.mvColors[i].y * 256;
+            b = aMesh.mvColors[i].z * 256;
         }
-    }
-    else{
-        for(int i = 0; i < aMesh.mVertices.size(); i++){
-            // save points
-            Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
-            points.push_back(pt);
-            // sensor
-//            Vector vec(aMesh.mNormals[i].x - pt.x(), aMesh.mNormals[i].y - pt.y(), aMesh.mNormals[i].z - pt.z());
-            Vector vec(aMesh.mvCapture[i].x - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
-            vertex_info vec_inf;
-            vec_inf.sensor_vec = vec;
-            // color
-            unsigned char r,g,b;
-            if(aMesh.mvColors.size() > 0){
-                r = aMesh.mvColors[i].x * 256;
-                g = aMesh.mvColors[i].y * 256;
-                b = aMesh.mvColors[i].z * 256;
-            }
-            std::array<unsigned char, 3> col = {r,g,b};
-            vec_inf.color = col;
-            // save vertex info
-            infos.push_back(vec_inf);
-        }
+        std::array<unsigned char, 3> col = {r,g,b};
+        vec_info.color = col;
+        // index, e.g. used in the concatenate data function
+        vec_info.idx = i;
+        // save vertex info
+        infos.push_back(vec_info);
     }
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
@@ -238,7 +225,7 @@ void readBinaryPLY(std::string ifn,
 
 
 
-void readBinaryPLY(std::string ifn,
+void readTLS(std::string ifn,
                    std::vector<Point>& points, std::vector<vertex_info>& infos,
                    std::vector<std::vector<int>>& sensor_triangle){
 
@@ -253,7 +240,6 @@ void readBinaryPLY(std::string ifn,
         Point pt(aMesh.mVertices[i].x, aMesh.mVertices[i].y, aMesh.mVertices[i].z);
         points.push_back(pt);
         // sensor
-//            Vector vec(aMesh.mNormals[i].x - pt.x(), aMesh.mNormals[i].y - pt.y(), aMesh.mNormals[i].z - pt.z());
         Vector vec(aMesh.mvCapture[i].x - pt.x(), aMesh.mvCapture[i].y - pt.y(), aMesh.mvCapture[i].z - pt.z());
         vertex_info vec_inf;
         vec_inf.sensor_vec = vec;
@@ -354,7 +340,6 @@ void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_i
                      std::vector<Point>& t_points, std::vector<vertex_info>& t_info,
                      bool copyInfo = 1)
 {
-    ///////////// a_points are TLS and t_points are AP here /////////////////
 
     // two versions of this function, one with copy info, and one where I give a specific color per dataset
     if(copyInfo){
@@ -366,7 +351,7 @@ void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_i
             Incremental_neighbor_search search(tree, t_points[i]);
             Incremental_neighbor_search::iterator it = search.begin();
 
-            // index of nearest neighbor in other cloud
+            // index of nearest neighbor in AP
             int idx = boost::get<1>(it->first).idx;
 
     //        t_info[i].normal = a_info[idx].normal;
@@ -463,9 +448,9 @@ void exportPoints(std::string path, std::vector<Point>& points, std::vector<vert
     fo << "property float x" << std::endl;
     fo << "property float y" << std::endl;
     fo << "property float z" << std::endl;
-    fo << "property float x_0" << std::endl;
-    fo << "property float y_0" << std::endl;
-    fo << "property float z_0" << std::endl;
+    fo << "property float scalar_x0" << std::endl;
+    fo << "property float scalar_y0" << std::endl;
+    fo << "property float scalar_z0" << std::endl;
     fo << "property uchar red" << std::endl;
     fo << "property uchar green" << std::endl;
     fo << "property uchar blue" << std::endl;
@@ -692,7 +677,7 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
 }
 
-void exportPLY(const Delaunay& Dt,
+void exportSurfacePLY(const Delaunay& Dt,
                 std::string path,
                 bool optimized, bool prune_or_color)
 {
@@ -895,7 +880,7 @@ void exportPLY(const Delaunay& Dt,
         // check if sensor position is on the positive side of the triangle
         // otherwise change order
         Plane p(tri[0]->point(), tri[1]->point(), tri[2]->point());
-        if(p.has_on_negative_side(tri[0]->info().sensor_pos)){
+        if(p.has_on_negative_side(avSensor)){
 //        if(p.has_on_positive_side(avSensor)){
             Vertex_handle temp = tri[1];
             tri[1] = tri[2];

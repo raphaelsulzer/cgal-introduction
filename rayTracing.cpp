@@ -8,21 +8,7 @@
 namespace rayTracing{
 
 
-////// cross product of two vector array.
-//std::vector<double> crossProduct(std::vector<double> a, std::vector<double> b){
-//    std::vector<double> cp(3);
-//    cp[0] = a[1] * b[2] - a[2] * b[1];
-//    cp[1] = a[0] * b[2] - a[2] * b[0];
-//    cp[2] = a[0] * b[1] - a[1] * b[0];
 
-//    return cp;
-//}
-//double dotProduct(std::vector<double> a, std::vector<double> b){
-//    return  a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-//}
-
-// TODO: maybe update ray triangle intersection with this:
-// https://stackoverflow.com/questions/44275153/is-m%C3%B6ller-trumbore-ray-intersection-the-fastest
 bool rayTriangleIntersection(Point& rayOrigin,
                            Vector& rayVector,
                            Triangle& inTriangle,
@@ -104,10 +90,9 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
 }
 
 
-// TODO: why can the Delaunay be const here? I'm changing the cell scores that are saved inside the Delaunay!
 int traverseCells(Delaunay& Dt,
                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
-                  Ray ray, double sigma, int oppositeVertex,
+                  Ray ray, Vertex_handle vit, double sigma, int oppositeVertex,
                   bool inside)
 {
     // input::
@@ -147,9 +132,10 @@ int traverseCells(Delaunay& Dt,
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
                 std::pair<double, double> score = cellScore(dist2, sigma, inside);
-                double vol = Dt.tetrahedron(current_cell).volume();
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
+                double vol = Dt.tetrahedron(current_cell).volume();
+//                double vol = 1;
                 current_cell->info().outside_score += (score.first*vol);
                 current_cell->info().inside_score += (score.second*vol);
                 // add to processed
@@ -163,10 +149,13 @@ int traverseCells(Delaunay& Dt,
                 // so start from there to put this into a function
                 Cell_handle newCell = mirror_fac.first;
                 int newIdx = mirror_fac.second;
-                traverseCells(Dt,
-                              newCell, processed,
-                              ray, sigma, newIdx,
-                              inside);
+                // the if stops the traversal once I hit the cell with the sensor center
+                if(!Dt.tetrahedron(current_cell).has_on_positive_side(vit->info().sensor_pos)){
+                    traverseCells(Dt,
+                                  newCell, processed,
+                                  ray, vit, sigma, newIdx,
+                                  inside);
+                }
                 // if there was a facet found in the current cell that intersects, break this loop!!
                 // this was a major issue before having this break there, because it can lead to endless loops
                 break;
@@ -227,53 +216,53 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
 //              result = intersection(tri, ray);
 
             if(oresult){
-//                if(const Point* p = boost::get<Point>(&*result)){
-                    intersection_count++;
-                    // get the distance between the source of the ray and the intersection point with the current cell
-                    double dist2 = CGAL::squared_distance(intersectionPoint, source);
-                    // calculate the score for the current cell based on the distance
-                    std::pair<double, double> score = cellScore(dist2, sigma, inside);
-                    // now locate the current cell in the global context of the triangulation,
-                    // so I can set the score
+                intersection_count++;
+                // get the distance between the source of the ray and the intersection point with the current cell
+                double dist2 = CGAL::squared_distance(intersectionPoint, source);
+                // calculate the score for the current cell based on the distance
+                std::pair<double, double> score = cellScore(dist2, sigma, inside);
+                // now locate the current cell in the global context of the triangulation,
+                // so I can set the score
 //                    if(inside){
 //                        std::cout << score.second << std::endl;
-                    double vol = Dt.tetrahedron(current_cell).volume();
-                    current_cell->info().inside_score += (score.second*vol);
-                    current_cell->info().outside_score += (score.first*vol);
-                    // add to processed set
-                    processed.insert(current_cell);
+                // for now only using volume weight on the secondary cells, since it has the tendency to oversmooth
+                // regions with little data support
+//                double vol = Dt.tetrahedron(current_cell).volume();
+                double vol = 1;
+                current_cell->info().inside_score += (score.second*vol);
+                current_cell->info().outside_score += (score.first*vol);
+                // add to processed set
+                processed.insert(current_cell);
 
-                    // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
-                    // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
-                    // and check if there is an intersection
-                    // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
-                    // so start from there to put this into a function
-                    if(!inside){
-                        Facet fac = std::make_pair(current_cell, cellBasedVertexIndex);
-                        Facet mirror_fac = Dt.mirror_facet(fac);
-                        Cell_handle newCell = mirror_fac.first;
-                        int newIdx = mirror_fac.second;
-                        // go to next cell
+                // 2. get the neighbouring cell of the current triangle and check for ray triangle intersections in that cell
+                // now from this new cell that I am in (get it from mirror_fac), iterate over all the triangles that are not the mirror triangle
+                // and check if there is an intersection
+                // this should be entered again at if(!Dt.is_infinite(current_cell)), since like this I can check if the cell is not already the infinite cell
+                // so start from there to put this into a function
+                if(!inside){
+                    Facet fac = std::make_pair(current_cell, cellBasedVertexIndex);
+                    Facet mirror_fac = Dt.mirror_facet(fac);
+                    Cell_handle newCell = mirror_fac.first;
+                    int newIdx = mirror_fac.second;
+                    // go to next cell
+                    // the if stops the traversal once I hit the cell with the sensor center
+                    if(!Dt.tetrahedron(current_cell).has_on_positive_side(vit->info().sensor_pos)){
                         traverseCells(Dt,
                                       newCell, processed,
-                                      ray, sigma, newIdx,
+                                      ray, vit, sigma, newIdx,
                                       inside);
                     }
+                }
                 // if there was a match, break the loop around this vertex, so it can go to the next one
                 // this is only done for speed reasons, it shouldn't have any influence on the label
-                    // because a ray can only hit more than one facet of a cell if it hits another point of the cell
-                    // in which case it goes THROUGH a facet of the cell, in which case the intersection is not a point
-                    // but an edge.
-                    // it does however make a difference if this is turn on or not. why??
-                    break;
-                // here the if(boost *point) ends...
-//                }
-
-            }
-        }
-        // put outside score of infinite cell very high
-        else{
-//            std::cout << "infinite cell score set" << std::endl;
+                // because a ray can only hit more than one facet of a cell if it hits another point of the cell
+                // in which case it goes THROUGH a facet of the cell, in which case the intersection is not a point
+                // but an edge.
+                // it does however make a difference if this is turn on or not. why??
+                break;
+            }// end of intersection result
+        }// end of finite cell check
+        else{         // put outside score of infinite cell very high
             current_cell->info().outside_score+=1;
             current_cell->info().inside_score+=0;
         }
