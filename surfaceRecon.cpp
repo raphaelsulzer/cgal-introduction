@@ -27,7 +27,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::cout << ifn1 << std::endl;
-    std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from the CC
+    std::string ifn2 = path1+"musee/AP/fused_fixedSensor_cut_alligned";     // there might be a problem with this file since it was exported as an ASCII from CC
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn1;

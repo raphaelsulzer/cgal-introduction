@@ -805,13 +805,6 @@ void exportPLY(const Delaunay& Dt,
         index++;
     }
 
-
-    // export cell center
-//    exportCellCenter(fo, Dt);
-
-
-
-
     // Save the facets to the PLY file
     int vidx;
     // initialise cell and vertex handle
@@ -896,7 +889,9 @@ void exportPLY(const Delaunay& Dt,
 //            Point p = c->vertex(j%4)->point();
         }
         // add up all the sensor positions
-        Point avSensor = CGAL::centroid(tri[0]->point(), tri[1]->point(), tri[2]->point());
+        Point avSensor = CGAL::centroid(tri[0]->info().sensor_pos,
+                                        tri[1]->info().sensor_pos,
+                                        tri[2]->info().sensor_pos);
         // check if sensor position is on the positive side of the triangle
         // otherwise change order
         Plane p(tri[0]->point(), tri[1]->point(), tri[2]->point());
@@ -910,23 +905,6 @@ void exportPLY(const Delaunay& Dt,
             // print the indicies of each cell to the file
             fo << tri[j]->info().idx << ' ';
         }
-//        for(int j = vidx + 1 ; j <= vidx + 3 ; j++){
-//            // print the indicies of each cell to the file
-//            v = c->vertex(j%4);
-//            fo << v->info().idx << ' ';
-//        }
-
-
-//        // color the facets (if !prune_faces, meaning coloring is active)
-//        if(clabel == 1 && mlabel == 1 && !prune_or_color){
-//            fo << " 0 191 255";
-//        }
-//        else if(clabel == 0 && mlabel == 0 && !prune_or_color){
-//            fo << "255 0 0";
-//        }
-//        else if(!prune_or_color){
-//            fo << "0 255 0";
-//        }
 
         // color the facets (if !prune_faces, meaning coloring is active)
         if(clabel == 1 && mlabel == 1){
@@ -939,14 +917,10 @@ void exportPLY(const Delaunay& Dt,
             fo << "0 255 0";
         }
 
-
-
         fo << std::endl;
-
     }
 
     fo.close();
-
 
     std::cout << "before face count: " << nf << std::endl;
     std::cout << "remaining faces: " << sub << std::endl;
