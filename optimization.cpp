@@ -77,7 +77,7 @@ void normalizeScores(Delaunay& Dt){
 
 }
 
-void log(Delaunay& Dt){
+void logScore(Delaunay& Dt){
 
     Delaunay::Finite_cells_iterator cit;
     for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
@@ -191,6 +191,8 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
 
                 // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
                 Triangle tri = Dt.triangle(current_cell, i);
+                // TODO: think about replacing the area weight with the beta-skeletion weight from
+                // Robust and efficient surface reconstruction from range data
                 float area = sqrt(tri.squared_area());
 
                 // call the neighbourhood function

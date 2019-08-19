@@ -66,6 +66,7 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
     double score_inside;
     double score_outside;
     // noise
+    // TODO: if not noise estimation is done before, sigma_d should be set to 1
     double sigma_d = eig3;
     // scene thickness // good for fontaine dataset is 0.1
     double sigma_o = 1.0;
@@ -81,8 +82,6 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
         score_outside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_e),2));
         score_inside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
     }
-//    if(score_inside != score_inside || score_outside != score_outside)
-//        std::cout << score_outside << "  " << score_inside << std::endl;
 
     // first element is the outside score, second the inside score
     std::pair<double,double> sigmas(score_outside, score_inside);
@@ -252,6 +251,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                                       ray, vit, sigma, newIdx,
                                       inside);
                     }
+                    // TODO: maybe put an else here and increase the score, because this cell should DEFINITELY be outside
                 }
                 // if there was a match, break the loop around this vertex, so it can go to the next one
                 // this is only done for speed reasons, it shouldn't have any influence on the label
@@ -263,6 +263,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
             }// end of intersection result
         }// end of finite cell check
         else{         // put outside score of infinite cell very high
+            // TODO: since accumulated scores per cell can get higher than 1, maybe I should also put the infinite cell score higher
             current_cell->info().outside_score+=1;
             current_cell->info().inside_score+=0;
         }

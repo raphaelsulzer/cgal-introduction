@@ -63,7 +63,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     /////// feature normalization
 //    standardizeScores(Dt);
 //    normalizeScores(Dt);
-//    log(Dt);
+//    logScore(Dt);
 //    softmax(Dt);
 
 

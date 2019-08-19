@@ -252,8 +252,11 @@ void createSurfaceMesh(const Delaunay& Dt, std::vector<Point>& points, std::vect
                        int orient, int nb_components_to_keep)
 {
 
-    // give every vertex from the triangulation an index starting at 0
-    // and already print the point coordinates, color and normal of the vertex to the PLY file
+    // POINTS:
+
+    // TODO:
+    // in fact here I am still using all the original points from the point set, and not only the points that are left after the
+    // GC optimization. this should be changed
     int index = 0;
     Delaunay::Finite_vertices_iterator vft;
     for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
@@ -262,10 +265,15 @@ void createSurfaceMesh(const Delaunay& Dt, std::vector<Point>& points, std::vect
         points.push_back(vft->point());
     }
 
-    // get the facets
-    // Save the facets to the PLY file
-    int vidx;
+
+    // FACETS:
+
+    // TODO:
+    // could also add the orientation from the exportSurfacePLY function
+    // maybe it helps to speed up the surface creation below.
+
     // initialise cell and vertex handle
+    int vidx;
     Cell_handle c;
     Vertex_handle v;
     Delaunay::Finite_facets_iterator fft;
