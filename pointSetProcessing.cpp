@@ -5,7 +5,7 @@
 ///////////////////////////// PCA //////////////////////////
 ////////////////////////////////////////////////////////////
 // PCA with kNN neighborhood
-void pcaKNN(Delaunay& Dt, std::vector<Point>& all_points){
+double pcaKNN(Delaunay& Dt, std::vector<Point>& all_points){
 
     auto start = std::chrono::high_resolution_clock::now();
     std::cout << "Start PCA..." << std::endl;
@@ -26,6 +26,7 @@ void pcaKNN(Delaunay& Dt, std::vector<Point>& all_points){
     // build a kd-tree with all the points
     Tree tree(all_points.begin(), all_points.end());
 
+    std::vector<double> all_eig3s;
     for(vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
 
         // set up the neighborhood search function
@@ -99,11 +100,18 @@ void pcaKNN(Delaunay& Dt, std::vector<Point>& all_points){
 //        all_vertices[vft]=std::make_pair(Point(EV(0,0)/norm,EV(1,0)/norm,EV(2,0)/norm), eig3);
         // save the result directly in the vertex_base of the Delaunay
         vft->info().sigma = eig3;
+        all_eig3s.push_back(eig3);
     }
+
+    size_t n = all_eig3s.size() / 2;
+    nth_element(all_eig3s.begin(), all_eig3s.begin()+n, all_eig3s.end());
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
     std::cout << "Calculated noise per point with PCA on " << NN << " neighbors in " << duration.count() << "s" << std::endl;
+    std::cout << "Median noise is " << all_eig3s[n] << std::endl;
+
+    return all_eig3s[n];
 
 }
 

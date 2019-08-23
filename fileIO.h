@@ -30,6 +30,10 @@ void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_i
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////// OUTPUT //////////////////////////////
 /////////////////////////////////////////////////////////////////////
+
+
+void printPLYHeader(std::fstream& fo, int nv, int nf, bool normals, bool color, bool sensor, bool cam_index);
+
 void exportEdges();
 
 void exportPoints(std::string path, std::vector<Point>& points, std::vector<vertex_info>& infos);
@@ -49,10 +53,16 @@ void fixSensorCenter();
 void exportCellCenter(std::string path,
                       const Delaunay& Dt);
 
+//void exportSurfacePLY(const Delaunay& Dt,
+//                std::string path,
+//                bool optimized, bool prune_or_color,
+//                const std::vector<Point>& remaining_points);
+
+
 void exportSurfacePLY(const Delaunay& Dt,
-               std::string path,
-               bool optimized, bool prune_or_color);
-
-
+                std::vector<Point>& remaining_points,
+                std::vector<std::vector<int>>& remaining_polygons,
+                std::string path,
+                bool optimized);
 
 #endif // FILEIO_H

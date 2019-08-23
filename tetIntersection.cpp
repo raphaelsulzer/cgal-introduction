@@ -246,8 +246,6 @@ int tetIntersectionFun(Tetrahedron& tet,
         return 0;
     }
     return 1;
-
-
 }
 
 

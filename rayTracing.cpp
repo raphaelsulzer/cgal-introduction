@@ -61,7 +61,7 @@ bool rayTriangleIntersection(Point& rayOrigin,
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
+std::pair<double, double> cellScore(double dist2, double eig3, bool inside, double medianNoise){
 
     double score_inside;
     double score_outside;
@@ -69,9 +69,9 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
     // TODO: if not noise estimation is done before, sigma_d should be set to 1
     double sigma_d = eig3;
     // scene thickness // good for fontaine dataset is 0.1
-    double sigma_o = 1.0;
+    double sigma_o = 0.1;
     // scale of the outside area?? // good for fontaine dataset is 1.0
-    double sigma_e = 1.0;
+    double sigma_e = 1.5;
     // not to be confused with the following, which means if I am walking inside/outside
     if(inside){
         //        sigma = 0.05;
@@ -92,7 +92,8 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside){
 int traverseCells(Delaunay& Dt,
                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
                   Ray ray, Vertex_handle vit, double sigma, int oppositeVertex,
-                  bool inside)
+                  bool inside,
+                  double medianNoise)
 {
     // input::
     // &Delaunay            Reference to a Delaunay triangulation
@@ -130,13 +131,15 @@ int traverseCells(Delaunay& Dt,
                 // ...this could potentially be a much faster way than the processed-set
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
-                std::pair<double, double> score = cellScore(dist2, sigma, inside);
+                std::pair<double, double> score = cellScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
-                double vol = Dt.tetrahedron(current_cell).volume();
-//                double vol = 1;
+//                double vol = Dt.tetrahedron(current_cell).volume();
+                double vol = 1;
                 current_cell->info().outside_score += (score.first*vol);
                 current_cell->info().inside_score += (score.second*vol);
+                current_cell->info().outside_count += 1;
+                current_cell->info().inside_count += 1;
                 // add to processed
                 processed.insert(current_cell);
 
@@ -153,7 +156,8 @@ int traverseCells(Delaunay& Dt,
                     traverseCells(Dt,
                                   newCell, processed,
                                   ray, vit, sigma, newIdx,
-                                  inside);
+                                  inside,
+                                  medianNoise);
                 }
                 // if there was a facet found in the current cell that intersects, break this loop!!
                 // this was a major issue before having this break there, because it can lead to endless loops
@@ -171,7 +175,7 @@ int traverseCells(Delaunay& Dt,
 
 void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                bool inside,
-               int& intersection_count){
+               double medianNoise){
 
     //init already processed set
     std::unordered_set<Cell_handle> processed;
@@ -215,11 +219,10 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
 //              result = intersection(tri, ray);
 
             if(oresult){
-                intersection_count++;
                 // get the distance between the source of the ray and the intersection point with the current cell
                 double dist2 = CGAL::squared_distance(intersectionPoint, source);
                 // calculate the score for the current cell based on the distance
-                std::pair<double, double> score = cellScore(dist2, sigma, inside);
+                std::pair<double, double> score = cellScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                    if(inside){
@@ -230,6 +233,8 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                 double vol = 1;
                 current_cell->info().inside_score += (score.second*vol);
                 current_cell->info().outside_score += (score.first*vol);
+                current_cell->info().outside_count += 1;
+                current_cell->info().inside_count += 1;
                 // add to processed set
                 processed.insert(current_cell);
 
@@ -249,7 +254,8 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                         traverseCells(Dt,
                                       newCell, processed,
                                       ray, vit, sigma, newIdx,
-                                      inside);
+                                      inside,
+                                      medianNoise);
                     }
                     // TODO: maybe put an else here and increase the score, because this cell should DEFINITELY be outside
                 }
@@ -272,7 +278,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
 
 }
 
-void rayTracingFun(Delaunay& Dt){
+void rayTracingFun(Delaunay& Dt, double medianNoise=0.02){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -289,9 +295,9 @@ void rayTracingFun(Delaunay& Dt){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-        firstCell(Dt, vit, 0, intersection_count);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 0, medianNoise);    // one_cell currently not used in the correct way
         // collect inside votes
-        firstCell(Dt, vit, 1, intersection_count);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 1, medianNoise);    // one_cell currently not used in the correct way
     }
 
     auto stop = std::chrono::high_resolution_clock::now();

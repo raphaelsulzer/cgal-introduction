@@ -45,6 +45,9 @@ typedef CGAL::Triangulation_vertex_base_with_info_3<vertex_info, EPICK>    VB;
 
 struct cell_info{
     int idx = 0;
+    int vidx; // the index of the vertex whose ray traverses this cell to the inside
+    int inside_count = 0;
+    int outside_count = 0;
     double outside_score = 0.0;
     double inside_score = 0.0;
     int final_label = 0;
@@ -78,6 +81,7 @@ typedef EPICK::Ray_3                                               Ray;
 typedef EPICK::Triangle_3                                          Triangle;
 typedef EPICK::Intersect_3                                         Intersect;
 typedef EPICK::Segment_3                                           Segment;
+typedef EPICK::Sphere_3                                            Sphere;
 typedef EPICK::Tetrahedron_3                                       Tetrahedron;
 typedef CGAL::Cartesian_converter<EPICK,EPECK>                     IK_to_EK;
 typedef CGAL::Cartesian_converter<EPECK,EPICK>                     EK_to_IK;

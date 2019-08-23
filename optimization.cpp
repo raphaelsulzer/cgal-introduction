@@ -123,7 +123,7 @@ void softmax(Delaunay& Dt){
 //// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with
 //// w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
 //std::pair<std::map<Cell_handle, int>, std::vector<int>> GeneralGraph_DArraySArraySpatVarying(std::pair<Delaunay&, Cell_map&> dt_cells, std::map<Cell_handle, int>& cell_indexMap, std::vector<int> result, int num_iterations)
-void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int num_iterations)
+void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float reg_weight, int num_iterations)
 {
     std::cout << "Starting Optimization..." << std::endl;
 
@@ -191,12 +191,32 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float area_weight, int n
 
                 // since i is giving me the cell that is opposite of vertex i, as well as the facet that is opposite of vertex i, I can just use that same index
                 Triangle tri = Dt.triangle(current_cell, i);
-                // TODO: think about replacing the area weight with the beta-skeletion weight from
-                // Robust and efficient surface reconstruction from range data
                 float area = sqrt(tri.squared_area());
 
+                // Robust and efficient surface reconstruction from range data
+                // get the speheres
+                Sphere sph1 = Sphere(current_cell->vertex(0)->point(), current_cell->vertex(1)->point(),
+                                     current_cell->vertex(2)->point(), current_cell->vertex(3)->point());
+                Sphere sph2 = Sphere(neighbour_cell->vertex(0)->point(), neighbour_cell->vertex(1)->point(),
+                                     neighbour_cell->vertex(2)->point(), neighbour_cell->vertex(3)->point());
+
+                Vector v1 = sph1.center() - tri.vertex(0);
+                Vector v2 = tri.vertex(1) - tri.vertex(0);
+                double angle1 = M_PI/2-std::acos(v1 * v2 / (std::sqrt(v1.squared_length())*std::sqrt(v2.squared_length())));
+
+                Vector v3 = sph2.center() - tri.vertex(0);
+                double angle2 = M_PI/2-std::acos(v3 * v2 / (std::sqrt(v3.squared_length())*std::sqrt(v2.squared_length())));
+
+                double binary_weight = area;
+//                double binary_weight = 1 - std::min(std::cos(angle1),std::cos(angle2));
+
+
+
+                // measure the angle between line sphereCenter-pointOfIntersection, and triangle
+
+
                 // call the neighbourhood function
-                gc->setNeighbors(current_index, neighbour_index, area_weight*area);
+                gc->setNeighbors(current_index, neighbour_index, reg_weight*binary_weight);
 
                 // TODO: what would be nice if I could make like a second grade neighborhood function, in order
                 // to penalize facets (=different labels between neighboring cells) even higher if facets from the same cell

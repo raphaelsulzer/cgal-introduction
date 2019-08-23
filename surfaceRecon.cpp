@@ -29,32 +29,34 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
-//    std::string ofn = ifn2;
-    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
+    std::string ofn = ifn1;
+//    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
 
     ifn1+=".ply";
     ifn2+=".ply";
 
+    // TLS
     std::vector<Point> t_points;
     std::vector<vertex_info> t_infos;
     std::vector<std::vector<int>> t_polys;
     readTLS(ifn1, t_points, t_infos, t_polys);
-    std::vector<Point> a_points;
-    std::vector<vertex_info> a_infos;
-    readAP(ifn2, a_points, a_infos);
-    concatenateData(a_points, a_infos, t_points, t_infos, 1);
-    t_points = a_points;
-    t_infos = a_infos;
+    // AP
+//    std::vector<Point> a_points;
+//    std::vector<vertex_info> a_infos;
+//    readAP(ifn2, a_points, a_infos);
+//    concatenateData(a_points, a_infos, t_points, t_infos, 1);
+//    t_points = a_points;
+//    t_infos = a_infos;
 
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
     // calculate noise per point and save it in the vertex_info of the Dt
-    pcaKNN(Dt, t_points);
+    double medianNoise = pcaKNN(Dt, t_points);
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 
 
-    rayTracing::rayTracingFun(Dt);
+    rayTracing::rayTracingFun(Dt, medianNoise);
 
 //    int outside_weight = 2.2;
 //    tetTracing::firstCell(Dt, t_polys, outside_weight);
@@ -78,21 +80,26 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 //    }
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
-    // Dt, file_output, (normals=1 or cam_index=0), optimized, (pruned=1 or colored=0)
-    exportSurfacePLY(Dt, ofn, 0, 1);
-    exportSurfacePLY(Dt, ofn, 1, 1);
+    // Dt, output_file, optimized, (pruned=1 or colored=0)
+    std::vector<Point> remaining_points;
+    std::vector<std::vector<int>> remaining_facets;
+    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 0);
+    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1);
+//    exportSurfacePLY(Dt, ofn, 0, 1);
+//    exportSurfacePLY(Dt, ofn, 0, 0);
+//    exportSurfacePLY(Dt, ofn, 1, 1);
 
     exportCellCenter(ofn, Dt);
 
 
-    // create surface mesh
-    Polyhedron out_mesh;
-    std::vector<std::vector<int>> polygons;
-    std::vector<Point> points;
-    // create surface mesh, with orient and nb_of_components_to_keep
-    createSurfaceMesh(Dt, points, polygons, out_mesh, 1, 1);
-    // export surface mesh as OFF
-    exportOFF(out_mesh, ofn);
+//    // create surface mesh
+//    Polyhedron out_mesh;
+//    std::vector<std::vector<int>> polygons;
+//    std::vector<Point> points;
+//    // create surface mesh, with orient and nb_of_components_to_keep
+//    createSurfaceMesh(Dt, points, polygons, out_mesh, 1, 1);
+//    // export surface mesh as OFF
+//    exportOFF(out_mesh, ofn);
 
 //    // Quality control
 ////    double max_dist =
@@ -116,5 +123,8 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 // problem now is that with a tetrahedron tracing I can get rid of the
 
 
-
+// TODO:
+// add a post processing step where I find non-manifold triangles and fix the region by applying face selection in the way that
+// PolyFit does it. Use their Gurobi energy minimization solver for it (their energy cannot be minimized with a graph-cut).
+// Problem will be that it might be to slow, and that it is not clear how to extract region with problem.
 
