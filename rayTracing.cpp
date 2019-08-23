@@ -61,7 +61,7 @@ bool rayTriangleIntersection(Point& rayOrigin,
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-std::pair<double, double> cellScore(double dist2, double eig3, bool inside, double medianNoise){
+std::pair<double, double> wasureScore(double dist2, double eig3, bool inside, double medianNoise){
 
     double score_inside;
     double score_outside;
@@ -81,6 +81,27 @@ std::pair<double, double> cellScore(double dist2, double eig3, bool inside, doub
     else{
         score_outside = (1 - 0.5*exp(-pow((sqrt(dist2)/sigma_d),2)))*exp(-pow((sqrt(dist2)/sigma_e),2));
         score_inside = 0.5*exp(-pow((sqrt(dist2)/sigma_d),2));
+    }
+
+    // first element is the outside score, second the inside score
+    std::pair<double,double> sigmas(score_outside, score_inside);
+    return sigmas;
+}
+
+std::pair<double, double> resrScore(double dist2, double eig3, bool inside, double medianNoise){
+
+    double score_inside;
+    double score_outside;
+
+    double alpha = 32;
+    double sigma = 0.01;
+    if(inside){
+        score_inside = alpha*(1-exp(-dist2/(2*sigma*sigma)));
+        score_outside = 0;
+    }
+    else{
+        score_outside = alpha*(1-exp(-dist2/(2*sigma*sigma)));;
+        score_inside = 0;
     }
 
     // first element is the outside score, second the inside score
@@ -131,7 +152,7 @@ int traverseCells(Delaunay& Dt,
                 // ...this could potentially be a much faster way than the processed-set
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
-                std::pair<double, double> score = cellScore(dist2, sigma, inside, medianNoise);
+                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                double vol = Dt.tetrahedron(current_cell).volume();
@@ -167,7 +188,7 @@ int traverseCells(Delaunay& Dt,
     }
     // put outside score of infinite cell very high
     else{
-        current_cell->info().outside_score+=1;
+        current_cell->info().outside_score+=1000000;
         current_cell->info().inside_score+=0;
     }
     return 0;
@@ -222,7 +243,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                 // get the distance between the source of the ray and the intersection point with the current cell
                 double dist2 = CGAL::squared_distance(intersectionPoint, source);
                 // calculate the score for the current cell based on the distance
-                std::pair<double, double> score = cellScore(dist2, sigma, inside, medianNoise);
+                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                    if(inside){
@@ -270,7 +291,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
         }// end of finite cell check
         else{         // put outside score of infinite cell very high
             // TODO: since accumulated scores per cell can get higher than 1, maybe I should also put the infinite cell score higher
-            current_cell->info().outside_score+=1;
+            current_cell->info().outside_score+=10000000;
             current_cell->info().inside_score+=0;
         }
     }
