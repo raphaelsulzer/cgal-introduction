@@ -208,6 +208,7 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float reg_weight, int nu
                 double angle2 = M_PI/2-std::acos(v3 * v2 / (std::sqrt(v3.squared_length())*std::sqrt(v2.squared_length())));
 
                 double binary_weight = area;
+                // TODO: check why this regularization doesn't seem to work properly; is the implementation correct?
 //                double binary_weight = 1 - std::min(std::cos(angle1),std::cos(angle2));
 
 

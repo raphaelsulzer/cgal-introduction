@@ -153,6 +153,7 @@ int traverseCells(Delaunay& Dt,
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
                 std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
+//                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                double vol = Dt.tetrahedron(current_cell).volume();
@@ -188,8 +189,10 @@ int traverseCells(Delaunay& Dt,
     }
     // put outside score of infinite cell very high
     else{
-        current_cell->info().outside_score+=1000000;
-        current_cell->info().inside_score+=0;
+        if(inside)
+            current_cell->info().inside_score+=10e3;
+        else
+            current_cell->info().outside_score+=10e3;
     }
     return 0;
 }
@@ -244,6 +247,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                 double dist2 = CGAL::squared_distance(intersectionPoint, source);
                 // calculate the score for the current cell based on the distance
                 std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
+//                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                    if(inside){
@@ -291,8 +295,10 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
         }// end of finite cell check
         else{         // put outside score of infinite cell very high
             // TODO: since accumulated scores per cell can get higher than 1, maybe I should also put the infinite cell score higher
-            current_cell->info().outside_score+=10000000;
-            current_cell->info().inside_score+=0;
+            if(inside)
+                current_cell->info().inside_score+=10e3;
+            else
+                current_cell->info().outside_score+=10e3;
         }
     }
 

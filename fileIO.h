@@ -32,7 +32,10 @@ void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_i
 /////////////////////////////////////////////////////////////////////
 
 
-void printPLYHeader(std::fstream& fo, int nv, int nf, bool normals, bool color, bool sensor, bool cam_index);
+void printPLYHeader(std::fstream& fo,
+                    int nv, int nf,
+                    bool normals, bool color, bool sensor, bool cam_index, bool fcolor,
+                    int precision);
 
 void exportEdges();
 
@@ -53,11 +56,9 @@ void fixSensorCenter();
 void exportCellCenter(std::string path,
                       const Delaunay& Dt);
 
-//void exportSurfacePLY(const Delaunay& Dt,
-//                std::string path,
-//                bool optimized, bool prune_or_color,
-//                const std::vector<Point>& remaining_points);
-
+void exportColoredFacetsPLY(const Delaunay& Dt,
+                            std::string path,
+                            bool optimized);
 
 void exportSurfacePLY(const Delaunay& Dt,
                 std::vector<Point>& remaining_points,

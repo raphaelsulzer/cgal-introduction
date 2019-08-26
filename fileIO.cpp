@@ -699,217 +699,120 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
 
 }
 
-//void exportSurfacePLY(const Delaunay& Dt,
-//                      std::string path,
-//                      bool optimized=true)
-//{
-//    auto start = std::chrono::high_resolution_clock::now();
+void exportColoredFacetsPLY(const Delaunay& Dt,
+                      std::string path,
+                      bool optimized=true)
+{
+    auto start = std::chrono::high_resolution_clock::now();
 
-//    // get number of vertices and triangles of the triangulation
-//    Delaunay::size_type nv = Dt.number_of_vertices();
-//    Delaunay::size_type nf = Dt.number_of_finite_facets();
-//    Delaunay::size_type nc = Dt.number_of_finite_cells();
+    // get number of vertices and triangles of the triangulation
+    Delaunay::size_type nv = Dt.number_of_vertices();
+    Delaunay::size_type nf = Dt.number_of_finite_facets();
 
 
-//    // calculate how many faces to print
-//    Delaunay::Finite_facets_iterator fft;
-//    int deletedFaceCount = 0;
-//    if(!optimized)
-//    {
-//        for(fft = Dt.finite_facets_begin(); fft != Dt.finite_facets_end(); fft++){
-//            Cell_handle c = fft->first;
-//            int clabel;
-//            float c1 = c->info().outside_score;
-//            float c2 = c->info().inside_score;
-//            if(c1 > c2)
-//                clabel = 1;
-//            else {
-//                clabel = 0;
-//            }
-//            Cell_handle m = Dt.mirror_facet(*fft).first;
-//            int mlabel;
-//            float m1 = m->info().outside_score;
-//            float m2 = m->info().inside_score;
-//            if(m1 > m2)
-//                mlabel = 1;
-//            else {
-//                mlabel = 0;
-//            }
-//            if(clabel == mlabel){deletedFaceCount++;}
-//        }
-//    }
-//    else{
-//        for(fft = Dt.finite_facets_begin(); fft != Dt.finite_facets_end(); fft++){
-//            Cell_handle c = fft->first;
-//            int clabel = c->info().final_label;
-//            Cell_handle m = Dt.mirror_facet(*fft).first;
-//            int mlabel = m->info().final_label;
-//            if(clabel == mlabel){deletedFaceCount++;}
-//        }
-//    }
-
-//    if(prune)
-//        nf = nf - deletedFaceCount;
-
-//    // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
-//    if(optimized)
-//        path+="_optimized";
-//    else
-//        path+="_initial";
-//    if(prune)
-//        path+="_pruned";
-//    else
-//        path+="_colored";
+    // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
+    if(optimized)
+        path+="_colored_optimized";
+    else
+        path+="_colored_initial";
             
-//    path+=".ply";
+    path+=".ply";
     
-//    std::fstream fo;
-//    fo.open(path, std::fstream::out);
-//    printPLYHeader(fo, nv, nf, true, true);
+    std::fstream fo;
+    fo.open(path, std::fstream::out);
+    printPLYHeader(fo, nv, nf, true, true, false, false, true);
 
-//    // give every vertex from the triangulation an index starting at 0
-//    // and already print the point coordinates, color and normal of the vertex to the PLY file
-//    int index = 0;
-//    Delaunay::Finite_vertices_iterator vft;
-//    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
-//        // reset the vertex index here, because I need to know the order of exactly this loop here
-//        // for the indexing of the facets in the PLY file
-//        vft->info().idx = index;
-//        // print data to file
-//        // coordinates
-//        fo  << vft->point() << " "
-//        // color
-//            << int(vft->info().color[0]) <<  " " << int(vft->info().color[1]) <<  " " << int(vft->info().color[2]) <<  " "
-//        // normal
-//            << vft->info().sensor_vec << std::endl;
-//        index++;
-//    }
+    // give every vertex from the triangulation an index starting at 0
+    // and already print the point coordinates, color and normal of the vertex to the PLY file
+    int index = 0;
+    Delaunay::Finite_vertices_iterator vft;
+    for (vft = Dt.finite_vertices_begin() ; vft != Dt.finite_vertices_end() ; vft++){
+        // reset the vertex index here, because I need to know the order of exactly this loop here
+        // for the indexing of the facets in the PLY file
+        vft->info().idx = index;
+        // print data to file
+        // coordinates
+        fo  << vft->point() << " "
+        // color
+            << int(vft->info().color[0]) <<  " " << int(vft->info().color[1]) <<  " " << int(vft->info().color[2]) <<  " "
+        // normal
+            << vft->info().sensor_vec << std::endl;
+        index++;
+    }
 
-//    // Save the facets to the PLY file
-//    int vidx;
-//    Cell_handle c;
-//    std::set<Point> remaining_set;
-//    for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
+    // Save the facets to the PLY file
+    int vidx;
+    Cell_handle c;
+    Delaunay::Finite_facets_iterator fft;
+    for(fft = Dt.finite_facets_begin() ; fft != Dt.finite_facets_end() ; fft++){
 
-//        // get vertex and cell index that describes the facet
-//        // facet fft is represented by std::pair(cell c, int vidx). vidx is the vertex opposite to the cell.
-//        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
-//        // see: https://doc.cgal.org/latest/Triangulation_3/index.html
-//        c = fft->first;         // cell
-//        vidx = fft->second;     // vertex index
+        // get vertex and cell index that describes the facet
+        // facet fft is represented by std::pair(cell c, int vidx). vidx is the vertex opposite to the cell.
+        // even though some of the facets may be described by infinite cells, the facet is still has a neighbouring cell that is finite.
+        // see: https://doc.cgal.org/latest/Triangulation_3/index.html
+        c = fft->first;         // cell
+        vidx = fft->second;     // vertex index
 
-////        if(Dt.is_infinite(c))
-////            std::cout << "infinite cell from finite facet" << std::endl;
+        //////// check which faces to prune:
+        int clabel;
+        int mlabel;
+        if(!optimized){
+            float c1 = c->info().outside_score;
+            float c2 = c->info().inside_score;
+            if(c1 > c2)
+                clabel = 1;
+            else {
+                clabel = 0;
+            }
+            Cell_handle m = Dt.mirror_facet(*fft).first;
+            float m1 = m->info().outside_score;
+            float m2 = m->info().inside_score;
+            if(m1 > m2)
+                mlabel = 1;
+            else {
+                mlabel = 0;
+            }
 
-//        //////// check which faces to prune:
-//        int clabel;
-//        int mlabel;
-//        if(!optimized){
-//            float c1 = c->info().outside_score;
-//            float c2 = c->info().inside_score;
-//            if(c1 > c2)
-//                clabel = 1;
-//            else {
-//                clabel = 0;
-//            }
-//            Cell_handle m = Dt.mirror_facet(*fft).first;
-//            float m1 = m->info().outside_score;
-//            float m2 = m->info().inside_score;
-//            if(m1 > m2)
-//                mlabel = 1;
-//            else {
-//                mlabel = 0;
-//            }
-////            // infinite stuff
-////            if(Dt.is_infinite(m)){
-////                mlabel == clabel;
-////            }
-////            else if(Dt.is_infinite(c)){
-////                clabel == mlabel;
-////            }
+        }
+        else{
+            // with GC labelling:
+            clabel = c->info().final_label;
+            Cell_handle m = Dt.mirror_facet(*fft).first;
+            mlabel = m->info().final_label;
+        }
 
-////            if(clabel==1 && Dt.is_infinite(m))
-////                mlabel = 1;
-////            else if(clabel==0 && Dt.is_infinite(m))
-////                mlabel = 0;
+        // if label of neighbouring cells is not the same...
+        // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
+        // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
+        // so we exactely skip 2 - the opposite vertex.
+        // start printed facet line with a 3
+        fo << 3 << ' ';
+        // fix the orientation
+        std::vector<Vertex_handle> tri;
+        for(int j = vidx + 1; j <= vidx + 3; j++){
+            // so c->vertex() gives me the global vertex handle from the Dt
+            fo << c->vertex(j%4)->info().idx << ' ';
+        }
+        // color the facets (if !prune_faces, meaning coloring is active)
+        if(clabel == 1 && mlabel == 1){
+            fo << " 0 191 255";
+        }
+        else if(clabel == 0 && mlabel == 0){
+            fo << "255 0 0";
+        }
+        else{
+            fo << "0 255 0";
+        }
 
-//        }
-//        else{
-//    //        // with GC labelling:
-//            clabel = c->info().final_label;
-//            Cell_handle m = Dt.mirror_facet(*fft).first;
-//            mlabel = m->info().final_label;
-//        }
+        fo << std::endl;
+    }
+    fo.close();
 
-
-//        // check if two neighbouring cells have the same label, and if so (and the prunce_faces export function is active) continue to next face
-//        if(clabel == mlabel && prune){
-////            std::cout << clabel << " == " << mlabel << std::endl;
-//            continue;
-//        }
-////        else{
-////            std::cout << clabel << " != " << mlabel << std::endl;
-////        }
-
-//        // if label of neighbouring cells is not the same...
-//        // if opposite vertex vidx is 2, we start at j = vidx + 1 = 3, 3%4 = 3
-//        // next iteration: j = 4, 4%4 = 0, next iteration: j = 5, 5%4 = 1;
-//        // so we exactely skip 2 - the opposite vertex.
-//        // start printed facet line with a 3
-//        fo << 3 << ' ';
-//        // fix the orientation
-//        std::vector<Vertex_handle> tri;
-//        for(int j = vidx + 1; j <= vidx + 3; j++){
-//            // so c->vertex() gives me the global vertex handle from the Dt
-//            tri.push_back(c->vertex(j%4));
-//            if(export_remaining)
-//                remaining_set.insert(c->vertex(j%4)->point());
-//        }
-//        // add up all the sensor positions
-//        Point avSensor = CGAL::centroid(tri[0]->info().sensor_pos,
-//                                        tri[1]->info().sensor_pos,
-//                                        tri[2]->info().sensor_pos);
-//        // check if sensor position is on the positive side of the triangle
-//        // otherwise change order
-//        Plane p(tri[0]->point(), tri[1]->point(), tri[2]->point());
-//        if(p.has_on_negative_side(avSensor)){
-//            Vertex_handle temp = tri[1];
-//            tri[1] = tri[2];
-//            tri[2] = temp;
-//        }
-//        for(int j = 0; j < 3; j++){
-//            // print the indicies of each cell to the file
-//            fo << tri[j]->info().idx << ' ';
-//        }
-
-//        // color the facets (if !prune_faces, meaning coloring is active)
-//        if(clabel == 1 && mlabel == 1){
-//            fo << " 0 191 255";
-//        }
-//        else if(clabel == 0 && mlabel == 0){
-//            fo << "255 0 0";
-//        }
-//        else{
-//            fo << "0 255 0";
-//        }
-
-//        fo << std::endl;
-//    }
-
-//    fo.close();
-
-//    if(export_remaining)
-//        std::copy(remaining_set.begin(), remaining_set.end(), remaining_points.end());
-////    remaining_points(remaining_points.end(), remaining_set.begin(), remaining_set.end());
-
-
-//    std::cout << "before face count: " << nf << std::endl;
-//    std::cout << "remaining faces: " << nv << std::endl;
-//    std::cout << "Exported to " << path << std::endl;
-//    auto stop = std::chrono::high_resolution_clock::now();
-//    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-//    std::cout << "...in " << duration.count() << "s" << std::endl;
-//}
+    std::cout << "Exported to " << path << std::endl;
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    std::cout << "...in " << duration.count() << "s" << std::endl;
+}
 
 
 void exportSurfacePLY(const Delaunay& Dt,
@@ -919,6 +822,9 @@ void exportSurfacePLY(const Delaunay& Dt,
                     bool optimized=true){
 
     auto start = std::chrono::high_resolution_clock::now();
+
+    remaining_points.clear();
+    remaining_polygons.clear();
 
     // get the remaining points and facets
     std::set<Vertex_handle> remaining_set;
@@ -937,6 +843,7 @@ void exportSurfacePLY(const Delaunay& Dt,
         //////// check which faces to prune:
         int clabel;
         int mlabel;
+        // not optimized
         if(!optimized){
             double c1 = c->info().outside_score;
             double c2 = c->info().inside_score;
@@ -954,8 +861,8 @@ void exportSurfacePLY(const Delaunay& Dt,
                 mlabel = 0;
             }
         }
+        // optimized = with GC labelling:
         else{
-            // with GC labelling:
             clabel = c->info().final_label;
             Cell_handle m = Dt.mirror_facet(*fft).first;
             mlabel = m->info().final_label;
@@ -1012,7 +919,7 @@ void exportSurfacePLY(const Delaunay& Dt,
 
     std::fstream fo;
     fo.open(path, std::fstream::out);
-    printPLYHeader(fo, nv, nf, true, true);
+    printPLYHeader(fo, nv, nf, true, true, false, false, true);
 
     std::set<Vertex_handle>::iterator vit;
     int vidx = 0;
@@ -1045,12 +952,20 @@ void exportSurfacePLY(const Delaunay& Dt,
             fo << (*fit)[j]->info().idx << ' ';
         }
         remaining_polygons.push_back(poly);
+        // put a color on the face, so that in Meshlab I can activate the color by facet mode, to compare with the "colored facet file"
+        fo << "0 128 0";
         fo << std::endl;
     }
     fo.close();
 
-    std::cout << "Before optimization (points, facets): (" << bnv << ", " << bnf << ")" << std::endl;
-    std::cout << "After optimization (points, facets): (" << nv << ", " << nf << ")" << std::endl;
+    if(optimized){
+        std::cout << "Before optimization (points, facets): (" << bnv << ", " << bnf << ")" << std::endl;
+        std::cout << "After optimization (points, facets): (" << nv << ", " << nf << ")" << std::endl;
+    }
+    else{
+        std::cout << "Before pruning (points, facets): (" << bnv << ", " << bnf << ")" << std::endl;
+        std::cout << "After pruning (points, facets): (" << nv << ", " << nf << ")" << std::endl;
+    }
     std::cout << "Exported to " << path << std::endl;
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
