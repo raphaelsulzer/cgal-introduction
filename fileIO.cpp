@@ -434,7 +434,7 @@ void importOff(std::string path, std::vector<Plane>& planes){
 
 void printPLYHeader(std::fstream& fo,
                     int nv, int nf=0,
-                    bool normals=true, bool color=true, bool sensor=false, bool cam_index=false,
+                    bool normals=true, bool color=true, bool sensor=false, bool cam_index=false, bool score=false,
                     bool fcolor=false,
                     int precision=8){
 
@@ -461,6 +461,8 @@ void printPLYHeader(std::fstream& fo,
     }
     if(cam_index)
         fo << "property int camera_index" << std::endl;
+    if(score)
+        fo << "property float score" << std::endl;
     if(nf > 0){
         fo << "element face " << nf << std::endl;
         fo << "property list uchar int vertex_indices" << std::endl;
@@ -919,7 +921,10 @@ void exportSurfacePLY(const Delaunay& Dt,
 
     std::fstream fo;
     fo.open(path, std::fstream::out);
-    printPLYHeader(fo, nv, nf, true, true, false, false, true);
+    printPLYHeader(fo,
+                   nv, nf,
+                   true, true, false, false, false,
+                   true);
 
     std::set<Vertex_handle>::iterator vit;
     int vidx = 0;

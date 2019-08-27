@@ -34,7 +34,8 @@ void concatenateData(std::vector<Point>& a_points, std::vector<vertex_info>& a_i
 
 void printPLYHeader(std::fstream& fo,
                     int nv, int nf,
-                    bool normals, bool color, bool sensor, bool cam_index, bool fcolor,
+                    bool normals, bool color, bool sensor, bool cam_index, bool score,
+                    bool fcolor,
                     int precision);
 
 void exportEdges();

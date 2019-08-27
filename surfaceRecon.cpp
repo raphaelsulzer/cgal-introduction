@@ -42,8 +42,124 @@ bool sortbysec(const Facet_score &a,
 }
 
 
+void exportProblematicFacets(Delaunay& Dt,
+                  std::vector<std::vector<Facet_score>>& problematic_facets_per_edge,
+                  std::string path){
 
-void selectFacets(Delaunay& Dt,
+    std::fstream fo;
+    fo.open(path+"_facets_center.ply", std::fstream::out);
+    int nf = problematic_facets_per_edge.size()*4;
+
+    printPLYHeader(fo,
+                   nf, 0,
+                   0, true, false, false, true,
+                   false,
+                   15);
+
+    for(int i = 0; i < problematic_facets_per_edge.size(); i++){
+
+        // get facets per edge and sort them according to their weight
+        std::vector<Facet_score> problematic_facets = problematic_facets_per_edge[i];
+
+        for(int j = 0; j < problematic_facets.size(); j++){
+
+            Facet fac = problematic_facets[j].first;
+            if(Dt.is_infinite(fac))
+                continue;
+            Triangle tri = Dt.triangle(fac);
+            Point p = CGAL::centroid(tri.vertex(0),tri.vertex(1),tri.vertex(2));
+            fo  << p << " " << problematic_facets[j].second << std::endl;
+        }
+
+    }
+
+    fo.close();
+}
+
+
+void exportProblematicFacets2(Delaunay& Dt,
+                  std::vector<std::vector<Facet_score>>& problematic_facets_per_edge,
+                  std::string path){
+
+
+    std::unordered_set<Vertex_handle> points;
+    std::vector<Facet_score> remaining_facets;
+
+    for(int i = 0; i < problematic_facets_per_edge.size(); i++){
+
+        // get facets per edge and sort them according to their weight
+        std::vector<Facet_score> problematic_facets = problematic_facets_per_edge[i];
+        std::sort(problematic_facets.begin(), problematic_facets.end(), sortbysec);
+
+        double min_score = problematic_facets[0].second;
+        double max_score = problematic_facets.back().second;
+
+        for(int j = 0; j < problematic_facets.size(); j++){
+
+            double scaled_score = 255*((problematic_facets[j].second-min_score)/(max_score-min_score));
+
+            // save the first two facets with the lowest score:
+            Cell_handle c1 = problematic_facets[j].first.first;
+            if(Dt.is_infinite(c1))
+                continue;
+            int vidx = problematic_facets[j].first.second;
+            for(int j = vidx + 1; j <= vidx + 3; j++){
+                // so c->vertex() gives me the global vertex handle from the Dt
+                points.insert(c1->vertex(j%4));
+            }
+            remaining_facets.push_back(std::make_pair(problematic_facets[j].first, scaled_score));
+
+
+        }
+    }
+
+    std::fstream fo;
+    fo.open(path+"_problematic_facets.ply", std::fstream::out);
+    int nv = points.size();
+    int nf = remaining_facets.size();
+
+    printPLYHeader(fo,
+                   nv, nf,
+                   true, true, false, false, false,
+                   true,
+                   15);
+
+    std::unordered_set<Vertex_handle>::iterator vit;
+    int vidx = 0;
+    for(vit = points.begin(); vit != points.end(); vit++){
+        // reset the vertex index here, because I need to know the order of exactly this loop here
+        // for the indexing of the facets in the PLY file
+        (*vit)->info().idx = vidx++;
+        // print data to file
+        // coordinates
+        fo  << (*vit)->point() << " "
+        // color
+            << int((*vit)->info().color[0]) <<  " " << int((*vit)->info().color[1]) <<  " " << int((*vit)->info().color[2]) <<  " "
+        // normal
+            << (*vit)->info().sensor_vec
+        // endl
+            << std::endl;
+
+    }
+
+    std::vector<Facet_score>::iterator fit;
+    for(fit = remaining_facets.begin(); fit != remaining_facets.end(); fit++){
+        // start printed facet line with a 3
+        fo << 3 << ' ';
+        Cell_handle c = fit->first.first;
+        int vidx = fit->first.second;
+        for(int j = vidx + 1; j <= vidx + 3; j++){
+            // so c->vertex() gives me the global vertex handle from the Dt
+            fo << c->vertex(j%4)->info().idx << ' ';
+        }
+        // put a color on the face, so that in Meshlab I can activate the color by facet mode, to compare with the "colored facet file"
+        fo << "0 " << int(fit->second) << " 0";
+        fo << std::endl;
+    }
+    fo.close();
+}
+
+void exportSelectedFacets(Delaunay& Dt,
                   std::vector<std::vector<Facet_score>>& problematic_facets_per_edge,
                   std::string path){
 
@@ -53,12 +169,14 @@ void selectFacets(Delaunay& Dt,
 
     for(int i = 0; i < problematic_facets_per_edge.size(); i++){
 
-        std::vector<Facet_score> problematic_facets;
-        problematic_facets = problematic_facets_per_edge[i];
+        // get facets per edge and sort them according to their weight
+        std::vector<Facet_score> problematic_facets = problematic_facets_per_edge[i];
         std::sort(problematic_facets.begin(), problematic_facets.end(), sortbysec);
 
         // save the first two facets with the lowest score:
         Cell_handle c1 = problematic_facets[0].first.first;
+        if(Dt.is_infinite(c1))
+            continue;
         int vidx = problematic_facets[0].first.second;
         for(int j = vidx + 1; j <= vidx + 3; j++){
             // so c->vertex() gives me the global vertex handle from the Dt
@@ -74,12 +192,6 @@ void selectFacets(Delaunay& Dt,
         }
         remaining_facets.push_back(problematic_facets[1].first);
 
-//        Facet f2 = problematic_facets[1].first;
-//        points.insert(f2.first->vertex((f2.second+1)%3));
-//        points.insert(f2.first->vertex((f2.second+2)%3));
-//        points.insert(f2.first->vertex((f2.second+3)%3));
-//        remaining_facets.push_back(f2);
-
     }
 
     std::fstream fo;
@@ -89,7 +201,8 @@ void selectFacets(Delaunay& Dt,
 
     printPLYHeader(fo,
                    nv, nf,
-                   true, true, false, false, true,
+                   true, true, false, false, false,
+                   true,
                    15);
 
     std::unordered_set<Vertex_handle>::iterator vit;
@@ -98,7 +211,6 @@ void selectFacets(Delaunay& Dt,
         // reset the vertex index here, because I need to know the order of exactly this loop here
         // for the indexing of the facets in the PLY file
         (*vit)->info().idx = vidx++;
-        // also create a remaining_points vector
         // print data to file
         // coordinates
         fo  << (*vit)->point() << " "
@@ -113,7 +225,6 @@ void selectFacets(Delaunay& Dt,
 
     std::vector<Facet>::iterator fit;
     for(fit = remaining_facets.begin(); fit != remaining_facets.end(); fit++){
-
         // start printed facet line with a 3
         fo << 3 << ' ';
         Cell_handle c = fit->first;
@@ -122,17 +233,11 @@ void selectFacets(Delaunay& Dt,
             // so c->vertex() gives me the global vertex handle from the Dt
             fo << c->vertex(j%4)->info().idx << ' ';
         }
-//        for(int j = 1; j < 4; j++){
-//            // print the indicies of each cell to the file
-//            fo << fit->first->vertex((fit->second+j)%3)->info().idx << ' ';
-//        }
         // put a color on the face, so that in Meshlab I can activate the color by facet mode, to compare with the "colored facet file"
         fo << "0 200 0";
         fo << std::endl;
     }
     fo.close();
-
-
 }
 
 
@@ -145,15 +250,15 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
 
 //    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
-    std::string ofn = ifn1;
-//    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
+//    std::string ofn = ifn1;
+    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
 
     ifn1+=".ply";
     ifn2+=".ply";
@@ -164,12 +269,12 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::vector<std::vector<int>> t_polys;
     readTLS(ifn1, t_points, t_infos, t_polys);
     // AP
-//    std::vector<Point> a_points;
-//    std::vector<vertex_info> a_infos;
-//    readAP(ifn2, a_points, a_infos);
-//    concatenateData(a_points, a_infos, t_points, t_infos, 1);
-//    t_points = a_points;
-//    t_infos = a_infos;
+    std::vector<Point> a_points;
+    std::vector<vertex_info> a_infos;
+    readAP(ifn2, a_points, a_infos);
+    concatenateData(a_points, a_infos, t_points, t_infos, 1);
+    t_points = a_points;
+    t_infos = a_infos;
 
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
@@ -210,42 +315,43 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::vector<std::vector<int>> remaining_facets;
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 0);
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1);
-    exportColoredFacetsPLY(Dt, ofn, 1);
+
+//    exportColoredFacetsPLY(Dt, ofn, 1);
+
+//    exportCellCenter(ofn, Dt);
+
+//    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
+//    nonManifoldEdges(Dt, problematic_facets_per_edge);
+//    exportSelectedFacets(Dt, problematic_facets_per_edge, ofn);
+//    exportProblematicFacets2(Dt, problematic_facets_per_edge, ofn);
 
 
-    exportCellCenter(ofn, Dt);
 
-    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
-    nonManifoldEdges(Dt, problematic_facets_per_edge);
-    selectFacets(Dt, problematic_facets_per_edge, ofn);
+//    // create surface mesh
+//    Polyhedron out_mesh;
 
+//    bool oriented = CGAL::Polygon_mesh_processing::orient_polygon_soup(remaining_points, remaining_facets);
+//    std::cout << "Created duplicate vertices to generated polygon surface? " << oriented << std::endl;
+//    std::cout << "... 0 meaning additional vertices were added for orientation (and probably for ensuring manifoldness)." << std::endl;
+//    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(remaining_points, remaining_facets, out_mesh);
+////    int erased_components = out_mesh.keep_largest_connected_components(1);
+////    std::cout << "Number of erased components from surface mesh: " << erased_components << std::endl;
 
+////    std::vector<std::vector<int>> polygons;
+////    std::vector<Point> points;
+////    // create surface mesh, with orient and nb_of_components_to_keep
+////    createSurfaceMesh(Dt, points, polygons, out_mesh, 1, 1);
 
-    // create surface mesh
-    Polyhedron out_mesh;
+//    // export surface mesh as OFF
+//    exportOFF(out_mesh, ofn);
 
-    bool oriented = CGAL::Polygon_mesh_processing::orient_polygon_soup(remaining_points, remaining_facets);
-    std::cout << "Created duplicate vertices to generated polygon surface? " << oriented << std::endl;
-    std::cout << "... 0 meaning additional vertices were added for orientation (and probably for ensuring manifoldness)." << std::endl;
-    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(remaining_points, remaining_facets, out_mesh);
-//    int erased_components = out_mesh.keep_largest_connected_components(1);
-//    std::cout << "Number of erased components from surface mesh: " << erased_components << std::endl;
-
-//    std::vector<std::vector<int>> polygons;
-//    std::vector<Point> points;
-//    // create surface mesh, with orient and nb_of_components_to_keep
-//    createSurfaceMesh(Dt, points, polygons, out_mesh, 1, 1);
-
-    // export surface mesh as OFF
-    exportOFF(out_mesh, ofn);
-
-//    // Quality control
-    double max_dist_to_point_set =
-          CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(out_mesh, t_points, 4000);
-    std::cout << "Max distance to point set (precision): " << max_dist_to_point_set << std::endl;
-    double max_dist_to_triangle_mesh =
-          CGAL::Polygon_mesh_processing::max_distance_to_triangle_mesh<CGAL::Sequential_tag>(t_points, out_mesh);
-    std::cout << "Max distance to tiangle mesh (recall): " << max_dist_to_triangle_mesh << std::endl;
+////    // Quality control
+//    double max_dist_to_point_set =
+//          CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(out_mesh, t_points, 4000);
+//    std::cout << "Max distance to point set (precision): " << max_dist_to_point_set << std::endl;
+//    double max_dist_to_triangle_mesh =
+//          CGAL::Polygon_mesh_processing::max_distance_to_triangle_mesh<CGAL::Sequential_tag>(t_points, out_mesh);
+//    std::cout << "Max distance to tiangle mesh (recall): " << max_dist_to_triangle_mesh << std::endl;
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
