@@ -5,9 +5,15 @@
 
 typedef std::pair<std::pair<Cell_handle, int>, double> Facet_score;
 
+// idea: take a clique, starting with a non manifold edge, ALL its sourounding facets and their facet neighbours.
+// now optimize a binary linear program by enforcing that an edge of this clique either has 2 or 0 facet neighbours.
+// the idea is that the neighbouring facets of the neighbours of the non manifold edge, which a lot of them did not get selected, now
+// contribute with their data attachment (low difference between inside and outside label -> take the inverse)
+// to the non selection of the obvious case where the
+// 2 facet around the non-manifold edge with the highest difference of inside outside get selected.
+
 // get non manifold edges
 void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& problematic_facets_per_edge){
-
 
     Delaunay::Finite_edges_iterator fei;
 //    std::vector<std::vector<std::tuple<Cell_handle, Cell_handle>>> problematic_facets_per_edge;
@@ -32,12 +38,95 @@ void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& probl
         while(*fac != f1);
         if(problematic_facets.size()>2)
             problematic_facets_per_edge.push_back(problematic_facets);
-
     }
     std::cout << "number of non manifold edges: " << problematic_facets_per_edge.size() << std::endl;
-
 }
 
+double facetScore(Cell_handle& c1, Cell_handle& c2){
+    return sqrt(pow(c1->info().inside_score - c2->info().inside_score,2) +
+                pow(c1->info().outside_score - c2->info().outside_score,2));
+}
+
+
+// get cliques as a list of facets including their score
+void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& problematic_facets_per_edge){
+
+    // iterate over all edges of the Delaunay to find the non-manifold ones
+    Delaunay::Finite_edges_iterator fei;
+    for(fei = Dt.finite_edges_begin(); fei != Dt.finite_edges_end(); fei++){
+        // circulate over all the facet of the current edge
+        Delaunay::Facet_circulator fac = Dt.incident_facets(*fei);
+        Facet nm_f1 = *fac; // save the first facet to now when to stop again
+        std::vector<Facet_score> problematic_facets;         // init a vector of facets for the current edge
+        do{
+            // get the neighbouring of the current facet fac
+            Cell_handle c1 = fac->first;
+            Cell_handle c2 = Dt.mirror_facet(*fac).first;
+            // first add the facets around the non-manifold edge which have different labels (usually 4)
+            if(c1->info().final_label != c2->info().final_label){
+                double score = facetScore(c1,c2);
+                problematic_facets.push_back(std::make_pair(std::make_pair(c1,fac->second),score));
+            } // end of facet around non manifold edge selection if they have different labels
+            fac++;
+        // end of facet around current non manifold edge circulation
+        }while(*fac != nm_f1);
+        // check if we are even talking about a non-manifold edge, and if not, continue to the next edge
+        if(problematic_facets.size()<3)
+            continue;
+        // now add the neighbouring facets of the problematic facets
+        std::vector<Facet_score> new_problematic_facets;
+        for(int j = 0; j < problematic_facets.size(); j++){
+            Facet current_facet = problematic_facets[j].first;
+            // get the vertex index of the current facet, and the current edge
+            int facet_vertex = current_facet.second;
+            int e1_vertex = fei->second;
+            int e2_vertex = fei->third;
+            // now build the two other edges of the current facet
+            for(int i = e1_vertex + 1; i <= e1_vertex + 3; i++){
+                int vertex = i%4;
+                // iterate until I am at the 4th vertex of this cell, which is the first vertex of the two remaining edges of the current facet
+                if(vertex==facet_vertex || vertex==e1_vertex || vertex==e2_vertex)
+                    continue;
+                // first edge (edge is a triple of Cell, idx, idx)
+                Edge en1 = CGAL::Triple<Cell_handle, int, int>(current_facet.first, vertex, e1_vertex);
+                // get all the incident facets to this edge, starting at the current facet
+                Delaunay::Facet_circulator fac1 = Dt.incident_facets(en1, current_facet);
+                fac1++;
+                std::cout << "current facet (" << current_facet.first->info().idx << ", " << current_facet.second << ")" << std::endl;
+                while(*fac1 != current_facet){
+                    Cell_handle c1 = fac1->first;
+                    Cell_handle c2 = Dt.mirror_facet(*fac1).first;
+                    double score = facetScore(c1,c2);
+                    new_problematic_facets.push_back(std::make_pair(std::make_pair(c1,fac1->second),score));
+                    std::cout << "before facet (" << fac1->first->info().idx << ", " << fac1->second << ")" << std::endl;
+                    fac1++;
+                    if(Dt.mirror_facet(*fac1)==current_facet)
+                        break;
+                    std::cout << "after facet (" << fac1->first->info().idx << ", " << fac1->second << ")" << std::endl;
+                }
+                // second edge
+                Edge en2 = CGAL::Triple<Cell_handle, int, int>(current_facet.first, e2_vertex, vertex);
+                // get all the incident facets to this edge, starting at the current facet
+                Delaunay::Facet_circulator fac2 = Dt.incident_facets(en2, current_facet);
+                fac2++;
+                while(*fac2 != current_facet){
+                    Cell_handle c1 = fac2->first;
+                    Cell_handle c2 = Dt.mirror_facet(*fac2).first;
+                    double score = facetScore(c1,c2);
+                    new_problematic_facets.push_back(std::make_pair(std::make_pair(c1,fac2->second),score));
+                    fac2++;
+                    if(Dt.mirror_facet(*fac2)==current_facet)
+                        break;
+                }
+            }
+            // add the new problematic facets to the original facets around the originial non-manifold edge
+            problematic_facets.insert(problematic_facets.end(), new_problematic_facets.begin(),
+                               new_problematic_facets.end());
+        }
+        problematic_facets_per_edge.push_back(problematic_facets);
+    }
+    std::cout << "number of non manifold edges: " << problematic_facets_per_edge.size() << std::endl;
+}
 
 bool sortbysec(const Facet_score &a,
               const Facet_score &b)
@@ -47,41 +136,6 @@ bool sortbysec(const Facet_score &a,
 
 
 void exportProblematicFacets(Delaunay& Dt,
-                  std::vector<std::vector<Facet_score>>& problematic_facets_per_edge,
-                  std::string path){
-
-    std::fstream fo;
-    fo.open(path+"_facets_center.ply", std::fstream::out);
-    int nf = problematic_facets_per_edge.size()*4;
-
-    printPLYHeader(fo,
-                   nf, 0,
-                   0, true, false, false, true,
-                   false,
-                   15);
-
-    for(int i = 0; i < problematic_facets_per_edge.size(); i++){
-
-        // get facets per edge and sort them according to their weight
-        std::vector<Facet_score> problematic_facets = problematic_facets_per_edge[i];
-
-        for(int j = 0; j < problematic_facets.size(); j++){
-
-            Facet fac = problematic_facets[j].first;
-            if(Dt.is_infinite(fac))
-                continue;
-            Triangle tri = Dt.triangle(fac);
-            Point p = CGAL::centroid(tri.vertex(0),tri.vertex(1),tri.vertex(2));
-            fo  << p << " " << problematic_facets[j].second << std::endl;
-        }
-
-    }
-
-    fo.close();
-}
-
-
-void exportProblematicFacets2(Delaunay& Dt,
                   std::vector<std::vector<Facet_score>>& problematic_facets_per_edge,
                   std::string path){
 

@@ -317,7 +317,6 @@ void rayTracingFun(Delaunay& Dt, double medianNoise=0.02){
     // this function can than be called with the vft2 iterator
     // and I pass this iterator around and also pass it from within the traversal function
     // when I want to restart from a point that is hit
-    int intersection_count = 0;
     Delaunay::Finite_vertices_iterator vit;
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
@@ -330,8 +329,6 @@ void rayTracingFun(Delaunay& Dt, double medianNoise=0.02){
     auto stop = std::chrono::high_resolution_clock::now();
     auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
     std::cout << "Ray tracing done in " << full_duration.count() << "s" << std::endl;
-    std::cout << "intersection count " << intersection_count << std::endl;
-
 }
 
 // end of namespace rayTracing
