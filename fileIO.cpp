@@ -953,7 +953,7 @@ void exportSurfacePLY(const Delaunay& Dt,
         }
         remaining_polygons.push_back(poly);
         // put a color on the face, so that in Meshlab I can activate the color by facet mode, to compare with the "colored facet file"
-        fo << "0 128 0";
+        fo << "0 0 200";
         fo << std::endl;
     }
     fo.close();

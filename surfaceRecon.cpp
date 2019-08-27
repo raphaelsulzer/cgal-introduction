@@ -1,6 +1,8 @@
 #include <surfaceRecon.h>
 
-void nonManifoldEdges(const Delaunay& Dt, std::vector<std::vector<std::pair<Facet, double>>>& problematic_facets_per_edge){
+typedef std::pair<std::pair<Cell_handle, int>, double> Facet_score;
+
+void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& problematic_facets_per_edge){
 
 
     Delaunay::Finite_edges_iterator fei;
@@ -10,7 +12,7 @@ void nonManifoldEdges(const Delaunay& Dt, std::vector<std::vector<std::pair<Face
         Delaunay::Facet_circulator fac = Dt.incident_facets(*fei);
         Facet f1 = *fac;
 //        std::vector<std::pair<Cell_handle,Cell_handle>> problematic_facets;
-        std::vector<std::pair<Facet,double>> problematic_facets;
+        std::vector<Facet_score> problematic_facets;
         do{
             Cell_handle c1 = fac->first;
             Facet mf = Dt.mirror_facet(*fac);
@@ -19,7 +21,7 @@ void nonManifoldEdges(const Delaunay& Dt, std::vector<std::vector<std::pair<Face
                 double score = sqrt(pow(c1->info().inside_score - c2->info().outside_score,2) +
                                     pow(c2->info().inside_score - c1->info().outside_score,2));
 //                problematic_facets.push_back(std::make_tuple(c1,c2));
-                problematic_facets.push_back(std::make_pair(*fac,score));
+                problematic_facets.push_back(std::make_pair(std::make_pair(c1,fac->second),score));
             }
             fac++;
         }
@@ -33,44 +35,55 @@ void nonManifoldEdges(const Delaunay& Dt, std::vector<std::vector<std::pair<Face
 }
 
 
-bool sortbysec(const std::pair<Facet, double> &a,
-              const std::pair<Facet, double> &b)
+bool sortbysec(const Facet_score &a,
+              const Facet_score &b)
 {
     return (a.second < b.second);
 }
 
 
 
-void selectFacets(const Delaunay& Dt,
-                  std::vector<std::vector<std::pair<Facet, double>>>& problematic_facets_per_edge,
+void selectFacets(Delaunay& Dt,
+                  std::vector<std::vector<Facet_score>>& problematic_facets_per_edge,
                   std::string path){
 
 
     std::unordered_set<Vertex_handle> points;
     std::vector<Facet> remaining_facets;
 
-    for(int i = 0; i = problematic_facets_per_edge.size(); i++){
+    for(int i = 0; i < problematic_facets_per_edge.size(); i++){
 
-        std::vector<std::pair<Facet,double>> problematic_facets = problematic_facets_per_edge[i];
+        std::vector<Facet_score> problematic_facets;
+        problematic_facets = problematic_facets_per_edge[i];
         std::sort(problematic_facets.begin(), problematic_facets.end(), sortbysec);
 
         // save the first two facets with the lowest score:
-        Facet f1 = problematic_facets[0].first;
-        points.insert(f1.first->vertex((f1.second+1)%3));
-        points.insert(f1.first->vertex((f1.second+2)%3));
-        points.insert(f1.first->vertex((f1.second+3)%3));
-        remaining_facets.push_back(f1);
+        Cell_handle c1 = problematic_facets[0].first.first;
+        int vidx = problematic_facets[0].first.second;
+        for(int j = vidx + 1; j <= vidx + 3; j++){
+            // so c->vertex() gives me the global vertex handle from the Dt
+            points.insert(c1->vertex(j%4));
+        }
+        remaining_facets.push_back(problematic_facets[0].first);
 
-        Facet f2 = problematic_facets[1].first;
-        points.insert(f2.first->vertex((f2.second+1)%3));
-        points.insert(f2.first->vertex((f2.second+2)%3));
-        points.insert(f2.first->vertex((f2.second+3)%3));
-        remaining_facets.push_back(f2);
+        c1 = problematic_facets[1].first.first;
+        vidx = problematic_facets[1].first.second;
+        for(int j = vidx + 1; j <= vidx + 3; j++){
+            // so c->vertex() gives me the global vertex handle from the Dt
+            points.insert(c1->vertex(j%4));
+        }
+        remaining_facets.push_back(problematic_facets[1].first);
+
+//        Facet f2 = problematic_facets[1].first;
+//        points.insert(f2.first->vertex((f2.second+1)%3));
+//        points.insert(f2.first->vertex((f2.second+2)%3));
+//        points.insert(f2.first->vertex((f2.second+3)%3));
+//        remaining_facets.push_back(f2);
 
     }
 
     std::fstream fo;
-    fo.open(path+"selected_facets.ply", std::fstream::out);
+    fo.open(path+"_selected_facets.ply", std::fstream::out);
     int nv = points.size();
     int nf = remaining_facets.size();
 
@@ -103,13 +116,18 @@ void selectFacets(const Delaunay& Dt,
 
         // start printed facet line with a 3
         fo << 3 << ' ';
-        std::vector<int> poly(3);
-        for(int j = 1; j < 4; j++){
-            // print the indicies of each cell to the file
-            fo << fit->first->vertex((fit->second+j)%3)->info().idx << ' ';
+        Cell_handle c = fit->first;
+        int vidx = fit->second;
+        for(int j = vidx + 1; j <= vidx + 3; j++){
+            // so c->vertex() gives me the global vertex handle from the Dt
+            fo << c->vertex(j%4)->info().idx << ' ';
         }
+//        for(int j = 1; j < 4; j++){
+//            // print the indicies of each cell to the file
+//            fo << fit->first->vertex((fit->second+j)%3)->info().idx << ' ';
+//        }
         // put a color on the face, so that in Meshlab I can activate the color by facet mode, to compare with the "colored facet file"
-        fo << "0 128 0";
+        fo << "0 200 0";
         fo << std::endl;
     }
     fo.close();
@@ -127,8 +145,8 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
@@ -197,7 +215,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 
     exportCellCenter(ofn, Dt);
 
-    std::vector<std::vector<std::pair<Facet, double>>> problematic_facets_per_edge;
+    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
     nonManifoldEdges(Dt, problematic_facets_per_edge);
     selectFacets(Dt, problematic_facets_per_edge, ofn);
 
