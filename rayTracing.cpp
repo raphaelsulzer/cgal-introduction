@@ -114,7 +114,8 @@ int traverseCells(Delaunay& Dt,
                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
                   Ray ray, Vertex_handle vit, double sigma, int oppositeVertex,
                   bool inside,
-                  double medianNoise)
+                  double medianNoise,
+                  double infiniteScore)
 {
     // input::
     // &Delaunay            Reference to a Delaunay triangulation
@@ -179,8 +180,11 @@ int traverseCells(Delaunay& Dt,
                                   newCell, processed,
                                   ray, vit, sigma, newIdx,
                                   inside,
-                                  medianNoise);
+                                  medianNoise,
+                                  infiniteScore);
                 }
+                //TODO: think about putting an else statement here, which gives a hight weight
+                // to the cell that includes the sensor center
                 // if there was a facet found in the current cell that intersects, break this loop!!
                 // this was a major issue before having this break there, because it can lead to endless loops
                 break;
@@ -190,16 +194,17 @@ int traverseCells(Delaunay& Dt,
     // put outside score of infinite cell very high
     else{
         if(inside)
-            current_cell->info().inside_score+=10e0;
+            current_cell->info().inside_score+=infiniteScore;
         else
-            current_cell->info().outside_score+=10e0;
+            current_cell->info().outside_score+=infiniteScore;
     }
     return 0;
 }
 
 void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                bool inside,
-               double medianNoise){
+               double medianNoise,
+               double infiniteScore){
 
     //init already processed set
     std::unordered_set<Cell_handle> processed;
@@ -280,7 +285,8 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                                       newCell, processed,
                                       ray, vit, sigma, newIdx,
                                       inside,
-                                      medianNoise);
+                                      medianNoise,
+                                      infiniteScore);
                     }
                     // TODO: maybe put an else here and increase the score, because this cell should DEFINITELY be outside
                 }
@@ -296,16 +302,16 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
         else{         // put outside score of infinite cell very high
             // TODO: since accumulated scores per cell can get higher than 1, maybe I should also put the infinite cell score higher
             if(inside)
-                current_cell->info().inside_score+=10e0;
+                current_cell->info().inside_score+=infiniteScore;
             else
-                current_cell->info().outside_score+=10e0;
+                current_cell->info().outside_score+=infiniteScore;
         }
     }
 
 
 }
 
-void rayTracingFun(Delaunay& Dt, double medianNoise=0.02){
+void rayTracingFun(Delaunay& Dt, double medianNoise=0.02, double infiniteScore=1){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -321,9 +327,9 @@ void rayTracingFun(Delaunay& Dt, double medianNoise=0.02){
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-        firstCell(Dt, vit, 0, medianNoise);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 0, medianNoise, infiniteScore);
         // collect inside votes
-        firstCell(Dt, vit, 1, medianNoise);    // one_cell currently not used in the correct way
+        firstCell(Dt, vit, 1, medianNoise, infiniteScore);
     }
 
     auto stop = std::chrono::high_resolution_clock::now();

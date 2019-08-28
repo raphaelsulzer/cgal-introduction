@@ -7,8 +7,8 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
@@ -36,13 +36,13 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
     // calculate noise per point and save it in the vertex_info of the Dt
-    double medianNoise = pcaKNN(Dt, t_points);
-//    double medianNoise = 0;
+//    double medianNoise = pcaKNN(Dt, t_points);
+    double medianNoise = 0;
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 
-
-    rayTracing::rayTracingFun(Dt, medianNoise);
+    double infiniteScore = 10e3;
+    rayTracing::rayTracingFun(Dt, medianNoise, infiniteScore);
 
 //    int outside_weight = 2.2;
 //    tetTracing::firstCell(Dt, t_polys, outside_weight);

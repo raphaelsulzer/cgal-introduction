@@ -53,7 +53,13 @@ void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& 
 
     // iterate over all edges of the Delaunay to find the non-manifold ones
     Delaunay::Finite_edges_iterator fei;
+    int edge_count = 0;
     for(fei = Dt.finite_edges_begin(); fei != Dt.finite_edges_end(); fei++){
+        std::cout << edge_count++ << std::endl;
+        if(Dt.is_infinite(*fei)){
+            std::cout << "...is infinite edge" << std::endl;
+            continue;
+        }
         // circulate over all the facet of the current edge
         Delaunay::Facet_circulator fac = Dt.incident_facets(*fei);
         Facet nm_f1 = *fac; // save the first facet to now when to stop again
@@ -77,10 +83,20 @@ void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& 
         std::vector<Facet_score> new_problematic_facets;
         for(int j = 0; j < problematic_facets.size(); j++){
             Facet current_facet = problematic_facets[j].first;
+//            std::cout << "new facet" << std::endl;
             // get the vertex index of the current facet, and the current edge
             int facet_vertex = current_facet.second;
             int e1_vertex = fei->second;
             int e2_vertex = fei->third;
+            if(facet_vertex == e1_vertex || facet_vertex == e2_vertex){
+                current_facet = Dt.mirror_facet(current_facet);
+                facet_vertex = current_facet.second;
+                if(facet_vertex == e1_vertex || facet_vertex == e2_vertex){
+//                    std::cout << "not working after switch" << std::endl;
+                    continue;
+                }
+
+            }
             // now build the two other edges of the current facet
             for(int i = e1_vertex + 1; i <= e1_vertex + 3; i++){
                 int vertex = i%4;
@@ -89,23 +105,33 @@ void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& 
                     continue;
                 // first edge (edge is a triple of Cell, idx, idx)
                 Edge en1 = CGAL::Triple<Cell_handle, int, int>(current_facet.first, vertex, e1_vertex);
+                if(Dt.is_infinite(en1)){
+                    std::cout << "infinite edge" << std::endl;
+                    continue;
+                }
                 // get all the incident facets to this edge, starting at the current facet
                 Delaunay::Facet_circulator fac1 = Dt.incident_facets(en1, current_facet);
                 fac1++;
-                std::cout << "current facet (" << current_facet.first->info().idx << ", " << current_facet.second << ")" << std::endl;
+//                std::cout << "current facet (" << current_facet.first->info().idx << ", " << current_facet.second << ")" << std::endl;
+                Facet mirror_facet = Dt.mirror_facet(current_facet);
+//                std::cout << "mirror facet (" << mirror_facet.first->info().idx << ", " << mirror_facet.second << ")" << std::endl;
                 while(*fac1 != current_facet){
                     Cell_handle c1 = fac1->first;
                     Cell_handle c2 = Dt.mirror_facet(*fac1).first;
                     double score = facetScore(c1,c2);
                     new_problematic_facets.push_back(std::make_pair(std::make_pair(c1,fac1->second),score));
-                    std::cout << "before facet (" << fac1->first->info().idx << ", " << fac1->second << ")" << std::endl;
+//                    std::cout << "before facet (" << fac1->first->info().idx << ", " << fac1->second << ")" << std::endl;
                     fac1++;
                     if(Dt.mirror_facet(*fac1)==current_facet)
                         break;
-                    std::cout << "after facet (" << fac1->first->info().idx << ", " << fac1->second << ")" << std::endl;
+//                    std::cout << "after facet (" << fac1->first->info().idx << ", " << fac1->second << ")" << std::endl;
                 }
                 // second edge
                 Edge en2 = CGAL::Triple<Cell_handle, int, int>(current_facet.first, e2_vertex, vertex);
+                if(Dt.is_infinite(en2)){
+                    std::cout << "infinite edge" << std::endl;
+                    continue;
+                }
                 // get all the incident facets to this edge, starting at the current facet
                 Delaunay::Facet_circulator fac2 = Dt.incident_facets(en2, current_facet);
                 fac2++;
@@ -119,10 +145,10 @@ void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& 
                         break;
                 }
             }
-            // add the new problematic facets to the original facets around the originial non-manifold edge
-            problematic_facets.insert(problematic_facets.end(), new_problematic_facets.begin(),
-                               new_problematic_facets.end());
         }
+        // add the new problematic facets to the original facets around the originial non-manifold edge
+        problematic_facets.insert(problematic_facets.end(), new_problematic_facets.begin(),
+                           new_problematic_facets.end());
         problematic_facets_per_edge.push_back(problematic_facets);
     }
     std::cout << "number of non manifold edges: " << problematic_facets_per_edge.size() << std::endl;

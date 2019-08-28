@@ -34,8 +34,8 @@ int tetIntersectionFun(Tetrahedron& tet,
 //    std::cout << plane_count << std::endl;
 
     // when tet was recursivly called it goes to plane 4
-    // which doesn't exist; hence algorithm is over and the current tets
-    // volume should be counted
+    // which doesn't exist; hence algorithm is over and
+    // the volume of the current tet should be added
     if(plane_count == 4){
         double newVol = abs(tet.volume());
 //        std::cout << "vol counted tet: " << tet_name << std::endl;
