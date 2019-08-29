@@ -23,17 +23,10 @@ void idxCells(Delaunay& Dt){
         fci->info().idx = i++;
     }
 }
-//void idxCells(Delaunay& Dt){
-//    Delaunay::All_cells_iterator fci;
-//    int i=0;
-//    for(fci=Dt.all_cells_begin();fci!=Dt.all_cells_end();fci++){
-//        if(!Dt.is_infinite(fci))
-//            fci->info().idx = i++;
-//        else
-//            fci->info().outside_score = 0.0;
-//    }
-//}
 
+// TODO: measure the time of
+// do_intersect(tri, tri)
+// and tetIntersectionFun()
 
 int traverseCells(Delaunay& Dt,
                   Cell_handle& first_cell,
@@ -52,12 +45,10 @@ int traverseCells(Delaunay& Dt,
 //        int cidx = current_cell->info().idx;
 //        std::cout << "first cell: " << fidx << "    second cell: " << cidx << std::endl;
 
-//        for(int t = 0; t < 4; t++){
-//            Triangle tri = Dt.triangle(current_cell, t);
-//            bool dointersect = CGAL::do_intersect(ray,tri);
-//            if(dointersect)
-
-//        }
+        // TODO: fix this!!
+        // this intersection test is actually not valid:
+        // a Dt.tetrahedron can lie completely inside a sensor tetrahedron and thus
+        // not be detected by this test!!!
         bool dointersect = false;
         int t=0;
         while(!dointersect && t < 4)
@@ -71,7 +62,6 @@ int traverseCells(Delaunay& Dt,
         }
 
         Tetrahedron current_tet = Dt.tetrahedron(current_cell);
-
         double vol = 0.0;
         tetIntersectionFun(current_tet, planes, vol);
         if(!isnan(vol)){
@@ -260,5 +250,6 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int ou
 }// end of firstCell function
 
 }// end of namespace
+
 
 

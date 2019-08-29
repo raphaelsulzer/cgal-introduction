@@ -246,7 +246,7 @@ void GeneralGraph_DArraySArraySpatVarying(Delaunay& Dt, float reg_weight, int nu
         {
             idx3 = cft->info().idx;
 //            std::get<3>(it3->second) = gc->whatLabel(idx3);
-            cft->info().final_label = gc->whatLabel(idx3);
+            cft->info().gc_label = gc->whatLabel(idx3);
 
         }
 

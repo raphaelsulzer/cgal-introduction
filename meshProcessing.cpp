@@ -289,9 +289,9 @@ void createSurfaceMesh(const Delaunay& Dt, std::vector<Point>& points, std::vect
         //////// check which faces to prune:
 
 //        // with GC labelling:
-        int clabel = c->info().final_label;
+        int clabel = c->info().gc_label;
         Cell_handle m = Dt.mirror_facet(*fft).first;
-        int mlabel = m->info().final_label;
+        int mlabel = m->info().gc_label;
 
         // check if two neighbouring cells have the same label, and if so (and the prunce_faces export function is active) continue to next face
         if(clabel == mlabel){

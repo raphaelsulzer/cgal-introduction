@@ -57,11 +57,12 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     // Dt, area_weight, iteration (-1 means until convergence)
     GeneralGraph_DArraySArraySpatVarying(Dt, regularization_weight, -1);
 
+    fixNonManifoldEdges(Dt);
 
 
 //    Delaunay::Finite_cells_iterator cit;
 //    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-//        std::cout << cit->info().final_label << std::endl;
+//        std::cout << cit->info().gc_label << std::endl;
 //    }
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
@@ -71,14 +72,15 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 0);
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1);
 
+
 //    exportColoredFacetsPLY(Dt, ofn, 1);
 
 //    exportCellCenter(ofn, Dt);
 
-    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
-    nonManifoldEdges(Dt, problematic_facets_per_edge);
-    exportSelectedFacets(Dt, problematic_facets_per_edge, ofn);
-    exportProblematicFacets(Dt, problematic_facets_per_edge, ofn);
+//    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
+//    nonManifoldEdges(Dt, problematic_facets_per_edge);
+//    exportSelectedFacets(Dt, problematic_facets_per_edge, ofn);
+//    exportProblematicFacets(Dt, problematic_facets_per_edge, ofn);
 
 //    // create surface mesh
 //    Polyhedron out_mesh;

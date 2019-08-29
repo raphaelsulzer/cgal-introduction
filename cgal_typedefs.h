@@ -50,7 +50,8 @@ struct cell_info{
     int outside_count = 0;
     double outside_score = 0.0;
     double inside_score = 0.0;
-    int final_label = 0;
+    int gc_label = 0;   // 0 meaning inside; 1 meaning outside !!, see exportColoredFacetsPLY function in fileIO
+    int manifold_label = 2; // 2 meaning no fixed label exists
 };
 typedef CGAL::Triangulation_cell_base_with_info_3<cell_info, EPICK>        CB;         // cell base
 

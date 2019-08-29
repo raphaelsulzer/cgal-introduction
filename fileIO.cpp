@@ -722,7 +722,10 @@ void exportColoredFacetsPLY(const Delaunay& Dt,
     
     std::fstream fo;
     fo.open(path, std::fstream::out);
-    printPLYHeader(fo, nv, nf, true, true, false, false, true);
+    printPLYHeader(fo,
+                   nv, nf,
+                   true, true, false, false, false,
+                   true);
 
     // give every vertex from the triangulation an index starting at 0
     // and already print the point coordinates, color and normal of the vertex to the PLY file
@@ -797,7 +800,7 @@ void exportColoredFacetsPLY(const Delaunay& Dt,
         }
         // color the facets (if !prune_faces, meaning coloring is active)
         if(clabel == 1 && mlabel == 1){
-            fo << " 0 191 255";
+            fo << " 0 111 255";
         }
         else if(clabel == 0 && mlabel == 0){
             fo << "255 0 0";

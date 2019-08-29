@@ -4,6 +4,8 @@
 
 #include "surfaceRecon.cpp"
 
+#include <boost/dynamic_bitset.hpp>
+
 int main(int argc, char const *argv[]){
 
     std::string file_number;
@@ -19,8 +21,8 @@ int main(int argc, char const *argv[]){
     std::cout << "Surface reconstruction of file number: " << file_number << " with regularization weight " << regularization_weight << std::endl;
     surfaceReconstruction(file_number, regularization_weight);
 
+    // process colmap PLY file
 //    readColmapPLY();
-
 
 //    tetIntersectionTest();
 

@@ -15,6 +15,207 @@ typedef std::pair<std::pair<Cell_handle, int>, double> Facet_score;
 // to the non selection of the obvious case where the
 // 2 facet around the non-manifold edge with the highest difference of inside outside get selected.
 
+
+
+// get non manifold edges
+int isManifoldEdge(const Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
+
+    Delaunay::Cell_circulator cc = Dt.incident_cells(*e);
+    Cell_handle first_cell = cc;
+    int borders = 0;
+    do{
+        // first cell
+        int cc_label;
+        if(cc->info().manifold_label < 2)
+            cc_label = cc->info().manifold_label;
+        else
+            cc_label = cc->info().gc_label;
+        // go to next cell
+        int nc_label;
+        cc++;
+        if(cc->info().manifold_label < 2)
+            nc_label = cc->info().manifold_label;
+        else
+            nc_label = cc->info().gc_label;
+        // check if there is a border
+        if(cc_label != nc_label){borders+=1;}
+    }
+    while(first_cell != cc && borders < 3);
+
+    if(borders > 2)
+        return 1;
+    else
+        return 0;
+}
+
+int getCellLabel(Cell_handle& c){
+
+    if(c->info().manifold_label < 2)
+        return c->info().manifold_label;
+    else
+        return c->info().gc_label;
+}
+
+
+double nonManifoldCliqueEnergy(const Delaunay& Dt, Delaunay::Finite_edges_iterator& e, double reg_weight){
+
+
+    Delaunay::Cell_circulator cc = Dt.incident_cells(*e, e->first);
+    Cell_handle first_cell = cc;
+    double unary = 0;
+    double binary = 0;
+    do{
+
+        // first cell
+        Cell_handle current_cell = cc;
+        int cc_label = getCellLabel(current_cell);
+
+        // add the unary term of this cell
+        if(cc_label==1){unary+=cc->info().inside_score;} // if label = 1 = outside, penalize with inside score
+        else{unary+=cc->info().outside_score;} // if label = 0 = inside, penalize with outside score
+
+        // add the binary term of the other two facets that are not connected to this edge
+        Facet f1 = std::make_pair(cc,e->second);
+        Cell_handle mc1 = Dt.mirror_facet(f1).first;
+        int mc1_label = getCellLabel(mc1);
+        //if they are not both infinite and have a different label, add their area to the binary term
+        if(!(Dt.is_infinite(cc) && Dt.is_infinite(mc1)) && mc1_label != cc_label){
+            Triangle tri = Dt.triangle(f1);
+            binary+=sqrt(tri.squared_area());
+        }
+        Facet f2 = std::make_pair(cc,e->third);
+        Cell_handle mc2 = Dt.mirror_facet(f2).first;
+        int mc2_label = getCellLabel(mc2);
+        //if they are not both infinite and have a different label, add their area to the binary term
+        if(!(Dt.is_infinite(cc) && Dt.is_infinite(mc2)) && mc2_label != cc_label){
+            Triangle tri = Dt.triangle(f2);
+            binary+=sqrt(tri.squared_area());
+        }
+
+        // go to next cell and add the binary term between previous cell and next cell
+        cc++;
+        int nidx = current_cell->index(cc); // the index of the new cell seen from the old cell = facet between previous and new cell
+        Facet f3 = std::make_pair(current_cell,nidx);
+        int mc3_label = getCellLabel(current_cell);
+        //if they are not both infinite and have a different label, add their area to the binary term
+        if(!(Dt.is_infinite(current_cell) && Dt.is_infinite(cc)) && mc3_label != cc_label){
+            Triangle tri = Dt.triangle(f3);
+            binary+=sqrt(tri.squared_area());
+        }
+    }
+    while(first_cell != cc);
+    return unary+reg_weight*binary;
+}
+
+typedef std::pair<double, boost::dynamic_bitset<>> Combination_score;
+int makeCombinations(int n, std::vector<Combination_score>& c){
+    const int x = pow(2,n);
+    for(int i = 0; i < x; i++){
+        const boost::dynamic_bitset<> b(n, i);
+        c.push_back(std::make_pair(0.0,b));
+    }
+    return x;
+}
+
+bool sortCombinations(const Combination_score &a,
+              const Combination_score &b)
+{
+    return (a.first < b.first);
+}
+
+void fixNonManifoldEdges(Delaunay& Dt){
+
+    Delaunay::Finite_edges_iterator fei;
+//    std::vector<std::vector<std::tuple<Cell_handle, Cell_handle>>> problematic_facets_per_edge;
+    for(fei = Dt.finite_edges_begin(); fei != Dt.finite_edges_end(); fei++){
+
+        if(!isManifoldEdge(Dt, fei))
+            continue;
+
+        // make a container with all incident cells
+        std::vector<Cell_handle> cells_around_nmedge;
+        Delaunay::Cell_circulator cc = Dt.incident_cells(*fei);
+        Cell_handle first_cell = cc;
+        do{cells_around_nmedge.push_back(cc++);}
+        while(first_cell != cc);
+
+        // make the bitset with according size
+        std::vector<Combination_score> combinations;
+        int number_of_cells = cells_around_nmedge.size();
+        int number_of_possible_combinations = makeCombinations(number_of_cells, combinations);
+
+        // iterate over the container, relabel the cells with the bitset, and get their corresponding energy and save it in a vector
+        for(int c = 0; c < number_of_possible_combinations; c++){
+            for(int v = 0; v < number_of_cells; v++){
+                cells_around_nmedge[v]->info().manifold_label = combinations[c].second[v];
+            }
+            // check if the current combination is manifold
+            if(isManifoldEdge(Dt, fei))
+                // if so, give it the corresponding energy
+                combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, 1);
+            else
+                // give it an energy below zero
+                combinations[c].first = -1;
+        }
+
+        // sort the container while keeping track of its original index, which gives you the corresponding configuration from the bitset index
+        std::sort(combinations.begin(), combinations.end(), sortCombinations);
+
+        // take the lowest energy and check if it is manifold
+        for(int sc = 0; sc < number_of_possible_combinations; sc++){
+            // if combination is manifold, relabel to this combination
+            if(combinations[sc].first >= 0){
+                for(int v = 0; v < number_of_cells; v++){
+                    // relabel to the correct combination
+                    cells_around_nmedge[v]->info().gc_label = combinations[sc].second[v];
+                }
+                break;
+            }
+            // will only go here if no manifold combination was found
+            std::cout << "no manifold combination found for edge ("
+                      << fei->first->info().idx << ", "
+                      << fei->second << ", "
+                      << fei->third << ")"
+                      << std::endl;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////
+/////////////////////// old facet based stuff //////////////////////
+////////////////////////////////////////////////////////////////////
+
 // get non manifold edges
 void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& problematic_facets_per_edge){
 
@@ -45,113 +246,16 @@ void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& probl
     std::cout << "number of non manifold edges: " << problematic_facets_per_edge.size() << std::endl;
 }
 
-// get non manifold edges
-int isManifoldEdge(const Delaunay& Dt, Edge e){
-
-    Delaunay::Cell_circulator cc = Dt.incident_cells(e);
-    Cell_handle first_cell = cc;
-    int borders = 0;
-    do{
-        // first cell
-        int cc_label;
-        if(cc->info().manifold_label < 2)
-            cc_label = cc->info().manifold_label;
-        else
-            cc_label = cc->info().gc_label;
-        // go to next cell
-        int nc_label;
-        cc++;
-        if(cc->info().manifold_label < 2)
-            nc_label = cc->info().manifold_label;
-        else
-            nc_label = cc->info().gc_label;
-        // check if there is a border
-        if(cc_label != nc_label){borders+=1;}
-    }
-    while(first_cell != cc && borders < 3);
-
-    if(borders > 2)
-        return 1;
-    else
-        return 0;
-}
-
-int getCellLabel(Cell_handle c){
-
-    if(c->info().manifold_label < 2)
-        return c->info().manifold_label;
-    else
-        return c->info().gc_label;
-}
-
-
-double nonManifoldCliqueEnergy(const Delaunay Dt, Edge e, double reg_weight){
-
-
-    Delaunay::Cell_circulator cc = Dt.incident_cells(e, e.first);
-    Cell_handle first_cell = cc;
-    double unary = 0;
-    double binary = 0;
-    do{
-
-        Cell_handle current_cell = cc;
-
-        // first cell
-        int cc_label = getCellLabel(cc);
-
-        // add the unary term of this cell
-        if(cc_label==1){unary+=cc->info().inside_score;} // if label = 1 = outside, penalize with inside score
-        else{unary+=cc->info().outside_score;} // if label = 0 = inside, penalize with outside score
-
-        // add the binary term of the other two facets that are not connected to this edge
-        Facet f1 = std::make_pair(cc,e.second);
-        Cell_handle mc1 = Dt.mirror_facet(f1).first;
-        int mc1_label = getCellLabel(mc1);
-        //if they are not both infinite and have a different label, add their area to the binary term
-        if(!(Dt.is_infinite(cc) && Dt.is_infinite(mc1)) && mc1_label != cc_label){
-            Triangle tri = Dt.triangle(f1);
-            binary+=sqrt(tri.squared_area());
-        }
-        Facet f2 = std::make_pair(cc,e.third);
-        Cell_handle mc2 = Dt.mirror_facet(f2).first;
-        int mc2_label = getCellLabel(mc2);
-        //if they are not both infinite and have a different label, add their area to the binary term
-        if(!(Dt.is_infinite(cc) && Dt.is_infinite(mc2)) && mc2_label != cc_label){
-            Triangle tri = Dt.triangle(f2);
-            binary+=sqrt(tri.squared_area());
-        }
-
-        // go to next cell and add the binary term between previous cell and next cell
-        cc++;
-        int nidx = current_cell->index(cc); // the index of the new cell seen from the old cell = facet between previous and new cell
-        Facet f3 = std::make_pair(current_cell,nidx);
-        int mc3_label = getCellLabel(cc);
-        //if they are not both infinite and have a different label, add their area to the binary term
-        if(!(Dt.is_infinite(current_cell) && Dt.is_infinite(cc)) && mc3_label != cc_label){
-            Triangle tri = Dt.triangle(f3);
-            binary+=sqrt(tri.squared_area());
-        }
-    }
-    while(first_cell != cc);
-    return unary+reg_weight*binary;
-}
-
-
-
-
-
 
 double facetScore(Cell_handle& c1, Cell_handle& c2){
     return sqrt(pow(c1->info().inside_score - c2->info().inside_score,2) +
                 pow(c1->info().outside_score - c2->info().outside_score,2));
 }
-
-
-
-
-
-
-
+bool sortFacets(const Facet_score &a,
+              const Facet_score &b)
+{
+    return (a.second < b.second);
+}
 
 // get cliques as a list of facets including their score
 void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& problematic_facets_per_edge){
@@ -259,11 +363,7 @@ void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& 
     std::cout << "number of non manifold edges: " << problematic_facets_per_edge.size() << std::endl;
 }
 
-bool sortbysec(const Facet_score &a,
-              const Facet_score &b)
-{
-    return (a.second < b.second);
-}
+
 
 
 void exportProblematicFacets(Delaunay& Dt,
@@ -278,7 +378,7 @@ void exportProblematicFacets(Delaunay& Dt,
 
         // get facets per edge and sort them according to their weight
         std::vector<Facet_score> problematic_facets = problematic_facets_per_edge[i];
-        std::sort(problematic_facets.begin(), problematic_facets.end(), sortbysec);
+        std::sort(problematic_facets.begin(), problematic_facets.end(), sortFacets);
 
         double min_score = problematic_facets[0].second;
         double max_score = problematic_facets.back().second;
@@ -360,7 +460,7 @@ void exportSelectedFacets(Delaunay& Dt,
 
         // get facets per edge and sort them according to their weight
         std::vector<Facet_score> problematic_facets = problematic_facets_per_edge[i];
-        std::sort(problematic_facets.begin(), problematic_facets.end(), sortbysec);
+        std::sort(problematic_facets.begin(), problematic_facets.end(), sortFacets);
 
         // save the first two facets with the lowest score:
         Cell_handle c1 = problematic_facets[0].first.first;
