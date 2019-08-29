@@ -18,7 +18,7 @@ typedef std::pair<std::pair<Cell_handle, int>, double> Facet_score;
 
 
 // get non manifold edges
-int isManifoldEdge(const Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
+int isManifoldEdge(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
 
     Delaunay::Cell_circulator cc = Dt.incident_cells(*e);
     Cell_handle first_cell = cc;
@@ -123,7 +123,10 @@ bool sortCombinations(const Combination_score &a,
     return (a.first < b.first);
 }
 
-void fixNonManifoldEdges(Delaunay& Dt){
+void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
+
+    // TODO: export the non-manifold edges, before and after their fixing, to see what is going wrong
+
 
     Delaunay::Finite_edges_iterator fei;
 //    std::vector<std::vector<std::tuple<Cell_handle, Cell_handle>>> problematic_facets_per_edge;
@@ -152,7 +155,7 @@ void fixNonManifoldEdges(Delaunay& Dt){
             // check if the current combination is manifold
             if(isManifoldEdge(Dt, fei))
                 // if so, give it the corresponding energy
-                combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, 1);
+                combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, regularization_weight);
             else
                 // give it an energy below zero
                 combinations[c].first = -1;
@@ -162,9 +165,12 @@ void fixNonManifoldEdges(Delaunay& Dt){
         std::sort(combinations.begin(), combinations.end(), sortCombinations);
 
         // take the lowest energy and check if it is manifold
-        for(int sc = 0; sc < number_of_possible_combinations; sc++){
+        int sc;
+        for(sc = 0; sc < number_of_possible_combinations; sc++){
             // if combination is manifold, relabel to this combination
-            if(combinations[sc].first >= 0){
+            if(combinations[sc].first < 0)
+                continue;
+            else{
                 for(int v = 0; v < number_of_cells; v++){
                     // relabel to the correct combination
                     cells_around_nmedge[v]->info().gc_label = combinations[sc].second[v];

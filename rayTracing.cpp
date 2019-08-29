@@ -153,8 +153,8 @@ int traverseCells(Delaunay& Dt,
                 // ...this could potentially be a much faster way than the processed-set
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
-//                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
-                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
+                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
+//                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                double vol = Dt.tetrahedron(current_cell).volume();
@@ -251,8 +251,8 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                 // get the distance between the source of the ray and the intersection point with the current cell
                 double dist2 = CGAL::squared_distance(intersectionPoint, source);
                 // calculate the score for the current cell based on the distance
-//                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
-                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
+                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
+//                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                    if(inside){
