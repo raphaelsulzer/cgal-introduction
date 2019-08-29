@@ -5,6 +5,9 @@
 
 typedef std::pair<std::pair<Cell_handle, int>, double> Facet_score;
 
+// TODO: ask Laurent how to use QUBO solver in order to optimize clique with manifold constrained.
+
+
 // idea: take a clique, starting with a non manifold edge, ALL its sourounding facets and their facet neighbours.
 // now optimize a binary linear program by enforcing that an edge of this clique either has 2 or 0 facet neighbours.
 // the idea is that the neighbouring facets of the neighbours of the non manifold edge, which a lot of them did not get selected, now
@@ -27,7 +30,7 @@ void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& probl
             Cell_handle c1 = fac->first;
             Facet mf = Dt.mirror_facet(*fac);
             Cell_handle c2 = mf.first;
-            if(c1->info().final_label != c2->info().final_label){
+            if(c1->info().gc_label != c2->info().gc_label){
                 double score = sqrt(pow(c1->info().inside_score - c2->info().outside_score,2) +
                                     pow(c2->info().inside_score - c1->info().outside_score,2));
 //                problematic_facets.push_back(std::make_tuple(c1,c2));
@@ -42,10 +45,112 @@ void nonManifoldEdges(Delaunay& Dt, std::vector<std::vector<Facet_score>>& probl
     std::cout << "number of non manifold edges: " << problematic_facets_per_edge.size() << std::endl;
 }
 
+// get non manifold edges
+int isManifoldEdge(const Delaunay& Dt, Edge e){
+
+    Delaunay::Cell_circulator cc = Dt.incident_cells(e);
+    Cell_handle first_cell = cc;
+    int borders = 0;
+    do{
+        // first cell
+        int cc_label;
+        if(cc->info().manifold_label < 2)
+            cc_label = cc->info().manifold_label;
+        else
+            cc_label = cc->info().gc_label;
+        // go to next cell
+        int nc_label;
+        cc++;
+        if(cc->info().manifold_label < 2)
+            nc_label = cc->info().manifold_label;
+        else
+            nc_label = cc->info().gc_label;
+        // check if there is a border
+        if(cc_label != nc_label){borders+=1;}
+    }
+    while(first_cell != cc && borders < 3);
+
+    if(borders > 2)
+        return 1;
+    else
+        return 0;
+}
+
+int getCellLabel(Cell_handle c){
+
+    if(c->info().manifold_label < 2)
+        return c->info().manifold_label;
+    else
+        return c->info().gc_label;
+}
+
+
+double nonManifoldCliqueEnergy(const Delaunay Dt, Edge e, double reg_weight){
+
+
+    Delaunay::Cell_circulator cc = Dt.incident_cells(e, e.first);
+    Cell_handle first_cell = cc;
+    double unary = 0;
+    double binary = 0;
+    do{
+
+        Cell_handle current_cell = cc;
+
+        // first cell
+        int cc_label = getCellLabel(cc);
+
+        // add the unary term of this cell
+        if(cc_label==1){unary+=cc->info().inside_score;} // if label = 1 = outside, penalize with inside score
+        else{unary+=cc->info().outside_score;} // if label = 0 = inside, penalize with outside score
+
+        // add the binary term of the other two facets that are not connected to this edge
+        Facet f1 = std::make_pair(cc,e.second);
+        Cell_handle mc1 = Dt.mirror_facet(f1).first;
+        int mc1_label = getCellLabel(mc1);
+        //if they are not both infinite and have a different label, add their area to the binary term
+        if(!(Dt.is_infinite(cc) && Dt.is_infinite(mc1)) && mc1_label != cc_label){
+            Triangle tri = Dt.triangle(f1);
+            binary+=sqrt(tri.squared_area());
+        }
+        Facet f2 = std::make_pair(cc,e.third);
+        Cell_handle mc2 = Dt.mirror_facet(f2).first;
+        int mc2_label = getCellLabel(mc2);
+        //if they are not both infinite and have a different label, add their area to the binary term
+        if(!(Dt.is_infinite(cc) && Dt.is_infinite(mc2)) && mc2_label != cc_label){
+            Triangle tri = Dt.triangle(f2);
+            binary+=sqrt(tri.squared_area());
+        }
+
+        // go to next cell and add the binary term between previous cell and next cell
+        cc++;
+        int nidx = current_cell->index(cc); // the index of the new cell seen from the old cell = facet between previous and new cell
+        Facet f3 = std::make_pair(current_cell,nidx);
+        int mc3_label = getCellLabel(cc);
+        //if they are not both infinite and have a different label, add their area to the binary term
+        if(!(Dt.is_infinite(current_cell) && Dt.is_infinite(cc)) && mc3_label != cc_label){
+            Triangle tri = Dt.triangle(f3);
+            binary+=sqrt(tri.squared_area());
+        }
+    }
+    while(first_cell != cc);
+    return unary+reg_weight*binary;
+}
+
+
+
+
+
+
 double facetScore(Cell_handle& c1, Cell_handle& c2){
     return sqrt(pow(c1->info().inside_score - c2->info().inside_score,2) +
                 pow(c1->info().outside_score - c2->info().outside_score,2));
 }
+
+
+
+
+
+
 
 
 // get cliques as a list of facets including their score
@@ -69,7 +174,7 @@ void getNonManifoldCliques(Delaunay& Dt, std::vector<std::vector<Facet_score>>& 
             Cell_handle c1 = fac->first;
             Cell_handle c2 = Dt.mirror_facet(*fac).first;
             // first add the facets around the non-manifold edge which have different labels (usually 4)
-            if(c1->info().final_label != c2->info().final_label){
+            if(c1->info().gc_label != c2->info().gc_label){
                 double score = facetScore(c1,c2);
                 problematic_facets.push_back(std::make_pair(std::make_pair(c1,fac->second),score));
             } // end of facet around non manifold edge selection if they have different labels

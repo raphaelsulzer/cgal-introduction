@@ -7,8 +7,8 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
@@ -76,7 +76,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 //    exportCellCenter(ofn, Dt);
 
     std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
-    getNonManifoldCliques(Dt, problematic_facets_per_edge);
+    nonManifoldEdges(Dt, problematic_facets_per_edge);
     exportSelectedFacets(Dt, problematic_facets_per_edge, ofn);
     exportProblematicFacets(Dt, problematic_facets_per_edge, ofn);
 

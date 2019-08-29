@@ -778,9 +778,9 @@ void exportColoredFacetsPLY(const Delaunay& Dt,
         }
         else{
             // with GC labelling:
-            clabel = c->info().final_label;
+            clabel = c->info().gc_label;
             Cell_handle m = Dt.mirror_facet(*fft).first;
-            mlabel = m->info().final_label;
+            mlabel = m->info().gc_label;
         }
 
         // if label of neighbouring cells is not the same...
@@ -865,9 +865,9 @@ void exportSurfacePLY(const Delaunay& Dt,
         }
         // optimized = with GC labelling:
         else{
-            clabel = c->info().final_label;
+            clabel = c->info().gc_label;
             Cell_handle m = Dt.mirror_facet(*fft).first;
-            mlabel = m->info().final_label;
+            mlabel = m->info().gc_label;
 
         }
 
