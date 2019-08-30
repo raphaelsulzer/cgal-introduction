@@ -654,8 +654,8 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
     fo << "property uchar blue" << std::endl;
     fo << "property float inside_score" << std::endl;
     fo << "property float outside_score" << std::endl;
-    fo << "property float inside_count" << std::endl;
-    fo << "property float outside_count" << std::endl;
+    fo << "property float inside" << std::endl;
+    fo << "property float outside" << std::endl;
     fo << "end_header" << std::endl;
     fo << std::setprecision(8);
 
@@ -692,9 +692,13 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
             green = 128;
         }
         fo << centroid << " " << red << " " << green << " " << blue << " "
-           << inside_score << " " << outside_score << " "
-           << cit->info().inside_count << " " << cit->info().outside_count << " "
-           << std::endl;
+           << inside_score << " " << outside_score << " ";
+//           << cit->info().inside_count << " " << cit->info().outside_count << " ";
+        if(cit->info().gc_label == 0)
+            fo << "255 0";
+        else
+            fo << "0 255";
+        fo << std::endl;
     }
     fo.close();
     std::cout << "Exported to " << path << std::endl;
@@ -824,7 +828,8 @@ void exportSurfacePLY(const Delaunay& Dt,
                     std::vector<Point>& remaining_points,
                     std::vector<std::vector<int>>& remaining_polygons,
                     std::string path,
-                    bool optimized=true){
+                    bool optimized=true,
+                    bool fixManifold=false){
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -918,9 +923,12 @@ void exportSurfacePLY(const Delaunay& Dt,
     ///////// file output ////////
     // create PLY output file for outputting the triangulation, with point coordinates, color, normals and triangle facets
     if(optimized)
-        path+="_optimized.ply";
+        path+="_optimized";
     else
-        path+="_initial.ply";
+        path+="_initial";
+    if(fixManifold)
+        path+="_fixedManifold";
+    path+=".ply";
 
     std::fstream fo;
     fo.open(path, std::fstream::out);

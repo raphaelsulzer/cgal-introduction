@@ -57,7 +57,18 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     // Dt, area_weight, iteration (-1 means until convergence)
     GeneralGraph_DArraySArraySpatVarying(Dt, regularization_weight, -1);
 
+    std::vector<Point> remaining_points;
+    std::vector<std::vector<int>> remaining_facets;
+    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 0);
+
     fixNonManifoldEdges(Dt, regularization_weight);
+    // TODO: implement a fixNonManifold points function;
+    // when I circulate around a point I now have to dimensional, instead of just one dimensional neighbours
+    // so I can not simply say if I have more than two borders, I am in non-manifoldness
+    // instead I need to check how many regions I have
+    // this means doing a region growing when implementing the cell iteration (there is no more cell circulator anymore, but a cell iterator)
+    // so start with a seed cell, go to next cell and see if it has a different label and if it is connected to the previous cell
+    // ... if I have more than two regions, point is not manifold
 
 
 //    Delaunay::Finite_cells_iterator cit;
@@ -66,16 +77,15 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 //    }
     // good area weight for fontaine dataset is 15.0, for daratec 0.01,
 
-    // Dt, output_file, optimized, (pruned=1 or colored=0)
-    std::vector<Point> remaining_points;
-    std::vector<std::vector<int>> remaining_facets;
-    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 0);
-    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1);
+    // Dt, output_file, optimized
+//    std::vector<Point> remaining_points;
+//    std::vector<std::vector<int>> remaining_facets;
+    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 1);
+//    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1);
 
+    exportColoredFacetsPLY(Dt, ofn, 1);
 
-//    exportColoredFacetsPLY(Dt, ofn, 1);
-
-//    exportCellCenter(ofn, Dt);
+    exportCellCenter(ofn, Dt);
 
 //    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
 //    nonManifoldEdges(Dt, problematic_facets_per_edge);

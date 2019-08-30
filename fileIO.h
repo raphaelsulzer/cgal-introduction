@@ -65,6 +65,7 @@ void exportSurfacePLY(const Delaunay& Dt,
                 std::vector<Point>& remaining_points,
                 std::vector<std::vector<int>>& remaining_polygons,
                 std::string path,
-                bool optimized);
+                bool optimized,
+                bool fixedManifold);
 
 #endif // FILEIO_H
