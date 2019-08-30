@@ -43,10 +43,101 @@ int isManifoldEdge(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
     while(first_cell != cc && borders < 3);
 
     if(borders > 2)
-        return 1;
-    else
         return 0;
+    else
+        return 1;
 }
+
+// get non manifold edges
+int isManifoldEdge(Delaunay& Dt, Edge e){
+
+    Delaunay::Cell_circulator cc = Dt.incident_cells(e);
+    Cell_handle first_cell = cc;
+    int borders = 0;
+    do{
+        // first cell
+        int cc_label;
+        if(cc->info().manifold_label < 2)
+            cc_label = cc->info().manifold_label;
+        else
+            cc_label = cc->info().gc_label;
+        // go to next cell
+        int nc_label;
+        cc++;
+        if(cc->info().manifold_label < 2)
+            nc_label = cc->info().manifold_label;
+        else
+            nc_label = cc->info().gc_label;
+        // check if there is a border
+        if(cc_label != nc_label){borders+=1;}
+    }
+    while(first_cell != cc && borders < 3);
+
+    if(borders > 2)
+        return 0;
+    else
+        return 1;
+}
+
+
+int isManifoldClique(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
+
+    if(!isManifoldEdge(Dt,e))
+        return 0;
+
+    Delaunay::Cell_circulator cc = Dt.incident_cells(*e, e->first);
+    Cell_handle first_cell = cc;
+    Edge current_edge = *e;
+    do{
+
+        int i = current_edge.second;
+        int j = current_edge.third;
+        int k = Dt.next_around_edge(i,j);
+
+        // check first edge
+        Edge e1 = CGAL::Triple<Cell_handle,int,int>(cc,i,k);
+        if(!isManifoldEdge(Dt,e1))
+            return 0;
+        // check second edge
+        Edge e2 = CGAL::Triple<Cell_handle,int,int>(cc,j,k);
+        if(!isManifoldEdge(Dt,e2))
+            return 0;
+        // check third edge
+        Edge e3 = CGAL::Triple<Cell_handle,int,int>(cc,k,6-(i+j+k));
+        if(!isManifoldEdge(Dt,e3))
+            return 0;
+
+        // go to next cell with its corresponding edge
+        cc++;
+        int new_i;
+        switch(i){
+        case 0: new_i = 1;
+            break;
+        case 1: new_i = 0;
+            break;
+        case 2: new_i = 2;
+            break;
+        case 3: new_i = 3;
+        }
+        int new_j;
+        switch(j){
+        case 0: new_j = 1;
+            break;
+        case 1: new_j = 0;
+            break;
+        case 2: new_j = 2;
+            break;
+        case 3: new_j = 3;
+        }
+        current_edge = CGAL::Triple<Cell_handle, int, int>(cc, new_j, new_i);
+    }
+    while(first_cell != cc);
+
+    return 1;
+
+}
+
+
 
 int getCellLabel(Cell_handle& c){
 
@@ -134,11 +225,12 @@ void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
     // in fact for now I can leave the code how it is
     // and simply add a isManifoldClique predicate in the last for loop
 
+    // iterate over all edges of the Dt
     Delaunay::Finite_edges_iterator fei;
-//    std::vector<std::vector<std::tuple<Cell_handle, Cell_handle>>> problematic_facets_per_edge;
     for(fei = Dt.finite_edges_begin(); fei != Dt.finite_edges_end(); fei++){
 
-        if(!isManifoldEdge(Dt, fei))
+        // if the current edge is (already) manifold, continue
+        if(isManifoldEdge(Dt, fei))
             continue;
 
         // make a container with all incident cells
@@ -158,39 +250,44 @@ void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
             for(int v = 0; v < number_of_cells; v++){
                 cells_around_nmedge[v]->info().manifold_label = combinations[c].second[v];
             }
-            // check if the current combination is manifold
-            if(isManifoldEdge(Dt, fei))
-                // if so, give it the corresponding energy
-                combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, regularization_weight);
-            else
-                // give it an energy below zero
-                combinations[c].first = -1;
+            combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, regularization_weight);
+
+//            // check if the current combination is manifold
+//            if(isManifoldEdge(Dt, fei))
+//                // if so, give it the corresponding energy
+//                combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, regularization_weight);
+//            else
+//                // give it an energy below zero
+//                combinations[c].first = -1;
         }
 
         // sort the container while keeping track of its original index, which gives you the corresponding configuration from the bitset index
         std::sort(combinations.begin(), combinations.end(), sortCombinations);
 
         // take the lowest energy and check if it is manifold
-        int sc;
-        for(sc = 0; sc < number_of_possible_combinations; sc++){
-            // if combination is manifold, relabel to this combination
-            if(combinations[sc].first < 0)
-                continue;
-            else{
+        int solution_found = 0;
+        for(int sc = 0; sc < number_of_possible_combinations; sc++){
+
+            // relabel to the correct combination
+            for(int v = 0; v < number_of_cells; v++){
+                cells_around_nmedge[v]->info().manifold_label = combinations[sc].second[v];
+            }
+            if(isManifoldClique(Dt, fei)){
                 for(int v = 0; v < number_of_cells; v++){
-                    // relabel to the correct combination
                     cells_around_nmedge[v]->info().gc_label = combinations[sc].second[v];
                 }
+                solution_found = 1;
                 break;
             }
-            // will only go here if no manifold combination was found
+        } // end of trying all possible solutions
+        if(!solution_found){
             std::cout << "no manifold combination found for edge ("
                       << fei->first->info().idx << ", "
                       << fei->second << ", "
                       << fei->third << ")"
                       << std::endl;
         }
-    }
+    } // end of iteration over all edges of the Delaunay
 }
 
 

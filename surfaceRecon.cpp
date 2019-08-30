@@ -57,7 +57,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     // Dt, area_weight, iteration (-1 means until convergence)
     GeneralGraph_DArraySArraySpatVarying(Dt, regularization_weight, -1);
 
-    fixNonManifoldEdges(Dt);
+    fixNonManifoldEdges(Dt, regularization_weight);
 
 
 //    Delaunay::Finite_cells_iterator cit;
