@@ -126,7 +126,13 @@ bool sortCombinations(const Combination_score &a,
 void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
 
     // TODO: export the non-manifold edges, before and after their fixing, to see what is going wrong
-
+    // problem is that I am not actually checking if the whole clique is manifold, but only if the
+    // original edge is manifold
+    // so I need to do a function asking isManifoldClique and check 3 additional edges (out of the six in a tet) if they are manifold
+    // there are some accelarations, e.g. if in the bitset there are more than two connected components,
+    // I already know it is not manifold it is not manifold
+    // in fact for now I can leave the code how it is
+    // and simply add a isManifoldClique predicate in the last for loop
 
     Delaunay::Finite_edges_iterator fei;
 //    std::vector<std::vector<std::tuple<Cell_handle, Cell_handle>>> problematic_facets_per_edge;
