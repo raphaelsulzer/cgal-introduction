@@ -150,13 +150,11 @@ int getCellLabel(Cell_handle& c){
 
 double nonManifoldCliqueEnergy(const Delaunay& Dt, Delaunay::Finite_edges_iterator& e, double reg_weight){
 
-
     Delaunay::Cell_circulator cc = Dt.incident_cells(*e, e->first);
     Cell_handle first_cell = cc;
     double unary = 0;
     double binary = 0;
     do{
-
         // first cell
         Cell_handle current_cell = cc;
         int cc_label = getCellLabel(current_cell);
@@ -216,15 +214,6 @@ bool sortCombinations(const Combination_score &a,
 
 void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
 
-    // TODO: export the non-manifold edges, before and after their fixing, to see what is going wrong
-    // problem is that I am not actually checking if the whole clique is manifold, but only if the
-    // original edge is manifold
-    // so I need to do a function asking isManifoldClique and check 3 additional edges (out of the six in a tet) if they are manifold
-    // there are some accelarations, e.g. if in the bitset there are more than two connected components,
-    // I already know it is not manifold it is not manifold
-    // in fact for now I can leave the code how it is
-    // and simply add a isManifoldClique predicate in the last for loop
-
     // iterate over all edges of the Dt
     Delaunay::Finite_edges_iterator fei;
     for(fei = Dt.finite_edges_begin(); fei != Dt.finite_edges_end(); fei++){
@@ -247,18 +236,10 @@ void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
 
         // iterate over the container, relabel the cells with the bitset, and get their corresponding energy and save it in a vector
         for(int c = 0; c < number_of_possible_combinations; c++){
-            for(int v = 0; v < number_of_cells; v++){
+            for(int v = 0; v < number_of_cells; v++)
                 cells_around_nmedge[v]->info().manifold_label = combinations[c].second[v];
-            }
+            // calculate the energy of the current configuration
             combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, regularization_weight);
-
-//            // check if the current combination is manifold
-//            if(isManifoldEdge(Dt, fei))
-//                // if so, give it the corresponding energy
-//                combinations[c].first = nonManifoldCliqueEnergy(Dt, fei, regularization_weight);
-//            else
-//                // give it an energy below zero
-//                combinations[c].first = -1;
         }
 
         // sort the container while keeping track of its original index, which gives you the corresponding configuration from the bitset index
@@ -289,6 +270,116 @@ void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
         }
     } // end of iteration over all edges of the Delaunay
 }
+
+////////////////////////////////////
+//////// Point manifoldness ////////
+////////////////////////////////////
+// get non manifold edges
+int isManifoldPoint(Delaunay& Dt, Delaunay::Finite_vertices_iterator& p){
+
+    std::vector<Cell_handle> incident_cells;
+    Dt.incident_cells(p, std::back_inserter(incident_cells));
+    std::vector<Cell_handle>::iterator cc;
+    // sort cells in inside and outside cells
+    std::vector<Cell_handle> inside_cells;
+    std::vector<Cell_handle> outside_cells;
+    for(cc = incident_cells.begin(); cc != incident_cells.end(); cc++){
+        if(getCellLabel(*cc) == 0)
+            inside_cells.push_back(*cc);
+        else
+            outside_cells.push_back(*cc);
+    }
+    // if one of them is empty, point is manifold
+    int is = inside_cells.size();
+    int os = outside_cells.size();
+    std::vector<Cell_handle> region;
+    std::vector<Cell_handle> rest;
+    std::vector<Cell_handle> stack;
+    if(is < 2 || os < 2){
+        return 1;
+    }
+    else if(is <= os){
+        region.push_back(inside_cells[0]);
+        for(int i = 1; i < is; i++)
+            rest.push_back(inside_cells[i]);
+    }
+    else if(is > os){
+        region.push_back(outside_cells[0]);
+        for(int i = 1; i < os; i++)
+            rest.push_back(outside_cells[i]);
+    }
+    int new_stack = 1000;
+    int old_stack = 1001;
+    do{
+        Cell_handle first_rest_cell = rest[0];
+        bool first_rest_cell_added = 0;
+        for(auto r = region.begin(); r != region.end(); r++){
+            if(first_rest_cell->has_neighbor(*r)){
+                region.push_back(first_rest_cell);
+                rest.erase(rest.begin());
+                first_rest_cell_added = 1;
+                break;
+            }
+        }
+        if(!first_rest_cell_added){
+            stack.push_back(first_rest_cell);
+            rest.erase(rest.begin());
+        }
+        if(rest.size() == 0){
+            if(stack.size()==0)
+                return 1;
+            rest = stack;
+            old_stack=new_stack;
+            new_stack=stack.size();
+            stack.clear();
+        }
+    }while(old_stack > new_stack);
+    if(rest.size()==0 && stack.size()==0)
+        return 1;
+    else
+        return 0;
+}
+
+void fixNonManifoldPoints(Delaunay& Dt, double regularization_weight){
+
+    // iterate over all edges of the Dt
+    Delaunay::Finite_vertices_iterator fvi;
+    int tcount = 0;
+    int count = 0;
+    for(fvi = Dt.finite_vertices_begin(); fvi != Dt.finite_vertices_end(); fvi++){
+
+
+        // if the current edge is (already) manifold, continue
+        bool mn = isManifoldPoint(Dt, fvi);
+        if(!mn)
+            count++;
+
+        std::cout << "points processed: " << tcount++ << std::endl;
+
+    }
+    std::cout << "number of non-manifold points: " << count << std::endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

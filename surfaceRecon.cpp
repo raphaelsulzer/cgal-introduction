@@ -61,7 +61,11 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::vector<std::vector<int>> remaining_facets;
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 0);
 
-    fixNonManifoldEdges(Dt, regularization_weight);
+//    fixNonManifoldEdges(Dt, regularization_weight);
+
+    fixNonManifoldPoints(Dt, regularization_weight);
+
+
     // TODO: implement a fixNonManifold points function;
     // when I circulate around a point I now have to dimensional, instead of just one dimensional neighbours
     // so I can not simply say if I have more than two borders, I am in non-manifoldness
