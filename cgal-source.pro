@@ -18,14 +18,15 @@ SOURCES += \
     tetIntersection.cpp \
     tetTracing.cpp \
     tetTracingBB.cpp \
-    faceSelection.cpp
+    manifoldness.cpp
 
 HEADERS += \
     cgal_typedefs.h \
     fileIO.h \
     rayTracing.h \
     tetIntersection.h \
-    surfaceRecon.h
+    surfaceRecon.h \
+    manifoldness.h
 
 QMAKE_CXXFLAGS += -std=c++11
 

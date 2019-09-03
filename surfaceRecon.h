@@ -11,7 +11,7 @@
 #include "tetTracing.cpp"
 //#include "tetTracingBB.cpp"
 #include "optimization.cpp"
-#include "faceSelection.cpp"
+#include "manifoldness.cpp"
 
 void surfaceReconstruction(std::string path, double regularization_weight);
 

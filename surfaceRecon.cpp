@@ -63,7 +63,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 
     fixNonManifoldEdges(Dt, regularization_weight);
 
-    fixNonManifoldPoints(Dt, regularization_weight);
+//    fixNonManifoldPoints(Dt, regularization_weight);
 
 
 
