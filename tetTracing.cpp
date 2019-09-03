@@ -34,7 +34,8 @@ int traverseCells(Delaunay& Dt,
                   std::vector<Plane>& planes,
                   Triangle& sensor_tri,
                   double noise,
-                  int outside_weight){
+                  int outside_weight,
+                  double infinite_score){
 
     // if current cell is not infinite then go on
     // processed state is already checked before calling this function, so no need to check again
@@ -84,20 +85,21 @@ int traverseCells(Delaunay& Dt,
             Facet mirror_fac = Dt.mirror_facet(fac);
             Cell_handle newCell = mirror_fac.first;
             if(processed.find(newCell) == processed.end()){
-                traverseCells(Dt, first_cell, newCell, processed, planes, sensor_tri, noise, outside_weight);
+                traverseCells(Dt, first_cell, newCell, processed, planes, sensor_tri,
+                              noise, outside_weight, infinite_score);
             }
         }
     }
     else{
         // give infinite cell high value
-        current_cell->info().outside_score+=1;
+        current_cell->info().outside_score+=infinite_score;
         processed.insert(current_cell);
     }
     return 1;
 }
 
 
-void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int outside_weight){
+void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int outside_weight, int infinite_score=1){
     std::cout << "Start marking crossed tets..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -192,7 +194,8 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int ou
 
                                 // TODO: investigate why there are sometimes NaNs!!
                                 if(!isnan(vol)){
-                                    double score = vol*outside_weight*noise/abs(current_tet.volume());
+//                                    double score = vol*outside_weight*noise/abs(current_tet.volume());
+                                    double score = vol*outside_weight/abs(current_tet.volume());
 //                                    double score = vol*outside_weight;
                                     current_cell->info().outside_score+=score;
     //                                std::cout << "inside score: " << current_cell->info().inside_score <<
@@ -229,7 +232,8 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int ou
                                     Facet mirror_fac = Dt.mirror_facet(fac);
                                     Cell_handle newCell = mirror_fac.first;
                                     if(processed.find(newCell) == processed.end()){
-                                        traverseCells(Dt, current_cell, newCell, processed, planes, tri, noise, outside_weight);
+                                        traverseCells(Dt, current_cell, newCell, processed, planes, tri,
+                                                      noise, outside_weight, infinite_score);
                                     }
                                 }
     //                        }//end of IF-already-processed
@@ -238,7 +242,7 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int ou
                 } // if cell is not infinite end
                 else{
                     // give infinite cell high value
-                    current_cell->info().outside_score+=1;
+                    current_cell->info().outside_score+=infinite_score;
                     processed.insert(current_cell);
                 }
             }

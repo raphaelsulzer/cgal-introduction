@@ -13,7 +13,6 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
 
-//    std::string ifn1 = "/home/raphael/PhD_local/data/museeZoologic/aerial_images/BIOM-EMS/colmap/results/fused";
     std::string ofn = ifn1;
 //    std::string ofn = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/musee/fused_mesh";
 
@@ -35,18 +34,27 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 
     Delaunay Dt = makeDelaunayWithInfo(t_points, t_infos);
 
-    // calculate noise per point and save it in the vertex_info of the Dt
+
+    ///// calculate noise per point and save it in the vertex_info of the Dt
 //    double medianNoise = pcaKNN(Dt, t_points);
     double medianNoise = 0;
 //    pcaDt(Dt);
     // TODO: calculate a sigma = sigmaKNN * sigmaDelaunay
 
-    double infiniteScore = 10e3;
-    rayTracing::rayTracingFun(Dt, medianNoise, infiniteScore);
 
+    double infiniteScore = 10e3;
+
+//    ///// Tet tracing
 //    int outside_weight = 2.2;
-//    tetTracing::firstCell(Dt, t_polys, outside_weight);
-//    tetTracingBB::treeIntersection(Dt, t_polys);
+//    tetTracing::firstCell(Dt, t_polys, outside_weight, infiniteScore);
+////    tetTracingBB::treeIntersection(Dt, t_polys);
+//    bool tetTracing = true;
+    bool tetTracing = false;
+
+
+    //// Ray tracing
+    rayTracing::rayTracingFun(Dt, tetTracing, infiniteScore);
+
 
     /////// feature normalization
 //    standardizeScores(Dt);
@@ -54,67 +62,46 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 //    logScore(Dt);
 //    softmax(Dt);
 
-    // Dt, area_weight, iteration (-1 means until convergence)
+    ///// optimization: Dt, area_weight, iteration (-1 means until convergence)
     GeneralGraph_DArraySArraySpatVarying(Dt, regularization_weight, -1);
 
+    ///// manifoldness operations
     std::vector<Point> remaining_points;
     std::vector<std::vector<int>> remaining_facets;
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 0);
-
     fixNonManifoldEdges(Dt, regularization_weight);
-
-//    fixNonManifoldPoints(Dt, regularization_weight);
-
+    fixNonManifoldPoints(Dt, regularization_weight);
 
 
+    ////// Dt, ..., ..., output_file, optimized, manifold
 
-
-//    Delaunay::Finite_cells_iterator cit;
-//    for(cit = Dt.finite_cells_begin(); cit != Dt.finite_cells_end(); cit++){
-//        std::cout << cit->info().gc_label << std::endl;
-//    }
-    // good area weight for fontaine dataset is 15.0, for daratec 0.01,
-
-    // Dt, output_file, optimized
 //    std::vector<Point> remaining_points;
 //    std::vector<std::vector<int>> remaining_facets;
+//    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 0, 0);
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 1);
-//    exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1);
 
     exportColoredFacetsPLY(Dt, ofn, 1);
-
     exportCellCenter(ofn, Dt);
 
-//    std::vector<std::vector<Facet_score>> problematic_facets_per_edge;
-//    nonManifoldEdges(Dt, problematic_facets_per_edge);
-//    exportSelectedFacets(Dt, problematic_facets_per_edge, ofn);
-//    exportProblematicFacets(Dt, problematic_facets_per_edge, ofn);
+    /////// create surface mesh
 
-//    // create surface mesh
-//    Polyhedron out_mesh;
+    Polyhedron out_mesh;
+    bool oriented = CGAL::Polygon_mesh_processing::orient_polygon_soup(remaining_points, remaining_facets);
+    std::cout << "Created duplicate vertices to generated polygon surface? " << oriented << std::endl;
+    std::cout << "... 0 meaning additional vertices were added for orientation (and probably for ensuring manifoldness)." << std::endl;
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(remaining_points, remaining_facets, out_mesh);
+    int erased_components = out_mesh.keep_largest_connected_components(1);
+    std::cout << "Number of erased components from surface mesh: " << erased_components << std::endl;
 
-//    bool oriented = CGAL::Polygon_mesh_processing::orient_polygon_soup(remaining_points, remaining_facets);
-//    std::cout << "Created duplicate vertices to generated polygon surface? " << oriented << std::endl;
-//    std::cout << "... 0 meaning additional vertices were added for orientation (and probably for ensuring manifoldness)." << std::endl;
-//    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(remaining_points, remaining_facets, out_mesh);
-////    int erased_components = out_mesh.keep_largest_connected_components(1);
-////    std::cout << "Number of erased components from surface mesh: " << erased_components << std::endl;
+    exportOFF(out_mesh, ofn);
 
-////    std::vector<std::vector<int>> polygons;
-////    std::vector<Point> points;
-////    // create surface mesh, with orient and nb_of_components_to_keep
-////    createSurfaceMesh(Dt, points, polygons, out_mesh, 1, 1);
-
-//    // export surface mesh as OFF
-//    exportOFF(out_mesh, ofn);
-
-////    // Quality control
-//    double max_dist_to_point_set =
-//          CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(out_mesh, t_points, 4000);
-//    std::cout << "Max distance to point set (precision): " << max_dist_to_point_set << std::endl;
-//    double max_dist_to_triangle_mesh =
-//          CGAL::Polygon_mesh_processing::max_distance_to_triangle_mesh<CGAL::Sequential_tag>(t_points, out_mesh);
-//    std::cout << "Max distance to tiangle mesh (recall): " << max_dist_to_triangle_mesh << std::endl;
+    ///// Quality control
+    double max_dist_to_point_set =
+          CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(out_mesh, t_points, 4000);
+    std::cout << "Max distance to point set (precision): " << max_dist_to_point_set << std::endl;
+    double max_dist_to_triangle_mesh =
+          CGAL::Polygon_mesh_processing::max_distance_to_triangle_mesh<CGAL::Sequential_tag>(t_points, out_mesh);
+    std::cout << "Max distance to tiangle mesh (recall): " << max_dist_to_triangle_mesh << std::endl;
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);

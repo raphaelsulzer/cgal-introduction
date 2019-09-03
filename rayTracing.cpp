@@ -61,7 +61,7 @@ bool rayTriangleIntersection(Point& rayOrigin,
 ////////////////////////////////////////////////////////////
 /////////////////// ray tracing functions //////////////////
 ////////////////////////////////////////////////////////////
-std::pair<double, double> wasureScore(double dist2, double eig3, bool inside, double medianNoise){
+std::pair<double, double> wasureScore(double dist2, double eig3, bool inside){
 
     double score_inside;
     double score_outside;
@@ -88,7 +88,7 @@ std::pair<double, double> wasureScore(double dist2, double eig3, bool inside, do
     return sigmas;
 }
 
-std::pair<double, double> resrScore(double dist2, double eig3, bool inside, double medianNoise){
+std::pair<double, double> resrScore(double dist2, double eig3, bool inside){
 
     double score_inside;
     double score_outside;
@@ -114,7 +114,6 @@ int traverseCells(Delaunay& Dt,
                   Cell_handle& current_cell, std::unordered_set<Cell_handle>& processed,
                   Ray ray, Vertex_handle vit, double sigma, int oppositeVertex,
                   bool inside,
-                  double medianNoise,
                   double infiniteScore)
 {
     // input::
@@ -153,8 +152,8 @@ int traverseCells(Delaunay& Dt,
                 // ...this could potentially be a much faster way than the processed-set
                 double dist2 = CGAL::squared_distance(intersectionPoint, rayO);
                 // calculate the score for the current cell based on the distance
-                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
-//                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
+                std::pair<double, double> score = resrScore(dist2, sigma, inside);
+//                std::pair<double, double> score = wasureScore(dist2, sigma, inside);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
 //                double vol = Dt.tetrahedron(current_cell).volume();
@@ -180,7 +179,6 @@ int traverseCells(Delaunay& Dt,
                                   newCell, processed,
                                   ray, vit, sigma, newIdx,
                                   inside,
-                                  medianNoise,
                                   infiniteScore);
                 }
                 //TODO: think about putting an else statement here, which gives a hight weight
@@ -203,7 +201,6 @@ int traverseCells(Delaunay& Dt,
 
 void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                bool inside,
-               double medianNoise,
                double infiniteScore){
 
     //init already processed set
@@ -251,7 +248,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                 // get the distance between the source of the ray and the intersection point with the current cell
                 double dist2 = CGAL::squared_distance(intersectionPoint, source);
                 // calculate the score for the current cell based on the distance
-                std::pair<double, double> score = resrScore(dist2, sigma, inside, medianNoise);
+                std::pair<double, double> score = resrScore(dist2, sigma, inside);
 //                std::pair<double, double> score = wasureScore(dist2, sigma, inside, medianNoise);
                 // now locate the current cell in the global context of the triangulation,
                 // so I can set the score
@@ -285,7 +282,6 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                                       newCell, processed,
                                       ray, vit, sigma, newIdx,
                                       inside,
-                                      medianNoise,
                                       infiniteScore);
                     }
                     // TODO: maybe put an else here and increase the score, because this cell should DEFINITELY be outside
@@ -311,7 +307,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
 
 }
 
-void rayTracingFun(Delaunay& Dt, double medianNoise=0.02, double infiniteScore=1){
+void rayTracingFun(Delaunay& Dt, bool outside_tracing=true, double infiniteScore=1){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -327,9 +323,10 @@ void rayTracingFun(Delaunay& Dt, double medianNoise=0.02, double infiniteScore=1
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-        firstCell(Dt, vit, 0, medianNoise, infiniteScore);
+        if(outside_tracing)
+            firstCell(Dt, vit, 0, infiniteScore);
         // collect inside votes
-        firstCell(Dt, vit, 1, medianNoise, infiniteScore);
+        firstCell(Dt, vit, 1, infiniteScore);
     }
 
     auto stop = std::chrono::high_resolution_clock::now();

@@ -18,7 +18,8 @@ SOURCES += \
     tetIntersection.cpp \
     tetTracing.cpp \
     tetTracingBB.cpp \
-    manifoldness.cpp
+    manifoldness.cpp \
+    tetTracing2.cpp
 
 HEADERS += \
     cgal_typedefs.h \
