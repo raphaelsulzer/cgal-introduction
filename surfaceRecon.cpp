@@ -7,8 +7,8 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
@@ -63,16 +63,10 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 
     fixNonManifoldEdges(Dt, regularization_weight);
 
-    fixNonManifoldPoints(Dt, regularization_weight, ofn);
+    fixNonManifoldPoints(Dt, regularization_weight);
 
 
-    // TODO: implement a fixNonManifold points function;
-    // when I circulate around a point I now have to dimensional, instead of just one dimensional neighbours
-    // so I can not simply say if I have more than two borders, I am in non-manifoldness
-    // instead I need to check how many regions I have
-    // this means doing a region growing when implementing the cell iteration (there is no more cell circulator anymore, but a cell iterator)
-    // so start with a seed cell, go to next cell and see if it has a different label and if it is connected to the previous cell
-    // ... if I have more than two regions, point is not manifold
+
 
 
 //    Delaunay::Finite_cells_iterator cit;
