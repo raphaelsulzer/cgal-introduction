@@ -340,7 +340,97 @@ int isManifoldPoint(Delaunay& Dt, Delaunay::Finite_vertices_iterator& p){
         return 0;
 }
 
-void fixNonManifoldPoints(Delaunay& Dt, double regularization_weight){
+// get non manifold edges
+int isPointManifoldClique(Delaunay& Dt, Delaunay::Finite_vertices_iterator& p){
+
+    std::unordered_set<Cell_handle> incident_cells;
+    Dt.incident_cells(p, std::back_inserter(incident_cells));
+    // TODO: also add the cells around the points around it,
+    // rest should work exactly the same
+
+    std::vector<Cell_handle>::iterator cc;
+    // sort cells in inside and outside cells
+    std::vector<Cell_handle> inside_cells;
+    std::vector<Cell_handle> outside_cells;
+    for(cc = incident_cells.begin(); cc != incident_cells.end(); cc++){
+        if(getCellLabel(*cc) == 0)
+            inside_cells.push_back(*cc);
+        else
+            outside_cells.push_back(*cc);
+    }
+
+
+    // if one of them is empty, point is manifold
+    int is = inside_cells.size();
+    int os = outside_cells.size();
+    std::vector<Cell_handle> region;
+    std::vector<Cell_handle> rest;
+    std::vector<Cell_handle> stack;
+    if(is < 2 || os < 2){
+        return 1;
+    }
+    else if(is <= os){
+        region.push_back(inside_cells[0]);
+        for(int i = 1; i < is; i++)
+            rest.push_back(inside_cells[i]);
+    }
+    else if(is > os){
+        region.push_back(outside_cells[0]);
+        for(int i = 1; i < os; i++)
+            rest.push_back(outside_cells[i]);
+    }
+    int new_stack = 1000;
+    int old_stack = 1001;
+    do{
+        Cell_handle first_rest_cell = rest[0];
+        bool first_rest_cell_added = 0;
+        for(auto r = region.begin(); r != region.end(); r++){
+            if(first_rest_cell->has_neighbor(*r)){
+                region.push_back(first_rest_cell);
+                rest.erase(rest.begin());
+                first_rest_cell_added = 1;
+                break;
+            }
+        }
+        if(!first_rest_cell_added){
+            stack.push_back(first_rest_cell);
+            rest.erase(rest.begin());
+        }
+        if(rest.size() == 0){
+            if(stack.size()==0)
+                return 1;
+            rest = stack;
+            old_stack=new_stack;
+            new_stack=stack.size();
+            stack.clear();
+        }
+    }while(old_stack > new_stack);
+    if(rest.size()==0 && stack.size()==0)
+        return 1;
+    else
+        return 0;
+}
+
+
+void fixNonManifoldPoints(Delaunay& Dt, double regularization_weight, std::string path){
+
+
+
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    path+="_nmPoints.ply";
+
+
+    std::fstream fo;
+    fo.open(path, std::fstream::out);
+
+    int nv = Dt.number_of_vertices();
+
+    printPLYHeader(fo,
+                   nv, 0,
+                   false, true, false, false, false, false, 15);
+
 
     // iterate over all edges of the Dt
     Delaunay::Finite_vertices_iterator fvi;
@@ -351,13 +441,20 @@ void fixNonManifoldPoints(Delaunay& Dt, double regularization_weight){
 
         // if the current edge is (already) manifold, continue
         bool mn = isManifoldPoint(Dt, fvi);
-        if(!mn)
+        if(!mn){
+            fo << fvi->point() << " " << "0 255 0" << std::endl;
             count++;
+        }
+        else{
+            fo << fvi->point() << " " << "0 0 0" << std::endl;
 
-        std::cout << "points processed: " << tcount++ << std::endl;
+        }
 
     }
     std::cout << "number of non-manifold points: " << count << std::endl;
+    fo.close();
+
+
 }
 
 

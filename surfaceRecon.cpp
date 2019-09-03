@@ -7,8 +7,8 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
-//    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
+//    std::string path1 = "/home/raphael/Dropbox/Studium/PhD/data/sampleData/";
+    std::string path1 = "/Users/Raphael/Dropbox/Studium/PhD/data/sampleData/";
 
     std::string ifn1 = path1+"musee/TLS/Est1.mesh_cut"+file_number;
     std::string ifn2 = path1+"musee/AP/AP_alligned_cut1";
@@ -61,9 +61,9 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::vector<std::vector<int>> remaining_facets;
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 0);
 
-//    fixNonManifoldEdges(Dt, regularization_weight);
+    fixNonManifoldEdges(Dt, regularization_weight);
 
-    fixNonManifoldPoints(Dt, regularization_weight);
+    fixNonManifoldPoints(Dt, regularization_weight, ofn);
 
 
     // TODO: implement a fixNonManifold points function;
