@@ -80,7 +80,7 @@ int isManifoldEdge(Delaunay& Dt, Edge e){
 }
 
 
-int isManifoldClique(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
+int isEdgeManifoldClique(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
 
     if(!isManifoldEdge(Dt,e))
         return 0;
@@ -255,8 +255,9 @@ void fixNonManifoldEdges(Delaunay& Dt, double regularization_weight){
             }
             // TODO: problem with point-edge-manifold (PEManifold) constraint is that it most of the time does not find valid configurations
             // solution could be to put a new point inside each cell in question, or increase the search space for manifold solutions
+            // try first solution first!
 //            if(isManifoldClique(Dt, fei)){
-            if(isPEManifoldClique(Dt, fei)){
+            if(isEdgeManifoldClique(Dt, fei)){
                 for(int v = 0; v < number_of_cells; v++){
                     cells_around_nmedge[v]->info().gc_label = combinations[sc].second[v];
                 }
@@ -463,7 +464,7 @@ int isPointManifoldClique(Delaunay& Dt, Delaunay::Finite_vertices_iterator& p){
     return 1;
 }
 
-int isPEManifoldClique(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
+int isManifoldClique(Delaunay& Dt, Delaunay::Finite_edges_iterator& e){
 
     // check for edge manifoldness
     if(!isManifoldEdge(Dt,e))

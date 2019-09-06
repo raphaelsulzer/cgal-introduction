@@ -70,7 +70,7 @@ void surfaceReconstruction(std::string file_number, double regularization_weight
     std::vector<std::vector<int>> remaining_facets;
     exportSurfacePLY(Dt, remaining_points, remaining_facets, ofn, 1, 0);
     fixNonManifoldEdges(Dt, regularization_weight);
-    fixNonManifoldPoints(Dt, regularization_weight);
+//    fixNonManifoldPoints(Dt, regularization_weight);
 
 
     ////// Dt, ..., ..., output_file, optimized, manifold

@@ -99,102 +99,115 @@ int traverseCells(Delaunay& Dt,
 }
 
 
-int whichSide(std::vector<Point> S, Point D, Point P){
-    // S v e r t i c e s a r e p r o j e c t e d t o t h e form P+t ∗D .
-    // R e t u r n v a l u e i s +1 i f a l l t > 0 ,
-    // −1 i f a l l t < 0 , 0 o t h e r w i s e , i n w h i c h c a s e t h e l i n e s p l i t s t h e p o l y g o n .
-    int positive = 0;
-    int negative = 0;
-    for(int i = 0; i < S.size(); i++){
+//int whichSide(std::vector<Point> S, Point D, Point P){
+//    // S v e r t i c e s a r e p r o j e c t e d t o t h e form P+t ∗D .
+//    // R e t u r n v a l u e i s +1 i f a l l t > 0 ,
+//    // −1 i f a l l t < 0 , 0 o t h e r w i s e , i n w h i c h c a s e t h e l i n e s p l i t s t h e p o l y g o n .
+//    int positive = 0;
+//    int negative = 0;
+//    for(int i = 0; i < S.size(); i++){
 
-        Vector temp = S[i] - P;
-        double t = D.x() * temp.x() + D.y() * temp.y() + D.z() * temp.z();
-        if( t > 0 )
-            positive++;
-        else if( t < 0 )
-            negative++;
-        if(positive && negative )
-            return 0;
-    }
-    return( positive? +1 : -1 );
-}
+//        Vector temp = S[i] - P;
+//        double t = D.x() * temp.x() + D.y() * temp.y() + D.z() * temp.z();
+//        if( t > 0 )
+//            positive++;
+//        else if( t < 0 )
+//            negative++;
+//        if(positive && negative )
+//            return 0;
+//    }
+//    return( positive? +1 : -1 );
+//}
 
+//std::vector<Vector> getTetNormals(const Tetrahedron& tet){
 
+//    std::vector<Vector> normals(4);
 
-void getTetNormals(Tetrahedron& tet, std::vector<Vector>& normals){
+//    std::vector<Point> tet_pts;
+//    tet_pts.push_back(tet.vertex(0));
+//    tet_pts.push_back(tet.vertex(1));
+//    tet_pts.push_back(tet.vertex(2));
+//    tet_pts.push_back(tet.vertex(3));
 
-    std::vector<Point> tet_pts;
-    tet_pts.push_back(tet.vertex(0));
-    tet_pts.push_back(tet.vertex(1));
-    tet_pts.push_back(tet.vertex(2));
-    tet_pts.push_back(tet.vertex(3));
+//    Vector v1, v2;
+//    // 0nd
+//    v1 = tet.vertex(3) - tet.vertex(1);
+//    v2 = tet.vertex(2) - tet.vertex(1);
+//    normals[0] = cross(v1,v2);
+//    // 1nd
+//    v1 = tet.vertex(3) - tet.vertex(0);
+//    v2 = tet.vertex(2) - tet.vertex(0);
+//    normals[1] = cross(v1,v2);
+//    // 2nd
+//    v1 = tet.vertex(1) - tet.vertex(0);
+//    v2 = tet.vertex(3) - tet.vertex(0);
+//    normals[2] = cross(v1,v2);
+//    // 2nd
+//    v1 = tet.vertex(1) - tet.vertex(0);
+//    v2 = tet.vertex(2) - tet.vertex(0);
+//    normals[3] = cross(v1,v2);
 
-
-
-
-
-
-
-}
-
-
-
-bool testTetIntersection(Tetrahedron C0, Tetrahedron C1){
-    // Test faces of C0 for seperation.
-    // Because of the counter-clockwise ordering, the projection interval for C0 is [m, 0] where m <= 0 .
-    // Only try to deterline if C1 is on the 'positive' side of the line
-
-    std::vector<Point> P0;
-    std::vector<Point> P1;
-    for(int i = 0; i < 4; i++){
-        P0.push_back(C0.vertex(i));
-        P1.push_back(C1.vertex(i));
-    }
-
-    for(int i = 0; i < 4; i++){
+//    return normals;
+//}
 
 
-        Point D =
-        D = C0 . F ( i ) . n o r m a l ;
-        // outward pointing
-        if( whichSide( C1 . V , D, C0 . F ( i ) . v e r t e x ) > 0 ){
-        // C1 i s e n t i r e l y on ‘ p o s i t i v e ’ s i d e o f l i n e C0 . F ( i ) . v e r t e x+t ∗D
-            return false ;
-        }
-    }
-    // T e s t f a c e s o f C1 f o r s e p a r a t i o n .
-    // Because of the counter-clockwise ordering
-    // t h e p r o j e c t i o n i n t e r v a l f o r C1 i s [m, 0 ] w h e r e m <= 0 .
-    // Only t r y t o d e t e r m i n e
-    // i f C0 i s on t h e ‘ p o s i t i v e ’ s i d e o f t h e l i n e .
-    for(int i = 0 ; i < C1 . L ; i ++){
-        D = C1 . F ( i ) . n o r m a l ;
-        // o u t w a r d p o i n t i n g
-        if( whichSide( C0.V, D, C1.F(i).vertex ) > 0 ){
-            // C0 i s e n t i r e l y on ‘ p o s i t i v e ’ s i d e o f l i n e C1 . F ( i ) . v e r t e x+t ∗D
-            return false;
-        }
-    }
-    // T e s t c r o s s p r o d u c t o f p a i r s o f e d g e s , one from e a c h p o l y h e d r o n .
-    for(int i = 0 ; i < C0.M; i ++){
-        for(int j = 0 ; j < C1.M; j ++){
-            D = Cross( C0.E ( i ) , C1 . E ( j ) ) ;
-            int side0 = WhichSide(C0.V, D, C0.E(i).vertex ) ;
-            if(side0 == 0 ){
-                continue;
-            }
-            int side1 = WhichSide( C1 . V , D, C0 . E ( i ) . v e r t e x ) ;
-            if( side1 == 0 ){
-            continue ;
-            }
-            if( side0 * side1 < 0 ){
-            // C0 and C1 a r e on ‘ o p p o s i t e ’ s i d e s o f l i n e C0 . E ( i ) . v e r t e x+t ∗D
-            return false ;
-            }
-        }
-    }
-    return true ;
-}
+
+//bool testTetIntersection(Tetrahedron C0, Tetrahedron C1){
+//    // Test faces of C0 for seperation.
+//    // Because of the counter-clockwise ordering, the projection interval for C0 is [m, 0] where m <= 0 .
+//    // Only try to deterline if C1 is on the 'positive' side of the line
+
+//    std::vector<Point> P0;
+//    std::vector<Point> P1;
+//    for(int i = 0; i < 4; i++){
+//        P0.push_back(C0.vertex(i));
+//        P1.push_back(C1.vertex(i));
+//    }
+
+//    for(int i = 0; i < 4; i++){
+
+
+//        Point D =
+//        D = C0 . F ( i ) . n o r m a l ;
+//        // outward pointing
+//        if( whichSide( C1 . V , D, C0 . F ( i ) . v e r t e x ) > 0 ){
+//        // C1 i s e n t i r e l y on ‘ p o s i t i v e ’ s i d e o f l i n e C0 . F ( i ) . v e r t e x+t ∗D
+//            return false ;
+//        }
+//    }
+//    // T e s t f a c e s o f C1 f o r s e p a r a t i o n .
+//    // Because of the counter-clockwise ordering
+//    // t h e p r o j e c t i o n i n t e r v a l f o r C1 i s [m, 0 ] w h e r e m <= 0 .
+//    // Only t r y t o d e t e r m i n e
+//    // i f C0 i s on t h e ‘ p o s i t i v e ’ s i d e o f t h e l i n e .
+//    for(int i = 0 ; i < C1 . L ; i ++){
+//        D = C1 . F ( i ) . n o r m a l ;
+//        // o u t w a r d p o i n t i n g
+//        if( whichSide( C0.V, D, C1.F(i).vertex ) > 0 ){
+//            // C0 i s e n t i r e l y on ‘ p o s i t i v e ’ s i d e o f l i n e C1 . F ( i ) . v e r t e x+t ∗D
+//            return false;
+//        }
+//    }
+//    // T e s t c r o s s p r o d u c t o f p a i r s o f e d g e s , one from e a c h p o l y h e d r o n .
+//    for(int i = 0 ; i < C0.M; i ++){
+//        for(int j = 0 ; j < C1.M; j ++){
+//            D = Cross( C0.E ( i ) , C1 . E ( j ) ) ;
+//            int side0 = WhichSide(C0.V, D, C0.E(i).vertex ) ;
+//            if(side0 == 0 ){
+//                continue;
+//            }
+//            int side1 = WhichSide( C1 . V , D, C0 . E ( i ) . v e r t e x ) ;
+//            if( side1 == 0 ){
+//            continue ;
+//            }
+//            if( side0 * side1 < 0 ){
+//            // C0 and C1 a r e on ‘ o p p o s i t e ’ s i d e s o f l i n e C0 . E ( i ) . v e r t e x+t ∗D
+//            return false ;
+//            }
+//        }
+//    }
+//    return true ;
+//}
 
 
 
@@ -219,13 +232,22 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int ou
     idxCells(Dt);
 
 
+    for(;;){
+
+
+
+
+
+    }
+
+
 
 
 
 
     // iterate over all sensor triangles/tetrahedrons
     int hit = 0;
-    for(int k = 0; k < sensor_polys.size(); k++){
+/*    for(int k = 0; k < sensor_polys.size(); k++){
         std::unordered_set<Cell_handle> processed;
 //        std::cout << "sensor poly " << k << std::endl;
 
@@ -353,10 +375,13 @@ void firstCell(Delaunay& Dt, std::vector<std::vector<int>>& sensor_polys, int ou
                 }
             }
         }//end of iteration over all three triangles of a sensor tetrahedron
-    }//end of iteration over all sensor tetrahedrons
+    }*///end of iteration over all sensor tetrahedrons
+
+
     auto stop = std::chrono::high_resolution_clock::now();
     auto full_duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
     std::cout << "Tet intersection done in " << full_duration.count() << "s" << std::endl;
+
 }// end of firstCell function
 
 }// end of namespace

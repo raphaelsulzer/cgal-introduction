@@ -303,11 +303,9 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                 current_cell->info().outside_score+=infiniteScore;
         }
     }
-
-
 }
 
-void rayTracingFun(Delaunay& Dt, bool outside_tracing=true, double infiniteScore=1){
+void rayTracingFun(Delaunay& Dt, bool tet_tracing=false, double infiniteScore=1){
 
     std::cout << "Start tracing rays to every point..." << std::endl;
 
@@ -323,7 +321,7 @@ void rayTracingFun(Delaunay& Dt, bool outside_tracing=true, double infiniteScore
     for(vit = Dt.finite_vertices_begin() ; vit != Dt.finite_vertices_end() ; vit++){
 
         // collect outside votes
-        if(outside_tracing)
+        if(!tet_tracing)
             firstCell(Dt, vit, 0, infiniteScore);
         // collect inside votes
         firstCell(Dt, vit, 1, infiniteScore);

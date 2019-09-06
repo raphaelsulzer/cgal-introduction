@@ -686,11 +686,11 @@ void exportCellCenter(std::string path, const Delaunay& Dt){
         int green = 0;
         int red  = int(255*(inside_score-inside_min)/(inside_max-inside_min));
         int blue = int(255*(outside_score-outside_min)/(outside_max-outside_min));
-        if(inside_score == outside_score){
-            blue = 0;
-            red = 0;
-            green = 128;
-        }
+//        if(inside_score == outside_score){
+//            blue = 0;
+//            red = 0;
+//            green = 128;
+//        }
         fo << centroid << " " << red << " " << green << " " << blue << " "
            << inside_score << " " << outside_score << " ";
 //           << cit->info().inside_count << " " << cit->info().outside_count << " ";

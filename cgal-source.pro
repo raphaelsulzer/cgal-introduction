@@ -19,7 +19,9 @@ SOURCES += \
     tetTracing.cpp \
     tetTracingBB.cpp \
     manifoldness.cpp \
-    tetTracing2.cpp
+    tetTracing2.cpp \
+    collisionDetection.cpp \
+    importDepthMap.cpp
 
 HEADERS += \
     cgal_typedefs.h \
@@ -27,7 +29,10 @@ HEADERS += \
     rayTracing.h \
     tetIntersection.h \
     surfaceRecon.h \
-    manifoldness.h
+    manifoldness.h \
+    collisionDetection.h \
+    vectorArithmetic.h \
+    CImg.h
 
 QMAKE_CXXFLAGS += -std=c++11
 
@@ -39,13 +44,16 @@ unix:!macx{
     INCLUDEPATH +=  /usr/local/include \
                     /usr/include/eigen3 \
                     /usr/lib/gco-v3.0-master \
-                    /home/raphael/PhD_local/cpp/rPLY
+                    /home/raphael/PhD_local/cpp/rPLY \
+                    /usr/lib/colmap/src
+
 
     LIBS += \
     -L/usr/local/lib/ -lCGAL \
     -L/usr/lib/ -lgmp \
     -L/usr/lib/ -lmpfr \
-    -L/usr/lib/gco-v3.0-master/build/ -lgco
+    -L/usr/lib/gco-v3.0-master/build/ -lgco \
+    -L/usr/lib/x86_64-linux-gnu/ -ltiff
 #    -L/usr/lib/librply-master/bin/ -lrply
 }
 

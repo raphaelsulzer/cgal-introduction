@@ -26,7 +26,7 @@ void firstCell(Delaunay& Dt, Delaunay::Finite_vertices_iterator& vit,
                bool inside,
                int& intersection_count);
 
-void rayTracingFun(Delaunay& Dt);
+void rayTracingFun(Delaunay& Dt, bool outside_tracing, double infiniteScore);
 
 // end of namespace rayTracing
 }
